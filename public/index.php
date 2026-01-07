@@ -16,6 +16,13 @@ $router->add('GET', '/login', 'Auth\\LoginController@showLoginForm');
 $router->add('POST', '/login', 'Auth\\LoginController@login');
 $router->add('GET', '/logout', 'Auth\\LoginController@logout');
 
+$router->add('GET', '/lang/{lang}', function ($lang) {
+    \App\Core\Lang::set($lang);
+    $referer = $_SERVER['HTTP_REFERER'] ?? (\App\Core\Auth::getBaseUrl() . 'admin/dashboard');
+    header('Location: ' . $referer);
+    exit;
+});
+
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
 

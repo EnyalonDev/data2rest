@@ -1,24 +1,24 @@
+<?php use App\Core\Lang; ?>
 <header class="mb-12">
-    <h1 class="text-5xl font-black text-white italic tracking-tighter uppercase">Cluster <span
-            class="text-primary">Storage</span></h1>
-    <p class="text-slate-500 font-medium tracking-tight">Managing active SQLite data nodes within the current operation
-        cluster.</p>
+    <h1 class="text-5xl font-black text-white italic tracking-tighter uppercase">
+        <?php echo Lang::get('databases.title'); ?></h1>
+    <p class="text-slate-500 font-medium tracking-tight"><?php echo Lang::get('databases.subtitle'); ?></p>
 </header>
 
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <div class="lg:col-span-1">
         <div class="glass-card sticky top-24">
-            <h2 class="text-xl font-bold text-white mb-6 uppercase italic tracking-tighter">Initialize New Node</h2>
+            <h2 class="text-xl font-bold text-white mb-6 uppercase italic tracking-tighter">
+                <?php echo Lang::get('databases.new_node'); ?></h2>
             <form action="<?php echo $baseUrl; ?>admin/databases/create" method="POST" class="space-y-4">
                 <div class="flex flex-col gap-2">
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Node
-                        Identifier</label>
-                    <input type="text" name="name" placeholder="e.g. Master Intelligence" required
-                        class="input-glass w-full">
+                    <label
+                        class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1"><?php echo Lang::get('databases.node_name'); ?></label>
+                    <input type="text" name="name" placeholder="<?php echo Lang::get('databases.node_placeholder'); ?>"
+                        required class="input-glass w-full">
                 </div>
                 <button type="submit"
-                    class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">Authorize Deployment
-                    +</button>
+                    class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs"><?php echo Lang::get('databases.create_node'); ?></button>
             </form>
         </div>
     </div>
@@ -33,15 +33,17 @@
                         💾</div>
                     <div>
                         <h3 class="text-xl font-bold text-white mb-1 tracking-tight uppercase italic">
-                            <?php echo htmlspecialchars($db['name']); ?></h3>
+                            <?php echo htmlspecialchars($db['name']); ?>
+                        </h3>
                         <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">
-                            <?php echo htmlspecialchars($db['path']); ?></p>
+                            <?php echo htmlspecialchars($db['path']); ?>
+                        </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 relative z-10">
                     <a href="<?php echo $baseUrl; ?>admin/databases/view?id=<?php echo $db['id']; ?>"
                         class="btn-primary flex items-center gap-2 italic uppercase text-xs tracking-wider !py-2">
-                        Interface &rarr;
+                        <?php echo Lang::get('databases.interface'); ?> &rarr;
                     </a>
                     <button
                         onclick="confirmDeleteDB(<?php echo $db['id']; ?>, '<?php echo htmlspecialchars($db['name']); ?>')"
@@ -61,10 +63,10 @@
 <script>
     function confirmDeleteDB(id, name) {
         showModal({
-            title: 'Nodal Deletion',
-            message: `Confirming the complete destruction of data node '${name}'. This action will terminate all associated tables and records permanently.`,
+            title: '<?php echo Lang::get('databases.delete_confirm_title'); ?>',
+            message: `<?php echo Lang::get('databases.delete_confirm_msg'); ?>`.replace(':name', name),
             type: 'confirm',
-            typeLabel: 'SYSTEM PURGE SEQUENCE',
+            typeLabel: '<?php echo Lang::get('databases.delete_confirm_btn'); ?>',
             onConfirm: () => {
                 window.location.href = `<?php echo $baseUrl; ?>admin/databases/delete?id=${id}`;
             }

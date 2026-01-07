@@ -1,138 +1,95 @@
-<?php use App\Core\Auth; ?>
-<script src="https://cdn.tiny.cloud/1/4twb1yrntltl1gohwrjplvnczgb9nlnr12ywqhns44icc3ur/tinymce/7/tinymce.min.js"
-    referrerpolicy="origin"></script>
-
-<style type="text/tailwindcss">
-    .btn-gallery {
-        @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold py-2 px-4 rounded-lg hover:bg-emerald-500 hover:text-white transition-all text-[10px] flex items-center gap-2;
-    }
-
-    .modal-bg {
-        @apply fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] hidden items-center justify-center p-6;
-    }
-
-    .modal-content {
-        @apply bg-dark border border-glass-border rounded-3xl w-full max-w-6xl p-8 max-h-[85vh] overflow-hidden flex flex-col;
-    }
-
-    .sidebar-item {
-        @apply w-full text-left px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all mb-2 border border-transparent;
-    }
-
-    .sidebar-item.active {
-        @apply bg-primary/10 text-primary border-primary/20;
-    }
-
-    .sidebar-item:not(.active) {
-        @apply text-slate-500 hover:text-slate-200 hover:bg-white/5;
-    }
-
-    .dropzone-active {
-        @apply border-primary bg-primary/5 ring-4 ring-primary/20 scale-[0.99];
-    }
-
-    .search-input {
-        @apply bg-black/40 border border-glass-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-primary/50 transition-all w-64;
-    }
-</style>
-
-<header class="text-center mb-16">
-    <h1 class="text-5xl font-black text-white italic tracking-tighter mb-4">
-        <?php echo $record ? 'Refine' : 'Initialize'; ?> <span class="text-primary">Record</span>
+<?php use App\Core\Auth;
+use App\Core\Lang; ?>
+<header class="mb-12 text-center">
+    <h1 class="text-4xl font-black text-white italic tracking-tighter mb-2">
+        <?php echo $id ? Lang::get('crud.edit') : Lang::get('crud.new'); ?>
+        <span class="text-primary italic"><?php echo ucfirst($ctx['table']); ?></span>
     </h1>
-    <p class="text-slate-500 font-medium">Injecting data into <b><?php echo ucfirst($ctx['table']); ?></b> collection.
+    <p class="text-slate-500 font-medium">Configurando registro estructural en la base de datos
+        <b><?php echo htmlspecialchars($ctx['database']['name']); ?></b>.
     </p>
 </header>
 
-<section class="glass-card relative overflow-hidden max-w-6xl mx-auto">
-    <form action="<?php echo $baseUrl; ?>admin/crud/save" method="POST" enctype="multipart/form-data" id="crud-form"
-        class="space-y-10 relative">
+<section class="max-w-4xl mx-auto">
+    <form action="<?php echo $baseUrl; ?>admin/crud/save" method="POST" id="crud-form" enctype="multipart/form-data">
         <input type="hidden" name="db_id" value="<?php echo $ctx['db_id']; ?>">
         <input type="hidden" name="table" value="<?php echo $ctx['table']; ?>">
-        <?php if ($record): ?>
-            <input type="hidden" name="id" value="<?php echo $record['id']; ?>">
-        <?php endif; ?>
+        <input type="hidden" name="id" value="<?php echo $record['id'] ?? ''; ?>">
 
-        <div class="space-y-12">
-            <?php foreach ($ctx['fields'] as $field): ?>
-                <?php if ($field['field_name'] === 'id' || !$field['is_editable'])
-                    continue; ?>
-
-                <div class="group">
-                    <label class="form-label group-focus-within:text-primary transition-colors">
-                        <?php echo ucfirst(str_replace('_', ' ', $field['field_name'])); ?>
-                        <?php if ($field['is_required'] ?? false): ?><span class="text-red-500 ml-1">*</span><?php endif; ?>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <?php foreach ($ctx['fields'] as $field):
+                if (!$field['is_editable'])
+                    continue;
+                $val = $record[$field['field_name']] ?? '';
+                $isFullWidth = in_array($field['view_type'], ['wysiwyg', 'textarea', 'gallery', 'image']);
+                ?>
+                <div class="<?php echo $isFullWidth ? 'md:col-span-2' : ''; ?> space-y-3">
+                    <label class="form-label flex items-center gap-2">
+                        <?php echo htmlspecialchars($field['field_name']); ?>
+                        <?php if ($field['is_required']): ?>
+                            <span
+                                class="text-primary text-[10px] font-black uppercase tracking-tighter">[<?php echo Lang::get('fields.required'); ?>]</span>
+                        <?php endif; ?>
                     </label>
 
-                    <?php
-                    $val = $record[$field['field_name']] ?? '';
+                    <?php switch ($field['view_type']):
+                        case 'text': ?>
+                            <input type="text" name="<?php echo $field['field_name']; ?>"
+                                value="<?php echo htmlspecialchars($val); ?>" <?php echo $field['is_required'] ? 'required' : ''; ?>
+                                class="form-input" data-type="<?php echo $field['data_type']; ?>">
+                            <?php break;
 
-                    if ($field['is_foreign_key']): ?>
-                        <select name="<?php echo $field['field_name']; ?>" class="form-input" <?php echo ($field['is_required'] ?? false) ? 'required' : ''; ?>>
-                            <option value="">-- Select from <?php echo $field['related_table']; ?> --</option>
-                            <?php foreach ($foreignOptions[$field['field_name']] as $opt): ?>
-                                <option value="<?php echo $opt['id']; ?>" <?php echo $val == $opt['id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($opt['label']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    <?php else:
-                        switch ($field['view_type']):
-                            case 'textarea': ?>
-                                <textarea name="<?php echo $field['field_name']; ?>" rows="6" class="form-input" <?php echo ($field['is_required'] ?? false) ? 'required' : ''; ?>><?php echo htmlspecialchars($val); ?></textarea>
-                                <?php break;
+                        case 'textarea': ?>
+                            <textarea name="<?php echo $field['field_name']; ?>" rows="4" <?php echo $field['is_required'] ? 'required' : ''; ?> class="form-input"><?php echo htmlspecialchars($val); ?></textarea>
+                            <?php break;
 
-                            case 'wysiwyg': ?>
-                                <div class="rounded-xl overflow-hidden shadow-inner"><textarea
-                                        name="<?php echo $field['field_name']; ?>"
-                                        class="editor"><?php echo htmlspecialchars($val); ?></textarea></div>
-                                <?php break;
+                        case 'wysiwyg': ?>
+                            <textarea name="<?php echo $field['field_name']; ?>" class="editor"><?php echo $val; ?></textarea>
+                            <?php break;
 
-                            case 'image':
-                            case 'gallery':
-                            case 'file': ?>
-                                <div
-                                    class="bg-black/40 p-8 rounded-2xl border-2 border-dashed border-glass-border hover:border-primary/40 transition-all flex flex-col gap-6">
-
+                        case 'image':
+                        case 'gallery': ?>
+                            <div class="glass-card !bg-black/20 overflow-hidden">
+                                <div class="flex flex-col lg:flex-row gap-8">
                                     <div id="preview-container-<?php echo $field['field_name']; ?>"
-                                        class="<?php echo empty($val) ? 'hidden' : ''; ?> flex items-center gap-6 p-4 bg-white/5 rounded-xl border border-glass-border">
-                                        <?php if ($field['view_type'] === 'image' || $field['view_type'] === 'gallery'): ?>
-                                            <img id="preview-img-<?php echo $field['field_name']; ?>" src="<?php echo $val; ?>"
-                                                class="max-h-32 rounded border border-primary/20">
-                                        <?php endif; ?>
-                                        <div class="flex-1">
-                                            <p class="text-[10px] font-black text-primary uppercase mb-1">Enlace Activo</p>
+                                        class="<?php echo empty($val) ? 'hidden' : ''; ?> w-full lg:w-48 aspect-square rounded-xl overflow-hidden border border-glass-border relative group">
+                                        <img id="preview-img-<?php echo $field['field_name']; ?>"
+                                            src="<?php echo (strpos($val, 'http') === 0) ? $val : $baseUrl . $val; ?>"
+                                            class="w-full h-full object-cover">
+                                        <div
+                                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
                                             <p id="preview-path-<?php echo $field['field_name']; ?>"
-                                                class="text-xs text-slate-400 font-mono break-all"><?php echo $val; ?></p>
+                                                class="text-[8px] font-mono text-primary break-all text-center"><?php echo $val; ?>
+                                            </p>
                                         </div>
                                         <button type="button" onclick="clearField('<?php echo $field['field_name']; ?>')"
-                                            class="text-red-400 hover:text-red-200 transition-colors">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                </path>
+                                                    d="M6 18L18 6M6 6l12 12"></path>
                                             </svg>
                                         </button>
                                     </div>
 
-                                    <div class="space-y-6">
+                                    <div class="flex-1 space-y-6">
                                         <div class="flex flex-col gap-3">
                                             <label
                                                 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                <span class="w-1 h-1 rounded-full bg-primary"></span> URL del Recurso (Interna o
-                                                Externa)
+                                                <span class="w-1 h-1 rounded-full bg-primary"></span>
+                                                <?php echo Lang::get('crud.resource_url'); ?>
                                             </label>
                                             <div class="flex gap-4">
                                                 <input type="text" name="gallery_<?php echo $field['field_name']; ?>"
                                                     id="gallery-<?php echo $field['field_name']; ?>"
                                                     value="<?php echo htmlspecialchars($val); ?>"
-                                                    placeholder="https://ejemplo.com/imagen.jpg o selecciona de la galería"
+                                                    placeholder="<?php echo Lang::get('crud.url_placeholder'); ?>"
                                                     class="form-input flex-1 !bg-white/5"
                                                     oninput="updatePreviewFromUrl('<?php echo $field['field_name']; ?>', this.value)">
 
-                                                <button type="button" onclick="openMediaGallery('<?php echo $field['field_name']; ?>')"
+                                                <button type="button"
+                                                    onclick="openMediaGallery('<?php echo $field['field_name']; ?>')"
                                                     class="btn-gallery whitespace-nowrap !py-2">
-                                                    <span>📁</span> Galería
+                                                    <span>📁</span> <?php echo Lang::get('crud.gallery_btn'); ?>
                                                 </button>
                                             </div>
                                         </div>
@@ -140,7 +97,8 @@
                                         <div class="flex flex-col gap-3 pt-6 border-t border-white/5">
                                             <label
                                                 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                <span class="w-1 h-1 rounded-full bg-primary/40"></span> O Subir Nuevo Archivo
+                                                <span class="w-1 h-1 rounded-full bg-primary/40"></span>
+                                                <?php echo Lang::get('crud.upload_new'); ?>
                                             </label>
                                             <input type="file" name="<?php echo $field['field_name']; ?>"
                                                 id="file-<?php echo $field['field_name']; ?>" <?php echo (($field['is_required'] ?? false) && empty($val)) ? 'required' : ''; ?>
@@ -149,29 +107,25 @@
                                         </div>
                                     </div>
                                 </div>
-                                <?php break;
+                            </div>
+                            <?php break;
 
-                            case 'boolean': ?>
-                                <label class="flex items-center gap-4 cursor-pointer">
-                                    <input type="checkbox" name="<?php echo $field['field_name']; ?>" value="1" <?php echo $val ? 'checked' : ''; ?> class="w-6 h-6 rounded bg-black/40 text-primary">
-                                    <span class="text-sm font-bold uppercase">Toggle Status</span>
-                                </label>
-                                <?php break;
+                        case 'boolean': ?>
+                            <label class="flex items-center gap-4 cursor-pointer">
+                                <input type="checkbox" name="<?php echo $field['field_name']; ?>" value="1" <?php echo $val ? 'checked' : ''; ?> class="w-6 h-6 rounded bg-black/40 text-primary">
+                                <span class="text-sm font-bold uppercase"><?php echo Lang::get('crud.toggle_status'); ?></span>
+                            </label>
+                            <?php break;
 
-                            default: ?>
-                                <input type="text" name="<?php echo $field['field_name']; ?>"
-                                    value="<?php echo htmlspecialchars($val); ?>" class="form-input" <?php echo ($field['is_required'] ?? false) ? 'required' : ''; ?>>
-                                <?php break;
-                        endswitch;
-                    endif; ?>
+                    endswitch; ?>
                 </div>
             <?php endforeach; ?>
         </div>
 
         <div class="pt-12 border-t border-glass-border flex justify-end gap-6">
             <a href="<?php echo $baseUrl; ?>admin/crud/list?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>"
-                class="btn-primary !bg-slate-800 !text-slate-300">ABORT</a>
-            <button type="submit" class="btn-primary">Commit Operation</button>
+                class="btn-primary !bg-slate-800 !text-slate-300"><?php echo Lang::get('common.abort'); ?></a>
+            <button type="submit" class="btn-primary"><?php echo Lang::get('common.commit'); ?></button>
         </div>
     </form>
 </section>
@@ -181,14 +135,15 @@
     <div class="modal-content">
         <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
             <div>
-                <h2 class="text-3xl font-black text-white italic tracking-tighter">Media Explorer</h2>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Neural Asset Selection
-                    System</p>
+                <h2 class="text-3xl font-black text-white italic tracking-tighter">
+                    <?php echo Lang::get('media.explorer'); ?></h2>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">
+                    <?php echo Lang::get('media.system'); ?></p>
             </div>
             <div class="flex items-center gap-6">
                 <!-- Search Input -->
                 <div class="relative">
-                    <input type="text" id="media-search" placeholder="Search assets..."
+                    <input type="text" id="media-search" placeholder="<?php echo Lang::get('media.search'); ?>"
                         oninput="handleSearch(this.value)" class="search-input pl-10">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                 </div>
@@ -210,8 +165,8 @@
                     <label
                         class="w-full flex flex-col items-center justify-center py-6 px-4 bg-primary/5 border border-dashed border-primary/30 rounded-2xl cursor-pointer hover:bg-primary/10 hover:border-primary/50 transition-all group">
                         <span class="text-2xl mb-2 group-hover:scale-110 transition-transform">🚀</span>
-                        <span class="text-[9px] font-black text-primary uppercase tracking-widest text-center">Instant
-                            Upload</span>
+                        <span
+                            class="text-[9px] font-black text-primary uppercase tracking-widest text-center"><?php echo Lang::get('media.upload'); ?></span>
                         <input type="file" class="hidden" onchange="handleDirectUpload(this.files[0])"
                             accept="image/*,video/*,application/pdf">
                     </label>
@@ -219,7 +174,8 @@
                 <div>
                     <h4
                         class="text-[10px] font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Temporal Nodes
+                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                        <?php echo Lang::get('media.temporal_nodes'); ?>
                     </h4>
                     <div id="filter-dates" class="space-y-1">
                         <!-- Dates inject here -->
@@ -229,7 +185,8 @@
                 <div>
                     <h4
                         class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Entity Collections
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <?php echo Lang::get('media.entity_collections'); ?>
                     </h4>
                     <div id="filter-tables" class="space-y-1">
                         <!-- Tables inject here -->
@@ -250,7 +207,8 @@
                     class="absolute inset-0 bg-primary/10 backdrop-blur-sm border-4 border-dashed border-primary rounded-2xl flex items-center justify-center z-50 pointer-events-none opacity-0 transition-opacity">
                     <div class="text-center">
                         <div class="text-6xl mb-4 animate-bounce">⚡</div>
-                        <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Release to Inject
+                        <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">
+                            <?php echo Lang::get('media.drop'); ?>
                         </h3>
                         <p class="text-[10px] text-primary font-black uppercase tracking-widest mt-2">Uploading to
                             Neural Network</p>
@@ -260,9 +218,10 @@
         </div>
 
         <div class="mt-8 pt-6 border-t border-glass-border flex justify-between items-center">
-            <span id="gallery-status" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scanning
-                Uplink...</span>
-            <button onclick="closeMediaGallery()" class="btn-outline">Abort Selection</button>
+            <span id="gallery-status"
+                class="text-[10px] font-bold text-slate-500 uppercase tracking-widest"><?php echo Lang::get('media.scanning'); ?></span>
+            <button onclick="closeMediaGallery()"
+                class="btn-outline"><?php echo Lang::get('media.abort_selection'); ?></button>
         </div>
     </div>
 </div>
@@ -299,51 +258,29 @@
         const dateContainer = document.getElementById('filter-dates');
         const tableContainer = document.getElementById('filter-tables');
 
-        dateContainer.innerHTML = `<button onclick="setFilter('date', 'all')" class="sidebar-item ${activeDateFilter === 'all' ? 'active' : ''}">All Timelines</button>`;
-        allMediaData.available_dates.sort().reverse().forEach(date => {
-            const btn = document.createElement('button');
-            btn.className = `sidebar-item ${activeDateFilter === date ? 'active' : ''}`;
-            btn.innerText = date;
-            btn.onclick = () => setFilter('date', date);
-            dateContainer.appendChild(btn);
+        const dates = [...new Set(allMediaData.files.map(f => f.date_folder))];
+        const tables = [...new Set(allMediaData.files.map(f => f.table_folder))];
+
+        dateContainer.innerHTML = `<button onclick="setDateFilter('all')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeDateFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-slate-500 hover:bg-white/5'}"><?php echo Lang::get('media.all'); ?></button>`;
+        dates.forEach(d => {
+            dateContainer.innerHTML += `<button onclick="setDateFilter('${d}')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeDateFilter === d ? 'bg-primary/20 text-primary' : 'text-slate-500 hover:bg-white/5'}">${d}</button>`;
         });
 
-        tableContainer.innerHTML = `<button onclick="setFilter('table', 'all')" class="sidebar-item ${activeTableFilter === 'all' ? 'active' : ''}">All Entities</button>`;
-        allMediaData.available_tables.sort().forEach(table => {
-            const btn = document.createElement('button');
-            btn.className = `sidebar-item ${activeTableFilter === table ? 'active' : ''}`;
-            btn.innerText = table;
-            btn.onclick = () => setFilter('table', table);
-            tableContainer.appendChild(btn);
+        tableContainer.innerHTML = `<button onclick="setTableFilter('all')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeTableFilter === 'all' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:bg-white/5'}"><?php echo Lang::get('media.all'); ?></button>`;
+        tables.forEach(t => {
+            tableContainer.innerHTML += `<button onclick="setTableFilter('${t}')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeTableFilter === t ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:bg-white/5'}">${t}</button>`;
         });
     }
 
-    function setFilter(type, value) {
-        if (type === 'date') activeDateFilter = value;
-        if (type === 'table') activeTableFilter = value;
-        renderFilters();
-        renderGrid();
-    }
+    function setDateFilter(d) { activeDateFilter = d; renderFilters(); renderGrid(); }
+    function setTableFilter(t) { activeTableFilter = t; renderFilters(); renderGrid(); }
+    function handleSearch(q) { searchQuery = q.toLowerCase(); renderGrid(); }
 
-    function handleSearch(val) {
-        searchQuery = val.toLowerCase();
-        renderGrid();
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        document.getElementById('drop-overlay').style.opacity = '1';
-        document.getElementById('mediaGrid').classList.add('scale-[0.98]');
-    }
-
-    function handleDragLeave(e) {
-        document.getElementById('drop-overlay').style.opacity = '0';
-        document.getElementById('mediaGrid').classList.remove('scale-[0.98]');
-    }
-
+    function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-overlay').style.opacity = '1'; }
+    function handleDragLeave(e) { e.preventDefault(); document.getElementById('drop-overlay').style.opacity = '0'; }
     function handleDrop(e) {
         e.preventDefault();
-        handleDragLeave();
+        document.getElementById('drop-overlay').style.opacity = '0';
         const file = e.dataTransfer.files[0];
         if (file) handleDirectUpload(file);
     }
@@ -397,10 +334,10 @@
         if (activeTableFilter !== 'all') filtered = filtered.filter(f => f.table_folder === activeTableFilter);
         if (searchQuery) filtered = filtered.filter(f => f.name.toLowerCase().includes(searchQuery));
 
-        status.innerText = `${filtered.length} Assets syncronized`;
+        status.innerText = `<?php echo Lang::get('media.sync'); ?>`.replace(':count', filtered.length);
 
         if (filtered.length === 0) {
-            grid.innerHTML = '<div class="col-span-full py-20 text-center text-slate-500 uppercase font-black tracking-widest opacity-30">Null sector: No assets in this query path</div>';
+            grid.innerHTML = '<div class="col-span-full py-20 text-center text-slate-500 uppercase font-black tracking-widest opacity-30"><?php echo Lang::get('media.null'); ?></div>';
             return;
         }
 
@@ -452,4 +389,54 @@
         document.getElementById('gallery-' + fieldName).value = '__EMPTY__';
         document.getElementById('file-' + fieldName).value = '';
     }
+
+    // Smart Validation Engine
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('crud-form');
+        const inputs = form.querySelectorAll('input, select, textarea');
+
+        inputs.forEach(input => {
+            input.addEventListener('input', () => validateInput(input));
+            input.addEventListener('blur', () => validateInput(input, true));
+        });
+
+        function validateInput(input, isBlur = false) {
+            const container = input.closest('div');
+            const label = container ? container.querySelector('.form-label') : null;
+            let isValid = true;
+            let errorMsg = '';
+
+            // 1. Check Required
+            if (input.hasAttribute('required') && !input.value.trim()) {
+                isValid = false;
+            }
+
+            // 2. Numeric Type Check (SQLite Types)
+            const type = input.getAttribute('data-type');
+            if (type === 'INTEGER' || type === 'REAL' || type === 'NUMERIC') {
+                if (input.value && isNaN(input.value)) {
+                    isValid = false;
+                    errorMsg = 'Numeric signal required';
+                    // Prevent typing non-numeric characters
+                    input.value = input.value.replace(/[^0-9.-]/g, '');
+                }
+            }
+
+            // Apply Styles
+            if (!isValid) {
+                input.classList.add('form-input-error');
+                input.classList.remove('form-input-valid');
+                if (label) label.classList.add('text-red-500');
+                if (isBlur) input.classList.add('animate-shake');
+            } else {
+                input.classList.remove('form-input-error', 'animate-shake');
+                if (label) label.classList.remove('text-red-500');
+                if (input.value.trim()) {
+                    input.classList.add('form-input-valid');
+                } else {
+                    input.classList.remove('form-input-valid');
+                }
+            }
+        }
+    });
 </script>

@@ -42,7 +42,21 @@
                 @apply w-full bg-black/40 border-2 border-glass-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all font-medium;
             }
             .form-label {
-                @apply block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3;
+                @apply block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 transition-colors;
+            }
+            .form-input-valid {
+                @apply border-emerald-500/50 ring-4 ring-emerald-500/10 bg-emerald-500/5;
+            }
+            .form-input-error {
+                @apply border-red-500/50 ring-4 ring-red-500/10 bg-red-500/5;
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.2s ease-in-out 0s 2;
             }
         }
     </style>
@@ -64,8 +78,8 @@
             </a>
 
             <span class="text-slate-600 font-medium">/</span>
-            <a
-                href="<?php echo $baseUrl; ?>" class="text-slate-500 hover:text-primary transition-colors font-medium">Dashboard</a>
+            <a href="<?php echo $baseUrl; ?>"
+                class="text-slate-500 hover:text-primary transition-colors font-medium"><?php echo \App\Core\Lang::get('common.dashboard'); ?></a>
 
             <?php if (isset($breadcrumbs) && is_array($breadcrumbs)): ?>
                 <?php foreach ($breadcrumbs as $label => $link): ?>
@@ -86,13 +100,24 @@
         </div>
 
         <div class="flex items-center gap-6">
+            <!-- Language Switcher -->
+            <div class="flex items-center bg-black/40 rounded-lg p-1 border border-glass-border">
+                <a href="<?php echo $baseUrl; ?>lang/es"
+                    class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all <?php echo \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white'; ?>">ES</a>
+                <a href="<?php echo $baseUrl; ?>lang/en"
+                    class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all <?php echo \App\Core\Lang::current() === 'en' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white'; ?>">EN</a>
+                <a href="<?php echo $baseUrl; ?>lang/pt"
+                    class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all <?php echo \App\Core\Lang::current() === 'pt' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white'; ?>">PT</a>
+            </div>
+
             <?php include __DIR__ . '/partials/theme_toggle.php'; ?>
             <?php if (\App\Core\Auth::check()): ?>
-                <span class="hidden md:block text-sm text-slate-400">Welcome, <b class="text-white">
+                <span class="hidden md:block text-sm text-slate-400"><?php echo \App\Core\Lang::get('common.welcome'); ?>,
+                    <b class="text-white">
                         <?php echo htmlspecialchars($_SESSION['username']); ?>
                     </b></span>
                 <a href="<?php echo $baseUrl; ?>logout"
-                    class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20">Logout</a>
+                    class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20"><?php echo \App\Core\Lang::get('common.logout'); ?></a>
             <?php endif; ?>
         </div>
     </nav>

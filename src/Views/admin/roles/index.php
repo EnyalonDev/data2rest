@@ -1,13 +1,15 @@
+<?php use App\Core\Lang; ?>
 <header class="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
     <div>
-        <h1 class="text-5xl font-black text-white italic tracking-tighter mb-2">Access <span
-                class="text-primary">Policies</span></h1>
-        <p class="text-slate-500 font-medium">Define complex permission sets for different job functions.</p>
+        <h1 class="text-5xl font-black text-white italic tracking-tighter mb-2">
+            <?php echo Lang::get('roles_list.title'); ?></h1>
+        <p class="text-slate-500 font-medium"><?php echo Lang::get('roles_list.subtitle'); ?></p>
     </div>
     <div class="flex gap-4">
-        <a href="<?php echo $baseUrl; ?>admin/users" class="btn-primary !bg-slate-800 !text-slate-300 !py-2">BACK TO
-            TEAM</a>
-        <a href="<?php echo $baseUrl; ?>admin/roles/new" class="btn-primary !py-2">NEW ROLE +</a>
+        <a href="<?php echo $baseUrl; ?>admin/users"
+            class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('roles_list.back'); ?></a>
+        <a href="<?php echo $baseUrl; ?>admin/roles/new"
+            class="btn-primary !py-2"><?php echo Lang::get('roles_list.new'); ?></a>
     </div>
 </header>
 
@@ -15,9 +17,9 @@
     <table class="w-full text-left">
         <thead>
             <tr class="bg-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                <th class="px-8 py-5">Role Name</th>
-                <th class="px-8 py-5">Status</th>
-                <th class="px-8 py-5 text-right">Actions</th>
+                <th class="px-8 py-5"><?php echo Lang::get('roles_list.name'); ?></th>
+                <th class="px-8 py-5"><?php echo Lang::get('common.status'); ?></th>
+                <th class="px-8 py-5 text-right"><?php echo Lang::get('common.actions'); ?></th>
             </tr>
         </thead>
         <tbody class="divide-y divide-white/[0.03]">
@@ -39,7 +41,7 @@
                             <div>
                                 <p class="font-bold text-white"><?php echo htmlspecialchars($r['name']); ?></p>
                                 <p class="text-[9px] text-slate-500 font-black uppercase">
-                                    <?php echo $isAdmin ? 'Full Root Access' : 'Custom Defined Policy'; ?>
+                                    <?php echo $isAdmin ? Lang::get('roles_list.full_access') : Lang::get('roles_list.custom_policy'); ?>
                                 </p>
                             </div>
                         </div>
@@ -47,12 +49,10 @@
                     <td class="px-8 py-6">
                         <?php if ($isAdmin): ?>
                             <span
-                                class="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">System
-                                Master</span>
+                                class="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest"><?php echo Lang::get('roles_list.system_master'); ?></span>
                         <?php else: ?>
                             <span
-                                class="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">Active
-                                Policy</span>
+                                class="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest"><?php echo Lang::get('roles_list.active_policy'); ?></span>
                         <?php endif; ?>
                     </td>
                     <td class="px-8 py-6 text-right">
@@ -85,10 +85,10 @@
 <script>
     function confirmDeleteRole(id, name) {
         showModal({
-            title: 'Policy Revocation',
-            message: `Are you certain you want to delete the '${name}' access policy? Users assigned to this role may lose all cluster privileges.`,
+            title: '<?php echo Lang::get('roles_list.delete_confirm_title'); ?>',
+            message: `<?php echo Lang::get('roles_list.delete_confirm_msg'); ?>`.replace(':name', name),
             type: 'confirm',
-            typeLabel: 'NODAL DESTRUCTION',
+            typeLabel: '<?php echo Lang::get('roles_list.delete_confirm_btn'); ?>',
             onConfirm: () => {
                 window.location.href = `<?php echo $baseUrl; ?>admin/roles/delete?id=${id}`;
             }

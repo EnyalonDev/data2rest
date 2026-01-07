@@ -334,6 +334,31 @@ WHERE id = ?");
                 $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                 $syncedTables++;
 
+                // --- Consistency Audit: Ensure audit columns exist ---
+                $columnNames = array_map(function ($c) {
+                    return strtolower($c['name']);
+                }, $columns);
+                $now = date('Y-m-d H:i:s');
+                $auditChanged = false;
+
+                if (!in_array('fecha_de_creacion', $columnNames)) {
+                    $targetDb->exec("ALTER TABLE $table ADD COLUMN fecha_de_creacion TEXT");
+                    $targetDb->exec("UPDATE $table SET fecha_de_creacion = '$now' WHERE fecha_de_creacion IS NULL OR fecha_de_creacion = ''");
+                    $auditChanged = true;
+                }
+                if (!in_array('fecha_edicion', $columnNames)) {
+                    $targetDb->exec("ALTER TABLE $table ADD COLUMN fecha_edicion TEXT");
+                    $targetDb->exec("UPDATE $table SET fecha_edicion = '$now' WHERE fecha_edicion IS NULL OR fecha_edicion = ''");
+                    $auditChanged = true;
+                }
+
+                // If schema changed, reload columns
+                if ($auditChanged) {
+                    $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                }
+                // ---------------------------------------------------
+
                 foreach ($columns as $col) {
                     $stmtCheck = $db->prepare("SELECT id FROM fields_config WHERE db_id = ? AND table_name = ? AND field_name = ?");
                     $stmtCheck->execute([$id, $table, $col['name']]);
@@ -353,7 +378,8 @@ WHERE id = ?");
                             $viewType = 'boolean';
                         }
 
-                        $isEditable = ($col['name'] === 'id') ? 0 : 1;
+                        // Protect audit fields from manual editing
+                        $isEditable = in_array($col['name'], ['id', 'fecha_de_creacion', 'fecha_edicion']) ? 0 : 1;
                         $isVisible = 1;
 
                         $stmtInsert = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
@@ -364,11 +390,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
                 }
             }
             Auth::setFlashError(
-                "Sincronización completada: $syncedTables tablas y $syncedFields campos detectados y registrados.",
+                "Audit completed: $syncedTables tables synchronized. Missing columns 'fecha_de_creacion/edicion' were automatically injected for consistency.",
                 'success'
             );
         } catch (\PDOException $e) {
-            Auth::setFlashError("Error de sincronización: " . $e->getMessage());
+            Auth::setFlashError("Audit Signal Error: " . $e->getMessage());
         }
 
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $id);

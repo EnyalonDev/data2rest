@@ -1,14 +1,16 @@
+<?php use App\Core\Auth;
+use App\Core\Lang; ?>
 <header class="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
     <div>
-        <h1 class="text-5xl font-black text-white italic tracking-tighter mb-2">Team <span
-                class="text-primary">Management</span></h1>
-        <p class="text-slate-500 font-medium">Assign access policies to collaborators and manage their connection
-            status.</p>
+        <h1 class="text-5xl font-black text-white italic tracking-tighter mb-2">
+            <?php echo Lang::get('users_list.title'); ?></h1>
+        <p class="text-slate-500 font-medium"><?php echo Lang::get('users_list.subtitle'); ?></p>
     </div>
     <div class="flex gap-4">
-        <a href="<?php echo $baseUrl; ?>admin/roles" class="btn-primary !bg-slate-800 !text-slate-300 !py-2">ACCESS
-            POLICIES</a>
-        <a href="<?php echo $baseUrl; ?>admin/users/new" class="btn-primary !py-2">CREATE USER +</a>
+        <a href="<?php echo $baseUrl; ?>admin/roles"
+            class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('users_list.access_policies'); ?></a>
+        <a href="<?php echo $baseUrl; ?>admin/users/new"
+            class="btn-primary !py-2"><?php echo Lang::get('users_list.create'); ?></a>
     </div>
 </header>
 
@@ -16,10 +18,10 @@
     <table class="w-full text-left">
         <thead>
             <tr class="bg-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                <th class="px-8 py-5">User Identity</th>
-                <th class="px-8 py-5">Assigned Policy (Role)</th>
-                <th class="px-8 py-5">Status</th>
-                <th class="px-8 py-5 text-right">Actions</th>
+                <th class="px-8 py-5"><?php echo Lang::get('users_list.identity'); ?></th>
+                <th class="px-8 py-5"><?php echo Lang::get('users_list.role'); ?></th>
+                <th class="px-8 py-5"><?php echo Lang::get('users_list.status'); ?></th>
+                <th class="px-8 py-5 text-right"><?php echo Lang::get('common.actions'); ?></th>
             </tr>
         </thead>
         <tbody class="divide-y divide-white/[0.03]">
@@ -33,7 +35,8 @@
                             </div>
                             <div>
                                 <p class="font-bold text-white"><?php echo htmlspecialchars($u['username']); ?></p>
-                                <p class="text-[10px] text-slate-500 uppercase font-black">NODE ID: #<?php echo $u['id']; ?>
+                                <p class="text-[10px] text-slate-500 uppercase font-black">
+                                    <?php echo Lang::get('users_list.node_id'); ?>: #<?php echo $u['id']; ?>
                                 </p>
                             </div>
                         </div>
@@ -42,17 +45,20 @@
                         <div class="flex flex-col">
                             <span
                                 class="text-xs font-bold text-slate-300"><?php echo htmlspecialchars($u['role_name'] ?? 'Unassigned'); ?></span>
-                            <span class="text-[9px] text-slate-500 uppercase font-black tracking-widest">Policy Level</span>
+                            <span
+                                class="text-[9px] text-slate-500 uppercase font-black tracking-widest"><?php echo Lang::get('users_list.policy_level'); ?></span>
                         </div>
                     </td>
                     <td class="px-8 py-6">
                         <?php if ($u['status']): ?>
                             <span class="text-emerald-500 flex items-center gap-2 text-[10px] font-black uppercase">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Authorized
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <?php echo Lang::get('users_list.authorized'); ?>
                             </span>
                         <?php else: ?>
                             <span class="text-red-500 flex items-center gap-2 text-[10px] font-black uppercase">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Revoked
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                <?php echo Lang::get('users_list.revoked'); ?>
                             </span>
                         <?php endif; ?>
                     </td>
@@ -88,10 +94,10 @@
 <script>
     function confirmDeleteUser(id, name) {
         showModal({
-            title: 'Personnel Purge',
-            message: `Are you certain you want to revoke database access and delete user '${name}'? This action cannot be undone.`,
+            title: '<?php echo Lang::get('users_list.delete_confirm_title'); ?>',
+            message: `<?php echo Lang::get('users_list.delete_confirm_msg'); ?>`.replace(':name', name),
             type: 'confirm',
-            typeLabel: 'NODAL DECOUPLING',
+            typeLabel: '<?php echo Lang::get('users_list.delete_confirm_btn'); ?>',
             onConfirm: () => {
                 window.location.href = `<?php echo $baseUrl; ?>admin/users/delete?id=${id}`;
             }
