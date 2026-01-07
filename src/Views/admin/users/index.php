@@ -3,7 +3,8 @@ use App\Core\Lang; ?>
 <header class="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
     <div>
         <h1 class="text-5xl font-black text-p-title italic tracking-tighter mb-2">
-            <?php echo Lang::get('users_list.title'); ?></h1>
+            <?php echo Lang::get('users_list.title'); ?>
+        </h1>
         <p class="text-p-muted font-medium"><?php echo Lang::get('users_list.subtitle'); ?></p>
     </div>
     <div class="flex gap-4">
@@ -17,7 +18,8 @@ use App\Core\Lang; ?>
 <section class="glass-card overflow-hidden !p-0 shadow-2xl">
     <table class="w-full text-left">
         <thead>
-            <tr class="bg-white/5 text-[10px] font-black text-p-muted uppercase tracking-widest">
+            <tr
+                class="bg-black/5 dark:bg-black/40 text-[10px] font-black text-p-muted uppercase tracking-widest border-b border-p-border">
                 <th class="px-8 py-5"><?php echo Lang::get('users_list.identity'); ?></th>
                 <th class="px-8 py-5"><?php echo Lang::get('users_list.role'); ?></th>
                 <th class="px-8 py-5"><?php echo Lang::get('users_list.status'); ?></th>
@@ -44,7 +46,7 @@ use App\Core\Lang; ?>
                     <td class="px-8 py-6">
                         <div class="flex flex-col">
                             <span
-                                class="text-xs font-bold text-slate-300"><?php echo htmlspecialchars($u['role_name'] ?? 'Unassigned'); ?></span>
+                                class="text-xs font-bold text-p-muted dark:text-slate-300"><?php echo htmlspecialchars($u['role_name'] ?? 'Unassigned'); ?></span>
                             <span
                                 class="text-[9px] text-p-muted uppercase font-black tracking-widest"><?php echo Lang::get('users_list.policy_level'); ?></span>
                         </div>
@@ -63,7 +65,7 @@ use App\Core\Lang; ?>
                         <?php endif; ?>
                     </td>
                     <td class="px-8 py-6 text-right">
-                        <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
                             <a href="<?php echo $baseUrl; ?>admin/users/edit?id=<?php echo $u['id']; ?>"
                                 class="text-p-muted hover:text-primary p-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

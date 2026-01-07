@@ -205,5 +205,33 @@ return [
             'medium' => 'Média',
             'industrial' => 'Muito Segura'
         ]
+    ],
+    'roles_form' => [
+        'policy_architect' => 'Arquiteto de Políticas',
+        'policy_subtitle' => 'Defina permissões de alta granularidade para os nós do sistema.',
+        'policy_title' => 'Título da Política',
+        'master_admin' => 'Administrador Mestre (Acesso Total)',
+        'global_module_access' => 'Acesso Global aos Módulos',
+        'node_granularity' => 'Granularidade Específica (Controle de Tabela e Dados)',
+        'enable_access' => 'HABILITAR ACESSO',
+        'structural_permissions' => 'Permissões Estruturais',
+        'content_permissions' => 'Permissões de Conteúdo (CRUD)',
+        'perm_view_db_hub' => 'Hub de Bancos de Dados',
+        'perm_create_db' => 'Criar Banco de Dados',
+        'perm_delete_db' => 'Excluir Banco de Dados',
+        'perm_view_keys' => 'Ver Chaves API',
+        'perm_manage_keys' => 'Gerenciar Chaves',
+        'perm_view_docs' => 'Ver Documentação API',
+        'perm_view_users' => 'Ver Equipe',
+        'perm_manage_users' => 'Gerenciar Usuários',
+        'perm_manage_roles' => 'Gerenciar Funções',
+        'perm_view_tables' => 'Ver Tabelas',
+        'perm_create_table' => 'Criar Tabela',
+        'perm_drop_table' => 'Excluir Tabela',
+        'perm_fields_config' => 'Configurar Campos',
+        'perm_read_data' => 'Ler Dados',
+        'perm_insert_data' => 'Inserir Dados',
+        'perm_update_data' => 'Atualizar Dados',
+        'perm_delete_data' => 'Excluir Dados',
     ]
 ];

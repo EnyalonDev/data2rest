@@ -205,5 +205,33 @@ return [
             'medium' => 'Media',
             'industrial' => 'Muy Segura'
         ]
+    ],
+    'roles_form' => [
+        'policy_architect' => 'Arquitecto de Políticas',
+        'policy_subtitle' => 'Define permisos de alta granularidad para los nodos del sistema.',
+        'policy_title' => 'Título de la Política',
+        'master_admin' => 'Administrador Maestro (Acceso Total)',
+        'global_module_access' => 'Acceso Global a Módulos',
+        'node_granularity' => 'Granularidad Específica (Control de Tabla y Datos)',
+        'enable_access' => 'HABILITAR ACCESO',
+        'structural_permissions' => 'Permisos Estructurales',
+        'content_permissions' => 'Permisos de Contenido (CRUD)',
+        'perm_view_db_hub' => 'Centro de Bases de Datos',
+        'perm_create_db' => 'Crear Base de Datos',
+        'perm_delete_db' => 'Eliminar Base de Datos',
+        'perm_view_keys' => 'Ver Claves API',
+        'perm_manage_keys' => 'Gestionar Claves',
+        'perm_view_docs' => 'Ver Docs API',
+        'perm_view_users' => 'Ver Equipo',
+        'perm_manage_users' => 'Gestionar Usuarios',
+        'perm_manage_roles' => 'Gestionar Roles',
+        'perm_view_tables' => 'Ver Tablas',
+        'perm_create_table' => 'Crear Tabla',
+        'perm_drop_table' => 'Eliminar Tabla',
+        'perm_fields_config' => 'Configurar Campos',
+        'perm_read_data' => 'Leer Datos',
+        'perm_insert_data' => 'Insertar Datos',
+        'perm_update_data' => 'Actualizar Datos',
+        'perm_delete_data' => 'Eliminar Datos',
     ]
 ];

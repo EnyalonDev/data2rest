@@ -141,8 +141,8 @@ use App\Core\Lang; ?>
 </section>
 
 <!-- Media Modal -->
-<div id="mediaModal" class="modal-bg">
-    <div class="modal-content">
+<div id="mediaModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xl transition-all">
+    <div class="glass-card w-full h-[90vh] flex flex-col shadow-2xl ring-1 ring-white/10 relative">
         <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
             <div>
                 <h2 class="text-3xl font-black text-p-title italic tracking-tighter">

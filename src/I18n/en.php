@@ -205,5 +205,33 @@ return [
             'medium' => 'Medium',
             'industrial' => 'Very Secure'
         ]
+    ],
+    'roles_form' => [
+        'policy_architect' => 'Policy Architect',
+        'policy_subtitle' => 'Define high-granularity permissions for system nodes.',
+        'policy_title' => 'Policy Title',
+        'master_admin' => 'Master Administrator (Full Access)',
+        'global_module_access' => 'Global Module Access',
+        'node_granularity' => 'Node-Specific Granularity (Table & Data Control)',
+        'enable_access' => 'ENABLE ACCESS',
+        'structural_permissions' => 'Structural Permissions',
+        'content_permissions' => 'Content Permissions (CRUD)',
+        'perm_view_db_hub' => 'Databases Hub',
+        'perm_create_db' => 'Create Database',
+        'perm_delete_db' => 'Delete Database',
+        'perm_view_keys' => 'View API Keys',
+        'perm_manage_keys' => 'Manage Keys',
+        'perm_view_docs' => 'View API Docs',
+        'perm_view_users' => 'View Team',
+        'perm_manage_users' => 'Manage Users',
+        'perm_manage_roles' => 'Manage Roles',
+        'perm_view_tables' => 'See Tables',
+        'perm_create_table' => 'Create Table',
+        'perm_drop_table' => 'Drop Table',
+        'perm_fields_config' => 'Fields Config',
+        'perm_read_data' => 'Read Data',
+        'perm_insert_data' => 'Insert Data',
+        'perm_update_data' => 'Update Data',
+        'perm_delete_data' => 'Delete Data',
     ]
 ];

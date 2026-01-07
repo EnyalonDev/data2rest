@@ -35,11 +35,16 @@
             --p-text: #1e293b;
             --p-title: #0f172a;
             --p-muted: #64748b;
-            --p-bg: #f8fafc;
+            --p-bg: #eff3f8;
+            /* Darker, cool grey for better contrast with white cards */
             --p-card: #ffffff;
-            --p-border: rgba(15, 23, 42, 0.1);
-            --p-nav: rgba(255, 255, 255, 0.8);
-            --p-input: #ffffff;
+            --p-border: #e2e8f0;
+            /* Clearer, solid border color */
+            --p-nav: rgba(255, 255, 255, 0.85);
+            /* Slightly more opaque nav */
+            --p-input: #f8fafc;
+            /* Subtle background for inputs */
+            --p-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); /* Soft but visible shadow for depth */
         }
 
         .dark {
@@ -51,6 +56,7 @@
             --p-border: rgba(255, 255, 255, 0.05);
             --p-nav: rgba(11, 17, 32, 0.8);
             --p-input: rgba(255, 255, 255, 0.05);
+            --p-shadow: none;
         }
 
         body {
@@ -65,6 +71,7 @@
             backdrop-filter: blur(20px);
             border-radius: 2rem;
             padding: 2rem;
+            box-shadow: var(--p-shadow);
         }
 
         .form-input {

@@ -23,10 +23,10 @@ use App\Core\Lang; ?>
         position: sticky;
         right: 0;
         z-index: 10;
-        background-color: rgba(11, 17, 32, 0.95) !important;
+        background-color: var(--p-card) !important;
         backdrop-filter: blur(12px);
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: -10px 0 20px -10px rgba(0, 0, 0, 0.5);
+        border-left: 1px solid var(--p-border);
+        box-shadow: -10px 0 20px -10px rgba(0, 0, 0, 0.1);
     }
 
     .hover-preview-container {
@@ -138,13 +138,13 @@ use App\Core\Lang; ?>
         <table class="w-full text-left">
             <thead>
                 <tr
-                    class="bg-black/40 text-[10px] font-black text-p-muted uppercase tracking-widest border-b border-white/5">
+                    class="bg-black/5 dark:bg-black/40 text-[10px] font-black text-p-muted uppercase tracking-widest border-b border-p-border">
                     <?php foreach ($ctx['fields'] as $field): ?>
                         <?php if ($field['is_visible']): ?>
                             <th class="px-8 py-5"><?php echo htmlspecialchars($field['field_name']); ?></th>
                         <?php endif; ?>
                     <?php endforeach; ?>
-                    <th class="px-8 py-5 text-right sticky-col bg-black/60 !z-20">
+                    <th class="px-8 py-5 text-right sticky-col !z-20">
                         <?php echo Lang::get('crud_list.ops'); ?>
                     </th>
                 </tr>
@@ -193,7 +193,8 @@ use App\Core\Lang; ?>
                                             </span>
                                         <?php else: ?>
                                             <div class="hover-preview-container">
-                                                <div class="text-[13px] font-medium text-slate-300 truncate max-w-[200px]">
+                                                <div
+                                                    class="text-[13px] font-medium text-p-muted dark:text-slate-300 truncate max-w-[200px]">
                                                     <?php echo mb_strimwidth(strip_tags((string) $val), 0, 50, "..."); ?>
                                                 </div>
                                                 <?php if (strlen(strip_tags((string) $val)) > 50): ?>
@@ -210,11 +211,10 @@ use App\Core\Lang; ?>
                                     </td>
                                 <?php endif; ?>
                             <?php endforeach; ?>
-                            <td class="px-8 py-6 sticky-col group-hover:bg-dark transition-colors">
-                                <div
-                                    class="flex justify-end gap-3 translate-x-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                            <td class="px-8 py-6 sticky-col group-hover:bg-p-bg/50 transition-colors">
+                                <div class="flex justify-end gap-3 opacity-60 group-hover:opacity-100 transition-all">
                                     <a href="<?php echo $baseUrl; ?>admin/crud/edit?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>&id=<?php echo $row['id']; ?>"
-                                        class="p-2 bg-white/5 rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all"
+                                        class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all shadow-sm hover:shadow-md"
                                         title="<?php echo Lang::get('common.edit'); ?>"><svg class="w-4 h-4" fill="none"
                                             stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -223,7 +223,7 @@ use App\Core\Lang; ?>
                                         </svg></a>
 
                                     <button onclick="confirmRecordDelete(<?php echo $row['id']; ?>)"
-                                        class="p-2 bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                        class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm hover:shadow-md"
                                         title="<?php echo Lang::get('common.delete'); ?>"><svg class="w-4 h-4" fill="none"
                                             stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
