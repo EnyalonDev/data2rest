@@ -10,6 +10,8 @@ use App\Core\Lang; ?>
     <div class="flex gap-4">
         <a href="<?php echo $baseUrl; ?>admin/roles"
             class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('users_list.access_policies'); ?></a>
+        <a href="<?php echo $baseUrl; ?>admin/groups"
+            class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('common.groups'); ?></a>
         <a href="<?php echo $baseUrl; ?>admin/users/new"
             class="btn-primary !py-2"><?php echo Lang::get('users_list.create'); ?></a>
     </div>
@@ -22,6 +24,7 @@ use App\Core\Lang; ?>
                 class="bg-black/5 dark:bg-black/40 text-[10px] font-black text-p-muted uppercase tracking-widest border-b border-p-border">
                 <th class="px-8 py-5"><?php echo Lang::get('users_list.identity'); ?></th>
                 <th class="px-8 py-5"><?php echo Lang::get('users_list.role'); ?></th>
+                <th class="px-8 py-5"><?php echo Lang::get('common.groups'); ?></th>
                 <th class="px-8 py-5"><?php echo Lang::get('users_list.status'); ?></th>
                 <th class="px-8 py-5 text-right"><?php echo Lang::get('common.actions'); ?></th>
             </tr>
@@ -49,6 +52,12 @@ use App\Core\Lang; ?>
                                 class="text-xs font-bold text-p-muted dark:text-slate-300"><?php echo htmlspecialchars($u['role_name'] ?? 'Unassigned'); ?></span>
                             <span
                                 class="text-[9px] text-p-muted uppercase font-black tracking-widest"><?php echo Lang::get('users_list.policy_level'); ?></span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <div class="flex flex-col">
+                            <span
+                                class="text-xs font-bold text-p-muted dark:text-slate-300"><?php echo htmlspecialchars($u['group_name'] ?? Lang::get('common.none')); ?></span>
                         </div>
                     </td>
                     <td class="px-8 py-6">

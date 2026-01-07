@@ -6,6 +6,7 @@
     <p class="text-p-muted font-medium tracking-tight"><?php echo Lang::get('databases.subtitle'); ?></p>
 </header>
 
+
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <div class="lg:col-span-1">
         <div class="glass-card sticky top-24">
@@ -47,16 +48,16 @@
                         </p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3 relative z-10">
+                <div class="flex items-center gap-3 relative z-10 transition-opacity opacity-80 group-hover:opacity-100">
                     <a href="<?php echo $baseUrl; ?>admin/databases/view?id=<?php echo $db['id']; ?>"
-                        class="btn-primary flex items-center gap-2 italic uppercase text-xs tracking-wider !py-2">
+                        class="btn-primary !bg-p-bg dark:!bg-white/5 !text-p-title dark:!text-slate-300 hover:!bg-primary/20 flex items-center gap-2 italic uppercase text-xs tracking-wider !py-2 shadow-sm">
                         <?php echo Lang::get('databases.interface'); ?> &rarr;
                     </a>
                     <button
                         onclick="confirmDeleteDB(<?php echo $db['id']; ?>, '<?php echo htmlspecialchars($db['name']); ?>')"
-                        class="p-3 text-p-muted hover:text-red-500 transition-colors">
+                        class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                             </path>
                         </svg>

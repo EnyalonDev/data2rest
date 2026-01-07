@@ -33,8 +33,7 @@
         <div class="flex-1 space-y-4">
             <?php if (empty($keys)): ?>
                 <div class="py-12 text-center opacity-20">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-p-muted" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-p-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
                         </path>
@@ -44,12 +43,13 @@
                 </div>
             <?php else: ?>
                 <?php foreach ($keys as $key): ?>
-                    <div class="bg-white/5 border border-glass-border p-4 rounded-xl group">
+                    <div class="bg-p-bg dark:bg-white/5 border border-glass-border p-4 rounded-xl group transition-all">
                         <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-bold text-slate-300"><?php echo htmlspecialchars($key['name']); ?></h3>
+                            <h3 class="font-bold text-p-title dark:text-slate-300"><?php echo htmlspecialchars($key['name']); ?>
+                            </h3>
                             <button
                                 onclick="confirmRevokeKey(<?php echo $key['id']; ?>, '<?php echo htmlspecialchars($key['name']); ?>')"
-                                class="text-red-500/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                                class="text-p-muted hover:text-red-500 transition-all cursor-pointer opacity-60 group-hover:opacity-100 p-1">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -57,9 +57,10 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-white/5">
+                        <div
+                            class="flex items-center gap-2 bg-white dark:bg-black/40 p-2 rounded-lg border border-p-border dark:border-white/5">
                             <code
-                                class="text-[10px] text-primary break-all flex-1 font-mono"><?php echo $key['key_value']; ?></code>
+                                class="text-[10px] text-primary break-all flex-1 font-mono font-bold"><?php echo $key['key_value']; ?></code>
                             <button onclick="navigator.clipboard.writeText('<?php echo $key['key_value']; ?>')"
                                 class="text-p-muted hover:text-p-title transition-colors" title="Copy to clipboard">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +84,7 @@
         <div class="grid gap-4">
             <?php foreach ($databases as $db): ?>
                 <a href="<?php echo $baseUrl; ?>admin/api/docs?db_id=<?php echo $db['id']; ?>"
-                    class="group bg-white/5 border border-glass-border p-6 rounded-2xl hover:border-primary/50 transition-all flex items-center justify-between">
+                    class="group bg-p-bg dark:bg-white/5 border border-glass-border p-6 rounded-2xl hover:border-primary/50 transition-all flex items-center justify-between">
                     <div>
                         <h3 class="text-lg font-bold text-p-title group-hover:text-primary transition-colors">
                             <?php echo htmlspecialchars($db['name']); ?>
@@ -103,8 +104,7 @@
             <?php endforeach; ?>
             <?php if (empty($databases)): ?>
                 <div class="py-12 text-center opacity-20">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-p-muted" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-p-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M3 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M3 7c0 2.21 3.582 4 8 4s8-1.79 8-4M3 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
                         </path>

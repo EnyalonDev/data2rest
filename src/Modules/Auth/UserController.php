@@ -17,8 +17,9 @@ class UserController extends BaseController
     public function index()
     {
         $db = Database::getInstance()->getConnection();
-        $users = $db->query("SELECT u.*, r.name as role_name FROM users u 
+        $users = $db->query("SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
                              LEFT JOIN roles r ON u.role_id = r.id 
+                             LEFT JOIN groups g ON u.group_id = g.id
                              ORDER BY u.id DESC")->fetchAll();
 
         $this->view('admin/users/index', [
@@ -41,10 +42,12 @@ class UserController extends BaseController
         }
 
         $roles = $db->query("SELECT * FROM roles ORDER BY id ASC")->fetchAll();
+        $groups = $db->query("SELECT * FROM groups ORDER BY name ASC")->fetchAll();
 
         $this->view('admin/users/form', [
             'user' => $user,
             'roles' => $roles,
+            'groups' => $groups,
             'id' => $id,
             'title' => ($id ? 'Edit' : 'New') . ' User',
             'breadcrumbs' => [
@@ -65,19 +68,21 @@ class UserController extends BaseController
         $role_id = $_POST['role_id'];
         $status = isset($_POST['status']) ? 1 : 0;
 
+        $group_id = !empty($_POST['group_id']) ? $_POST['group_id'] : null;
+
         if ($id) {
             if (!empty($_POST['password'])) {
                 $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-                $stmt = $db->prepare("UPDATE users SET username = ?, password = ?, role_id = ?, status = ? WHERE id = ?");
-                $stmt->execute([$username, $password, $role_id, $status, $id]);
+                $stmt = $db->prepare("UPDATE users SET username = ?, password = ?, role_id = ?, group_id = ?, status = ? WHERE id = ?");
+                $stmt->execute([$username, $password, $role_id, $group_id, $status, $id]);
             } else {
-                $stmt = $db->prepare("UPDATE users SET username = ?, role_id = ?, status = ? WHERE id = ?");
-                $stmt->execute([$username, $role_id, $status, $id]);
+                $stmt = $db->prepare("UPDATE users SET username = ?, role_id = ?, group_id = ?, status = ? WHERE id = ?");
+                $stmt->execute([$username, $role_id, $group_id, $status, $id]);
             }
         } else {
             $password = password_hash($_POST['password'] ?? '123456', PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO users (username, password, role_id, status) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$username, $password, $role_id, $status]);
+            $stmt = $db->prepare("INSERT INTO users (username, password, role_id, group_id, status) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $password, $role_id, $group_id, $status]);
         }
 
         $this->redirect('admin/users');

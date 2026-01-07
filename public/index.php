@@ -36,6 +36,7 @@ $router->add('POST', '/admin/databases/table/create', 'Database\\DatabaseControl
 $router->add('GET', '/admin/databases/table/delete', 'Database\\DatabaseController@deleteTable');
 $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@manageFields');
 $router->add('POST', '/admin/databases/fields/add', 'Database\\DatabaseController@addField');
+$router->add('GET', '/admin/databases/fields/delete', 'Database\\DatabaseController@deleteField');
 $router->add('POST', '/admin/databases/fields/update', 'Database\\DatabaseController@updateFieldConfig');
 
 // --- Dynamic CRUD ---
@@ -59,6 +60,12 @@ $router->add('GET', '/admin/users/new', 'Auth\\UserController@form');
 $router->add('GET', '/admin/users/edit', 'Auth\\UserController@form');
 $router->add('POST', '/admin/users/save', 'Auth\\UserController@save');
 $router->add('GET', '/admin/users/delete', 'Auth\\UserController@delete');
+
+$router->add('GET', '/admin/groups', 'Auth\\GroupController@index');
+$router->add('GET', '/admin/groups/new', 'Auth\\GroupController@form');
+$router->add('GET', '/admin/groups/edit', 'Auth\\GroupController@form');
+$router->add('POST', '/admin/groups/save', 'Auth\\GroupController@save');
+$router->add('GET', '/admin/groups/delete', 'Auth\\GroupController@delete');
 
 $router->add('GET', '/admin/roles', 'Auth\\RoleController@index');
 $router->add('GET', '/admin/roles/new', 'Auth\\RoleController@form');

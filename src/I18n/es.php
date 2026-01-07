@@ -4,6 +4,7 @@ return [
         'dashboard' => 'Panel',
         'databases' => 'Bases de Datos',
         'users' => 'Usuarios',
+        'groups' => 'Grupos de Usuarios',
         'roles' => 'Roles',
         'api' => 'Configuración de API',
         'save' => 'Guardar Cambios',
@@ -21,6 +22,9 @@ return [
         'commit' => 'Guardar Datos',
         'status' => 'Estado',
         'loading' => 'Cargando...',
+        'none' => 'Ninguno / No Asignado',
+        'dismiss' => 'Cerrar',
+        'confirm' => 'Confirmar',
     ],
     'dashboard' => [
         'title' => 'Panel Principal',
@@ -97,6 +101,9 @@ return [
         'data_type' => 'Tipo de Dato',
         'ui_comp' => 'Tipo de Control en Formulario',
         'commit' => 'Guardar Estructura',
+        'delete_confirm_title' => 'Eliminar Campo',
+        'delete_confirm_msg' => '¿Estás seguro de que deseas eliminar el campo ":name"? Esta acción alterará la estructura de tu base de datos y perderás los datos almacenados en esta columna.',
+        'delete_confirm_btn' => 'ELIMINAR CAMPO',
     ],
     'roles_list' => [
         'title' => 'Roles y Permisos',

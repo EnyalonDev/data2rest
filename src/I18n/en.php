@@ -4,6 +4,7 @@ return [
         'dashboard' => 'Dashboard',
         'databases' => 'Databases',
         'users' => 'Users',
+        'groups' => 'User Groups',
         'roles' => 'Roles',
         'api' => 'API Configuration',
         'save' => 'Save Changes',
@@ -21,6 +22,9 @@ return [
         'commit' => 'Save Data',
         'status' => 'Status',
         'loading' => 'Loading...',
+        'none' => 'None / Not Assigned',
+        'dismiss' => 'Dismiss',
+        'confirm' => 'Confirm',
     ],
     'dashboard' => [
         'title' => 'Main Dashboard',
@@ -97,6 +101,9 @@ return [
         'data_type' => 'Data Type',
         'ui_comp' => 'Form Control Type',
         'commit' => 'Save Structure',
+        'delete_confirm_title' => 'Delete Field',
+        'delete_confirm_msg' => 'Are you sure you want to delete the field ":name"? This will alter your database structure and you will lose data stored in this column.',
+        'delete_confirm_btn' => 'DELETE FIELD',
     ],
     'roles_list' => [
         'title' => 'Roles & Permissions',

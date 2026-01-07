@@ -44,7 +44,8 @@
             /* Slightly more opaque nav */
             --p-input: #f8fafc;
             /* Subtle background for inputs */
-            --p-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); /* Soft but visible shadow for depth */
+            --p-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            /* Soft but visible shadow for depth */
         }
 
         .dark {
@@ -98,6 +99,28 @@
             letter-spacing: 0.1em;
             display: block;
             margin-bottom: 0.5rem;
+        }
+
+        .custom-select {
+            background-color: var(--p-input);
+            color: var(--p-title);
+            border: 2px solid var(--p-border);
+            border-radius: 1rem;
+            padding: 1rem 1.25rem;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+
+        .custom-select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
         }
 
         /* Custom UI */

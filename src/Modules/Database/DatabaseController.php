@@ -273,6 +273,58 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         }
     }
 
+    public function deleteField()
+    {
+        $config_id = $_GET['config_id'] ?? null;
+        if (!$config_id) {
+            Auth::setFlashError("Invalid Field Configuration ID");
+            $this->redirect('admin/databases');
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM fields_config WHERE id = ?");
+        $stmt->execute([$config_id]);
+        $field = $stmt->fetch();
+
+        if (!$field) {
+            Auth::setFlashError("Field not found.");
+            $this->redirect('admin/databases');
+        }
+
+        $db_id = $field['db_id'];
+        $table_name = $field['table_name'];
+        $field_name = $field['field_name'];
+
+        Auth::requirePermission("db:$db_id", 'manage_fields');
+
+        // Prevent deleting system fields
+        if (in_array($field_name, ['id', 'fecha_de_creacion', 'fecha_edicion'])) {
+            Auth::setFlashError("System fields cannot be deleted.", 'error');
+            $this->redirect("admin/databases/fields?db_id=$db_id&table=$table_name");
+        }
+
+        // Delete from Config
+        $stmt = $db->prepare("DELETE FROM fields_config WHERE id = ?");
+        $stmt->execute([$config_id]);
+
+        // Attempt to Drop Column from Structure
+        $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            // SQLite supports DROP COLUMN in newer versions, but we should wrap in try/catch just in case
+            $targetDb->exec("ALTER TABLE $table_name DROP COLUMN $field_name");
+            Auth::setFlashError("Field '$field_name' dropped successfully.", 'success');
+        } catch (\PDOException $e) {
+            // Fallback: If drop column is not supported or fails, at least config is gone.
+            Auth::setFlashError("Field config removed, but column persisted (SQLite limitation or data conflict): " . $e->getMessage(), 'warning');
+        }
+
+        $this->redirect("admin/databases/fields?db_id=$db_id&table=$table_name");
+    }
+
     public function updateFieldConfig()
     {
         $config_id = $_POST['config_id'] ?? null;

@@ -1,21 +1,8 @@
 <?php use App\Core\Auth;
 use App\Core\Lang; ?>
-<style type="text/tailwindcss">
-    .field-row {
-        @apply bg-white/[0.02] border border-glass-border rounded-2xl p-6 mb-6 transition-all hover:bg-white/[0.04] hover:border-primary/20;
-    }
-
-    .custom-select {
-        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-sm text-p-title focus:outline-none focus:border-primary/50 transition-all cursor-pointer;
-    }
-
-    .checkbox-custom {
-        @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
-    }
-</style>
-
 <header class="mb-12">
-    <h1 class="text-4xl font-black text-p-title uppercase tracking-tighter"><?php echo Lang::get('fields.title'); ?></h1>
+    <h1 class="text-4xl font-black text-p-title uppercase tracking-tighter"><?php echo Lang::get('fields.title'); ?>
+    </h1>
     <p class="text-p-muted mt-2">
         <?php echo str_replace(':table', '<b class="text-primary">' . htmlspecialchars($table_name) . '</b>', Lang::get('fields.subtitle')); ?>
     </p>
@@ -30,7 +17,8 @@ use App\Core\Lang; ?>
             </h3>
 
             <?php foreach ($configFields as $field): ?>
-                <form action="<?php echo $baseUrl; ?>admin/databases/fields/update" method="POST" class="field-row">
+                <form action="<?php echo $baseUrl; ?>admin/databases/fields/update" method="POST"
+                    class="bg-white/[0.02] border border-glass-border rounded-2xl p-6 mb-6 transition-all hover:bg-p-bg/50 dark:hover:bg-white/[0.04] hover:border-primary/20">
                     <input type="hidden" name="config_id" value="<?php echo $field['id']; ?>">
 
                     <div
@@ -48,8 +36,26 @@ use App\Core\Lang; ?>
                                     class="bg-white/10 text-[10px] text-p-muted px-2 py-0.5 rounded uppercase font-black tracking-widest"><?php echo Lang::get('fields.system_field'); ?></span>
                             <?php endif; ?>
                         </div>
-                        <button type="submit"
-                            class="btn-primary !py-1.5 !px-4 !text-[11px] uppercase tracking-wider"><?php echo Lang::get('fields.sync'); ?></button>
+                        <div class="flex items-center gap-3">
+                            <button type="submit"
+                                class="btn-primary !py-1.5 !px-4 !text-[11px] uppercase tracking-wider"><?php echo Lang::get('fields.sync'); ?></button>
+                            <?php if (!in_array($field['field_name'], ['id', 'fecha_de_creacion', 'fecha_edicion'])): ?>
+                                <button type="button" onclick="showModal({
+                                        type: 'confirm',
+                                        title: '<?php echo htmlspecialchars(addslashes(Lang::get('fields.delete_confirm_title')), ENT_QUOTES); ?>',
+                                        message: '<?php echo htmlspecialchars(addslashes(Lang::get('fields.delete_confirm_msg', ['name' => $field['field_name']])), ENT_QUOTES); ?>',
+                                        confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('fields.delete_confirm_btn')), ENT_QUOTES); ?>',
+                                        dismissText: '<?php echo htmlspecialchars(addslashes(Lang::get('common.dismiss')), ENT_QUOTES); ?>',
+                                        onConfirm: function() { window.location.href = '<?php echo $baseUrl; ?>admin/databases/fields/delete?config_id=<?php echo $field['id']; ?>'; }
+                                    })" class="text-red-500 hover:text-red-400 p-2 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                </button>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -85,25 +91,34 @@ use App\Core\Lang; ?>
                             <label
                                 class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-1"><?php echo Lang::get('fields.constraints'); ?></label>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" name="is_required" class="checkbox-custom" <?php echo ($field['is_required'] ?? false) ? 'checked' : ''; ?>>
+                                <input type="checkbox" name="is_required"
+                                    class="w-4 h-4 rounded border-glass-border bg-p-bg dark:bg-black/40 text-primary focus:ring-primary/20 cursor-pointer"
+                                    <?php echo ($field['is_required'] ?? false) ? 'checked' : ''; ?>>
                                 <span
                                     class="text-[10px] font-bold text-p-muted group-hover:text-p-title transition-colors uppercase"><?php echo Lang::get('fields.required'); ?></span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" name="is_visible" class="checkbox-custom" <?php echo ($field['is_visible'] ?? false) ? 'checked' : ''; ?>>
+                                <input type="checkbox" name="is_visible"
+                                    class="w-4 h-4 rounded border-glass-border bg-p-bg dark:bg-black/40 text-primary focus:ring-primary/20 cursor-pointer"
+                                    <?php echo ($field['is_visible'] ?? false) ? 'checked' : ''; ?>>
                                 <span
                                     class="text-[10px] font-bold text-p-muted group-hover:text-p-title transition-colors uppercase"><?php echo Lang::get('fields.visible'); ?></span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" name="is_editable" class="checkbox-custom" <?php echo ($field['is_editable'] ?? false) ? 'checked' : ''; ?>     <?php echo ($field['field_name'] == 'id' || $field['field_name'] == 'fecha_de_creacion' || $field['field_name'] == 'fecha_edicion') ? 'disabled' : ''; ?>>
+                                <input type="checkbox" name="is_editable"
+                                    class="w-4 h-4 rounded border-glass-border bg-p-bg dark:bg-black/40 text-primary focus:ring-primary/20 cursor-pointer"
+                                    <?php echo ($field['is_editable'] ?? false) ? 'checked' : ''; ?>     <?php echo ($field['field_name'] == 'id' || $field['field_name'] == 'fecha_de_creacion' || $field['field_name'] == 'fecha_edicion') ? 'disabled' : ''; ?>>
                                 <span
                                     class="text-[10px] font-bold text-p-muted group-hover:text-p-title transition-colors uppercase"><?php echo Lang::get('fields.editable'); ?></span>
                             </label>
                         </div>
 
-                        <div class="lg:col-span-2 bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div
+                            class="lg:col-span-2 bg-p-bg dark:bg-black/20 p-4 rounded-xl border border-p-border dark:border-white/5">
                             <label class="flex items-center gap-2 mb-4 cursor-pointer group">
-                                <input type="checkbox" name="is_foreign_key" class="checkbox-custom" <?php echo ($field['is_foreign_key'] ?? false) ? 'checked' : ''; ?>>
+                                <input type="checkbox" name="is_foreign_key"
+                                    class="w-4 h-4 rounded border-glass-border bg-p-bg dark:bg-black/40 text-primary focus:ring-primary/20 cursor-pointer"
+                                    <?php echo ($field['is_foreign_key'] ?? false) ? 'checked' : ''; ?>>
                                 <span
                                     class="text-[10px] font-black text-primary uppercase tracking-widest"><?php echo Lang::get('fields.fk'); ?></span>
                             </label>
@@ -124,7 +139,7 @@ use App\Core\Lang; ?>
                                     <input type="text" name="related_field"
                                         value="<?php echo htmlspecialchars($field['related_field'] ?? ''); ?>"
                                         placeholder="e.g. name"
-                                        class="w-full bg-black/40 border border-glass-border rounded-lg px-2 py-1 text-xs text-p-title focus:outline-none focus:border-primary/50">
+                                        class="w-full bg-p-bg dark:bg-black/40 border border-glass-border rounded-lg px-2 py-1 text-xs text-p-title focus:outline-none focus:border-primary/50">
                                 </div>
                             </div>
                         </div>
@@ -148,7 +163,7 @@ use App\Core\Lang; ?>
                     <label
                         class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.sql_id'); ?></label>
                     <input type="text" name="field_name" placeholder="e.g. status" required
-                        class="w-full bg-black/40 border border-glass-border rounded-xl px-4 py-3 text-p-title focus:border-primary/50 transition-all font-mono text-sm">
+                        class="w-full bg-p-bg dark:bg-black/40 border border-glass-border rounded-xl px-4 py-3 text-p-title focus:border-primary/50 transition-all font-mono text-sm">
                 </div>
 
                 <div>

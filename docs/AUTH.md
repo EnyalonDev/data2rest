@@ -33,11 +33,12 @@ src/Modules/Auth/
 - Permisos granulares por base de datos
 - Listado y búsqueda de usuarios
 
-### 🛡️ Control de Acceso (RBAC)
+### 🛡️ Control de Acceso (RBAC) - Policy Architect
 - Roles personalizables (admin, user, etc.)
-- Permisos específicos por recurso
-- Validación en cada acción
-- Grupos de usuarios
+- **Arquitecto de Políticas**: Interfaz visual para definir permisos granulares.
+- Permisos específicos por recurso (CRUD por tabla).
+- Validación en cada acción.
+- Grupos de usuarios.
 
 ---
 
@@ -188,12 +189,6 @@ CREATE TABLE roles (
   - Cerrar sesiones remotamente
   - Límite de sesiones concurrentes
   - Detección de dispositivos
-
-- [ ] **Permisos Granulares**
-  - Permisos por tabla individual
-  - Permisos por campo (leer/escribir)
-  - Permisos temporales
-  - Herencia de permisos
 
 - [ ] **Grupos de Usuarios**
   - Organización jerárquica

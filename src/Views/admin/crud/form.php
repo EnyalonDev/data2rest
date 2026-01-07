@@ -32,7 +32,20 @@ use App\Core\Lang; ?>
                         <?php endif; ?>
                     </label>
 
-                    <?php switch ($field['view_type']):
+                    <?php 
+                    if (!empty($field['is_foreign_key']) && isset($foreignOptions[$field['field_name']])): ?>
+                        <div class="relative">
+                            <select name="<?php echo $field['field_name']; ?>" class="custom-select" <?php echo $field['is_required'] ? 'required' : ''; ?>>
+                                <option value=""><?php echo Lang::get('common.none'); ?></option>
+                                <?php foreach ($foreignOptions[$field['field_name']] as $opt): ?>
+                                    <option value="<?php echo $opt['id']; ?>" <?php echo ($val == $opt['id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($opt['label'] ?? $opt['id']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php else:
+                        switch ($field['view_type']):
                         case 'text': ?>
                             <input type="text" name="<?php echo $field['field_name']; ?>"
                                 value="<?php echo htmlspecialchars($val); ?>" <?php echo $field['is_required'] ? 'required' : ''; ?>
@@ -126,7 +139,8 @@ use App\Core\Lang; ?>
                             </div>
                             <?php break;
 
-                    endswitch; ?>
+                    endswitch; 
+                    endif; ?>
                 </div>
             <?php endforeach; ?>
             </div>

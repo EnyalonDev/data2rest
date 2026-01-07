@@ -4,6 +4,7 @@ return [
         'dashboard' => 'Painel',
         'databases' => 'Bancos de Dados',
         'users' => 'Usuários',
+        'groups' => 'Grupos de Usuários',
         'roles' => 'Funções',
         'api' => 'Configuração de API',
         'save' => 'Salvar Alterações',
@@ -21,6 +22,9 @@ return [
         'commit' => 'Salvar Dados',
         'status' => 'Status',
         'loading' => 'Carregando...',
+        'none' => 'Nenhum / Não Atribuído',
+        'dismiss' => 'Fechar',
+        'confirm' => 'Confirmar',
     ],
     'dashboard' => [
         'title' => 'Painel Principal',
@@ -97,6 +101,9 @@ return [
         'data_type' => 'Tipo de Dado',
         'ui_comp' => 'Tipo de Controle no Formulário',
         'commit' => 'Salvar Estrutura',
+        'delete_confirm_title' => 'Excluir Campo',
+        'delete_confirm_msg' => 'Tem certeza de que deseja excluir o campo ":name"? Esta ação alterará a estrutura do banco de dados e você perderá os dados armazenados nesta coluna.',
+        'delete_confirm_btn' => 'EXCLUIR CAMPO',
     ],
     'roles_list' => [
         'title' => 'Funções e Permissões',

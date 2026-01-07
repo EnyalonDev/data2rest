@@ -40,6 +40,17 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <div>
+            <label class="form-label"><?php echo Lang::get('common.groups'); ?></label>
+            <select name="group_id" class="form-input">
+                <option value=""><?php echo Lang::get('common.none'); ?></option>
+                <?php foreach ($groups as $g): ?>
+                    <option value="<?php echo $g['id']; ?>" <?php echo ($user['group_id'] ?? '') == $g['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($g['name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
         <div class="pt-4 flex items-center justify-between">
             <span
                 class="text-[10px] font-black uppercase text-p-muted tracking-widest"><?php echo Lang::get('users.status'); ?></span>
