@@ -41,7 +41,7 @@ class DatabaseController
         $name = $_POST['name'] ?? 'New Database';
         $sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', strtolower($name));
         $storagePath = Config::get('db_storage_path');
-        
+
         // Priority: Check if a file with this name already exists in data/
         $filename = $sanitized . '.sqlite';
         $path = $storagePath . $filename;
@@ -61,11 +61,11 @@ class DatabaseController
             $newDb = new PDO('sqlite:' . $path);
             // Ensure permissions are set for writing
             @chmod($path, 0666);
-            
+
             $db = Database::getInstance()->getConnection();
             $stmt = $db->prepare("INSERT INTO databases (name, path) VALUES (?, ?)");
             $stmt->execute([$name, $path]);
-            
+
             // Auto-trigger sync if the file already had data
             $dbId = $db->lastInsertId();
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $dbId);
@@ -160,9 +160,9 @@ class DatabaseController
     {
         $db_id = $_GET['db_id'] ?? null;
         Auth::requirePermission("db:$db_id", 'delete_table');
-        $table_name = $_GET['table'] ?? null;
+        $table_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['table'] ?? '');
 
-        if ($db_id && $table_name) {
+        if ($db_id && !empty($table_name)) {
             $db = Database::getInstance()->getConnection();
             $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
             $stmt->execute([$db_id]);
@@ -212,12 +212,12 @@ class DatabaseController
     {
         $db_id = $_POST['db_id'] ?? null;
         Auth::requirePermission("db:$db_id", 'manage_fields');
-        $table_name = $_POST['table_name'] ?? null;
+        $table_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['table_name'] ?? '');
         $field_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['field_name'] ?? '');
         $data_type = $_POST['data_type'] ?? 'TEXT';
         $view_type = $_POST['view_type'] ?? 'text';
 
-        if (!$db_id || !$table_name || !$field_name) {
+        if (!$db_id || empty($table_name) || empty($field_name)) {
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
             exit;
         }

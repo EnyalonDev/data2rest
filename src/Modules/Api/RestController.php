@@ -6,10 +6,14 @@ use App\Core\Database;
 use App\Core\Auth;
 use PDO;
 
-class RestController {
-    public function __construct() {}
+class RestController
+{
+    public function __construct()
+    {
+    }
 
-    private function authenticate() {
+    private function authenticate()
+    {
         $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
         if (!$apiKey) {
             $this->jsonResponse(['error' => 'API Key required (X-API-KEY header or api_key param)'], 401);
@@ -27,15 +31,19 @@ class RestController {
         return $keyData;
     }
 
-    public function handle($db_id, $table, $id = null) {
+    public function handle($db_id, $table, $id = null)
+    {
         $this->authenticate();
+
+        $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
 
         $sysDb = Database::getInstance()->getConnection();
         $stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
-        if (!$database) $this->jsonResponse(['error' => 'Database container not found'], 404);
+        if (!$database)
+            $this->jsonResponse(['error' => 'Database container not found'], 404);
 
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
@@ -75,22 +83,23 @@ class RestController {
         }
     }
 
-    private function handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id) {
+    private function handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id)
+    {
         $params = $_GET;
         unset($params['api_key']);
 
         // 1. Base Select and Joins
         $selectFields = ["t.*"];
         $joins = [];
-        
+
         foreach ($fieldsConfig as $field) {
             if ($field['is_foreign_key'] && !empty($field['related_table'])) {
                 $alias = "ref_" . $field['field_name'];
                 $relTable = $field['related_table'];
-                
+
                 // Determine display field for the related table
                 $displayField = $this->getDisplayField($targetDb, $db_id, $relTable, $field['related_field']);
-                
+
                 $joins[] = "LEFT JOIN $relTable $alias ON t.{$field['field_name']} = $alias.id";
                 $selectFields[] = "$alias.$displayField AS {$field['field_name']}_label";
             }
@@ -121,18 +130,19 @@ class RestController {
             $stmt = $targetDb->prepare($sql);
             $stmt->execute([$id]);
             $result = $stmt->fetch();
-            if (!$result) $this->jsonResponse(['error' => 'Record not found'], 404);
+            if (!$result)
+                $this->jsonResponse(['error' => 'Record not found'], 404);
             $this->jsonResponse($result);
         } else {
             // Pagination
-            $limit = (int)($params['limit'] ?? 50);
-            $offset = (int)($params['offset'] ?? 0);
+            $limit = (int) ($params['limit'] ?? 50);
+            $offset = (int) ($params['offset'] ?? 0);
             unset($params['limit'], $params['offset']);
 
             // Filters
             $where = [];
             $values = [];
-            
+
             // Validate columns for filtering
             $stmtCols = $targetDb->query("PRAGMA table_info($table)");
             $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
@@ -162,14 +172,15 @@ class RestController {
 
             // Metadata for response
             $countSql = "SELECT COUNT(*) FROM $table t";
-            if (!empty($where)) $countSql .= " WHERE " . implode(' AND ', $where);
+            if (!empty($where))
+                $countSql .= " WHERE " . implode(' AND ', $where);
             $total = $targetDb->prepare($countSql);
             $total->execute(array_slice($values, 0, count($where)));
             $totalCount = $total->fetchColumn();
 
             $this->jsonResponse([
                 'metadata' => [
-                    'total_records' => (int)$totalCount,
+                    'total_records' => (int) $totalCount,
                     'limit' => $limit,
                     'offset' => $offset,
                     'count' => count($results)
@@ -179,8 +190,10 @@ class RestController {
         }
     }
 
-    private function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null) {
-        if (!empty($preferredField)) return $preferredField;
+    private function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null)
+    {
+        if (!empty($preferredField))
+            return $preferredField;
 
         // Try to find common label fields in system config first
         $sysDb = Database::getInstance()->getConnection();
@@ -190,7 +203,8 @@ class RestController {
                                    LIMIT 1");
         $stmtCheck->execute([$db_id, $tableName]);
         $found = $stmtCheck->fetchColumn();
-        if ($found) return $found;
+        if ($found)
+            return $found;
 
         // Fallback to searching in actual table schema
         try {
@@ -201,51 +215,66 @@ class RestController {
                     return $col['name'];
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         return 'id';
     }
 
-    private function handlePostRequest($targetDb, $table) {
+    private function handlePostRequest($targetDb, $table)
+    {
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        if (empty($input)) $this->jsonResponse(['error' => 'No data provided'], 400);
+        if (empty($input))
+            $this->jsonResponse(['error' => 'No data provided'], 400);
 
-        if (!isset($input['fecha_de_creacion'])) $input['fecha_de_creacion'] = date('Y-m-d H:i:s');
-        if (!isset($input['fecha_edicion'])) $input['fecha_edicion'] = date('Y-m-d H:i:s');
+        if (!isset($input['fecha_de_creacion']))
+            $input['fecha_de_creacion'] = date('Y-m-d H:i:s');
+        if (!isset($input['fecha_edicion']))
+            $input['fecha_edicion'] = date('Y-m-d H:i:s');
 
-        $keys = array_keys($input);
+        $keys = array_map(function ($k) {
+            return preg_replace('/[^a-zA-Z0-9_]/', '', $k); }, array_keys($input));
         $cols = implode(', ', $keys);
         $vals = implode(', ', array_fill(0, count($keys), '?'));
-        
+
         $stmt = $targetDb->prepare("INSERT INTO $table ($cols) VALUES ($vals)");
         $stmt->execute(array_values($input));
-        
+
         $this->jsonResponse(['success' => true, 'id' => $targetDb->lastInsertId()], 201);
     }
 
-    private function handleUpdateRequest($targetDb, $table, $id) {
-        if (!$id) $this->jsonResponse(['error' => 'ID required'], 400);
+    private function handleUpdateRequest($targetDb, $table, $id)
+    {
+        if (!$id)
+            $this->jsonResponse(['error' => 'ID required'], 400);
         $input = json_decode(file_get_contents('php://input'), true);
-        if (empty($input)) $this->jsonResponse(['error' => 'No data'], 400);
+        if (empty($input))
+            $this->jsonResponse(['error' => 'No data'], 400);
 
         $input['fecha_edicion'] = date('Y-m-d H:i:s');
         $sets = [];
-        foreach ($input as $key => $val) { $sets[] = "$key = ?"; }
+        foreach ($input as $key => $val) {
+            $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
+            $sets[] = "$safeKey = ?";
+        }
         $sql = "UPDATE $table SET " . implode(', ', $sets) . " WHERE id = ?";
-        
+
         $stmt = $targetDb->prepare($sql);
         $stmt->execute(array_merge(array_values($input), [$id]));
         $this->jsonResponse(['success' => true]);
     }
 
-    private function handleDeleteRequest($targetDb, $table, $id) {
-        if (!$id) $this->jsonResponse(['error' => 'ID required'], 400);
+    private function handleDeleteRequest($targetDb, $table, $id)
+    {
+        if (!$id)
+            $this->jsonResponse(['error' => 'ID required'], 400);
         $stmt = $targetDb->prepare("DELETE FROM $table WHERE id = ?");
         $stmt->execute([$id]);
         $this->jsonResponse(['success' => true]);
     }
 
-    private function jsonResponse($data, $code = 200) {
+    private function jsonResponse($data, $code = 200)
+    {
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode($data);

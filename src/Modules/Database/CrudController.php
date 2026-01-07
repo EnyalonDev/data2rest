@@ -9,12 +9,15 @@ use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 
-class CrudController {
-    public function __construct() {
+class CrudController
+{
+    public function __construct()
+    {
         Auth::requireLogin();
     }
 
-    private function getContext($action = null) {
+    private function getContext($action = null)
+    {
         $db_id = $_GET['db_id'] ?? $_POST['db_id'] ?? null;
         $table = $_GET['table'] ?? $_POST['table'] ?? null;
 
@@ -59,7 +62,8 @@ class CrudController {
                         'is_foreign_key' => 0
                     ];
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+            }
         }
 
         return [
@@ -70,8 +74,10 @@ class CrudController {
         ];
     }
 
-    private function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null) {
-        if (!empty($preferredField)) return $preferredField;
+    private function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null)
+    {
+        if (!empty($preferredField))
+            return $preferredField;
 
         $db = Database::getInstance()->getConnection();
         $stmtCheck = $db->prepare("SELECT field_name FROM fields_config 
@@ -80,8 +86,9 @@ class CrudController {
                                    LIMIT 1");
         $stmtCheck->execute([$db_id, $tableName]);
         $found = $stmtCheck->fetchColumn();
-        
-        if ($found) return $found;
+
+        if ($found)
+            return $found;
 
         try {
             $stmt = $targetDb->query("PRAGMA table_info($tableName)");
@@ -91,21 +98,24 @@ class CrudController {
                     return $col['name'];
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         return 'id';
     }
 
-    public function list() {
+    public function list()
+    {
         $ctx = $this->getContext('crud_view');
         $targetPath = $ctx['database']['path'];
-        
+
         try {
             $targetDb = new PDO('sqlite:' . $targetPath);
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
-            $stmt = $targetDb->query("SELECT * FROM {$ctx['table']} ORDER BY id DESC");
+            $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
+            $stmt = $targetDb->query("SELECT * FROM $tableName ORDER BY id DESC");
             $records = $stmt->fetchAll();
 
             foreach ($ctx['fields'] as $field) {
@@ -116,14 +126,15 @@ class CrudController {
                     try {
                         $stmtRel = $targetDb->query("SELECT id, $relatedDisplay as display FROM $relatedTable");
                         $relMap = $stmtRel->fetchAll(PDO::FETCH_KEY_PAIR);
-                        
+
                         foreach ($records as &$row) {
                             if (!empty($row[$field['field_name']]) && isset($relMap[$row[$field['field_name']]])) {
                                 $row[$field['field_name']] = $relMap[$row[$field['field_name']]];
                             }
                         }
                         unset($row);
-                    } catch (\PDOException $e) {}
+                    } catch (\PDOException $e) {
+                    }
                 }
             }
         } catch (\PDOException $e) {
@@ -133,7 +144,8 @@ class CrudController {
         require_once __DIR__ . '/../../Views/admin/crud/list.php';
     }
 
-    public function form() {
+    public function form()
+    {
         $id = $_GET['id'] ?? null;
         $ctx = $this->getContext($id ? 'crud_edit' : 'crud_create');
         $record = null;
@@ -145,7 +157,8 @@ class CrudController {
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
             if ($id) {
-                $stmt = $targetDb->prepare("SELECT * FROM {$ctx['table']} WHERE id = ?");
+                $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
+                $stmt = $targetDb->prepare("SELECT * FROM $tableName WHERE id = ?");
                 $stmt->execute([$id]);
                 $record = $stmt->fetch();
             }
@@ -169,10 +182,11 @@ class CrudController {
         require_once __DIR__ . '/../../Views/admin/crud/form.php';
     }
 
-    public function save() {
+    public function save()
+    {
         $id = $_POST['id'] ?? null;
         $ctx = $this->getContext($id ? 'crud_edit' : 'crud_create');
-        
+
         $data = $_POST;
         unset($data['db_id'], $data['table'], $data['id']);
 
@@ -194,8 +208,9 @@ class CrudController {
                     $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
                     $relativeDir = "$dateFolder/$tableName/";
                     $absoluteDir = $uploadBase . $relativeDir;
-                    if (!is_dir($absoluteDir)) mkdir($absoluteDir, 0777, true);
-                    
+                    if (!is_dir($absoluteDir))
+                        mkdir($absoluteDir, 0777, true);
+
                     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
                     $newName = uniqid() . '.' . $ext;
                     if (move_uploaded_file($file['tmp_name'], $absoluteDir . $newName)) {
@@ -208,24 +223,34 @@ class CrudController {
         try {
             $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
             $now = date('Y-m-d H:i:s');
+            $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
 
             if ($id) {
                 foreach ($ctx['fields'] as $field) {
-                    if ($field['field_name'] === 'fecha_edicion') $data['fecha_edicion'] = $now;
+                    if ($field['field_name'] === 'fecha_edicion')
+                        $data['fecha_edicion'] = $now;
                 }
-                $sets = []; $values = [];
-                foreach ($data as $key => $value) { $sets[] = "$key = ?"; $values[] = $value; }
+                $sets = [];
+                $values = [];
+                foreach ($data as $key => $value) {
+                    $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
+                    $sets[] = "$safeKey = ?";
+                    $values[] = $value;
+                }
                 $values[] = $id;
-                $stmt = $targetDb->prepare("UPDATE {$ctx['table']} SET " . implode(', ', $sets) . " WHERE id = ?");
+                $stmt = $targetDb->prepare("UPDATE $tableName SET " . implode(', ', $sets) . " WHERE id = ?");
                 $stmt->execute($values);
             } else {
                 foreach ($ctx['fields'] as $field) {
-                    if ($field['field_name'] === 'fecha_de_creacion') $data['fecha_de_creacion'] = $now;
-                    if ($field['field_name'] === 'fecha_edicion') $data['fecha_edicion'] = $now;
+                    if ($field['field_name'] === 'fecha_de_creacion')
+                        $data['fecha_de_creacion'] = $now;
+                    if ($field['field_name'] === 'fecha_edicion')
+                        $data['fecha_edicion'] = $now;
                 }
-                $keys = array_keys($data);
+                $keys = array_map(function ($k) {
+                    return preg_replace('/[^a-zA-Z0-9_]/', '', $k); }, array_keys($data));
                 $placeholders = array_fill(0, count($keys), '?');
-                $stmt = $targetDb->prepare("INSERT INTO {$ctx['table']} (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $placeholders) . ")");
+                $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $placeholders) . ")");
                 $stmt->execute(array_values($data));
             }
 
@@ -235,13 +260,15 @@ class CrudController {
         }
     }
 
-    public function delete() {
+    public function delete()
+    {
         $ctx = $this->getContext('crud_delete');
         $id = $_GET['id'] ?? null;
         if ($id) {
             try {
                 $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
-                $stmt = $targetDb->prepare("DELETE FROM {$ctx['table']} WHERE id = ?");
+                $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
+                $stmt = $targetDb->prepare("DELETE FROM $tableName WHERE id = ?");
                 $stmt->execute([$id]);
             } catch (\PDOException $e) {
                 die("Error deleting record: " . $e->getMessage());
@@ -250,12 +277,15 @@ class CrudController {
         header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
     }
 
-    public function mediaList() {
+    public function mediaList()
+    {
         // Media list is accessible to anyone logged in for now, but let's at least check login
         Auth::requireLogin();
         $uploadBase = Config::get('upload_dir');
         $fullBaseUrl = Auth::getFullBaseUrl();
-        $files = []; $dates = []; $tables = [];
+        $files = [];
+        $dates = [];
+        $tables = [];
 
         if (is_dir($uploadBase)) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploadBase));
@@ -265,8 +295,10 @@ class CrudController {
                     $relativePath = str_replace($uploadBase, '', $path);
                     $parts = explode(DIRECTORY_SEPARATOR, $relativePath);
                     if (count($parts) >= 3) {
-                        $dateFolder = $parts[0]; $tableFolder = $parts[1];
-                        $dates[] = $dateFolder; $tables[] = $tableFolder;
+                        $dateFolder = $parts[0];
+                        $tableFolder = $parts[1];
+                        $dates[] = $dateFolder;
+                        $tables[] = $tableFolder;
                         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
                         if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) {
                             $files[] = [
@@ -281,7 +313,8 @@ class CrudController {
                 }
             }
         }
-        usort($files, function($a, $b) { return $b['mtime'] - $a['mtime']; });
+        usort($files, function ($a, $b) {
+            return $b['mtime'] - $a['mtime']; });
         header('Content-Type: application/json');
         echo json_encode(['files' => $files, 'available_dates' => array_values(array_unique($dates)), 'available_tables' => array_values(array_unique($tables))]);
         exit;
