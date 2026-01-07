@@ -26,6 +26,14 @@
     .sidebar-item:not(.active) {
         @apply text-slate-500 hover:text-slate-200 hover:bg-white/5;
     }
+
+    .dropzone-active {
+        @apply border-primary bg-primary/5 ring-4 ring-primary/20 scale-[0.99];
+    }
+
+    .search-input {
+        @apply bg-black/40 border border-glass-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-primary/50 transition-all w-64;
+    }
 </style>
 
 <header class="text-center mb-16">
@@ -177,18 +185,37 @@
                 <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">Neural Asset Selection
                     System</p>
             </div>
-            <button onclick="closeMediaGallery()"
-                class="text-slate-500 hover:text-white transition-colors bg-white/5 p-2 rounded-xl">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
+            <div class="flex items-center gap-6">
+                <!-- Search Input -->
+                <div class="relative">
+                    <input type="text" id="media-search" placeholder="Search assets..."
+                        oninput="handleSearch(this.value)" class="search-input pl-10">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                </div>
+                <button onclick="closeMediaGallery()"
+                    class="text-slate-500 hover:text-white transition-colors bg-white/5 p-2 rounded-xl">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="flex-1 flex gap-8 overflow-hidden">
             <!-- Sidebar Filters -->
             <aside class="w-64 flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar border-r border-white/5">
+                <!-- Drop to Upload Button/Zone -->
+                <div class="mb-4">
+                    <label
+                        class="w-full flex flex-col items-center justify-center py-6 px-4 bg-primary/5 border border-dashed border-primary/30 rounded-2xl cursor-pointer hover:bg-primary/10 hover:border-primary/50 transition-all group">
+                        <span class="text-2xl mb-2 group-hover:scale-110 transition-transform">🚀</span>
+                        <span class="text-[9px] font-black text-primary uppercase tracking-widest text-center">Instant
+                            Upload</span>
+                        <input type="file" class="hidden" onchange="handleDirectUpload(this.files[0])"
+                            accept="image/*,video/*,application/pdf">
+                    </label>
+                </div>
                 <div>
                     <h4
                         class="text-[10px] font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -211,10 +238,23 @@
             </aside>
 
             <!-- Grid Area -->
-            <div class="flex-1 flex flex-col overflow-hidden">
+            <div class="flex-1 flex flex-col overflow-hidden relative">
                 <div id="mediaGrid"
-                    class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-4 pr-2 custom-scrollbar content-start pb-10">
+                    class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-4 pr-2 custom-scrollbar content-start pb-10 transition-all"
+                    ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
                     <!-- Media items will be injected here -->
+                </div>
+
+                <!-- Drop Overlay -->
+                <div id="drop-overlay"
+                    class="absolute inset-0 bg-primary/10 backdrop-blur-sm border-4 border-dashed border-primary rounded-2xl flex items-center justify-center z-50 pointer-events-none opacity-0 transition-opacity">
+                    <div class="text-center">
+                        <div class="text-6xl mb-4 animate-bounce">⚡</div>
+                        <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">Release to Inject
+                        </h3>
+                        <p class="text-[10px] text-primary font-black uppercase tracking-widest mt-2">Uploading to
+                            Neural Network</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -232,6 +272,7 @@
     let allMediaData = null;
     let activeDateFilter = 'all';
     let activeTableFilter = 'all';
+    let searchQuery = '';
 
     tinymce.init({
         selector: '.editor', language: 'es', skin: 'oxide-dark', content_css: 'dark', height: 400,
@@ -284,6 +325,68 @@
         renderGrid();
     }
 
+    function handleSearch(val) {
+        searchQuery = val.toLowerCase();
+        renderGrid();
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        document.getElementById('drop-overlay').style.opacity = '1';
+        document.getElementById('mediaGrid').classList.add('scale-[0.98]');
+    }
+
+    function handleDragLeave(e) {
+        document.getElementById('drop-overlay').style.opacity = '0';
+        document.getElementById('mediaGrid').classList.remove('scale-[0.98]');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        handleDragLeave();
+        const file = e.dataTransfer.files[0];
+        if (file) handleDirectUpload(file);
+    }
+
+    function handleDirectUpload(file) {
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const status = document.getElementById('gallery-status');
+        status.innerText = 'Uploading: ' + file.name + '...';
+        status.className = 'text-[10px] font-bold text-primary animate-pulse uppercase tracking-widest';
+
+        fetch('<?php echo $baseUrl; ?>admin/media/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.url) {
+                    // Refresh gallery and select the new file
+                    fetch('<?php echo $baseUrl; ?>admin/media/list')
+                        .then(res => res.json())
+                        .then(galleryData => {
+                            allMediaData = galleryData;
+                            renderFilters();
+                            renderGrid();
+                            // Optional: auto-select the new one
+                            selectMedia(data.url);
+                        });
+                } else {
+                    alert('Upload failed: ' + (data.error || 'Unknown Error'));
+                }
+            })
+            .catch(err => {
+                alert('Upload failed: ' + err.message);
+            })
+            .finally(() => {
+                status.className = 'text-[10px] font-bold text-slate-500 uppercase tracking-widest';
+            });
+    }
+
     function renderGrid() {
         const grid = document.getElementById('mediaGrid');
         const status = document.getElementById('gallery-status');
@@ -292,6 +395,7 @@
         let filtered = allMediaData.files;
         if (activeDateFilter !== 'all') filtered = filtered.filter(f => f.date_folder === activeDateFilter);
         if (activeTableFilter !== 'all') filtered = filtered.filter(f => f.table_folder === activeTableFilter);
+        if (searchQuery) filtered = filtered.filter(f => f.name.toLowerCase().includes(searchQuery));
 
         status.innerText = `${filtered.length} Assets syncronized`;
 

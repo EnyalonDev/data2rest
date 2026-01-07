@@ -352,4 +352,37 @@ LIMIT 1");
         ]);
         exit;
     }
+    public function mediaUpload()
+    {
+        Auth::requireLogin();
+        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            $this->json(['error' => 'No file uploaded or upload error'], 400);
+        }
+
+        $uploadBase = Config::get('upload_dir');
+        $dateFolder = date('Y-m-d');
+        $tableFolder = 'explorer'; // Default target for explorer uploads
+        $relativeDir = "$dateFolder/$tableFolder/";
+        $absoluteDir = $uploadBase . $relativeDir;
+
+        if (!is_dir($absoluteDir)) {
+            mkdir($absoluteDir, 0777, true);
+        }
+
+        $file = $_FILES['file'];
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newName = uniqid() . '.' . $ext;
+
+        if (move_uploaded_file($file['tmp_name'], $absoluteDir . $newName)) {
+            $url = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $newName;
+            $this->json([
+                'url' => $url,
+                'name' => $newName,
+                'date_folder' => $dateFolder,
+                'table_folder' => $tableFolder
+            ]);
+        }
+
+        $this->json(['error' => 'Failed to move uploaded file'], 500);
+    }
 }

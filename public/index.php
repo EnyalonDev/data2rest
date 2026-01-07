@@ -38,6 +38,7 @@ $router->add('GET', '/admin/crud/edit', 'Database\\CrudController@form');
 $router->add('POST', '/admin/crud/save', 'Database\\CrudController@save');
 $router->add('GET', '/admin/crud/delete', 'Database\\CrudController@delete');
 $router->add('GET', '/admin/media/list', 'Database\\CrudController@mediaList');
+$router->add('POST', '/admin/media/upload', 'Database\\CrudController@mediaUpload');
 
 // --- Module: API REST Panel ---
 $router->add('GET', '/admin/api', 'Api\\ApiDocsController@index');
