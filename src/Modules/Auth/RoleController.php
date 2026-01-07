@@ -22,7 +22,7 @@ class RoleController extends BaseController
         $this->view('admin/roles/index', [
             'roles' => $roles,
             'title' => 'Roles & Permissions',
-            'breadcrumbs' => ['Access Policies' => null]
+            'breadcrumbs' => [\App\Core\Lang::get('common.roles') => null]
         ]);
     }
 
@@ -47,7 +47,7 @@ class RoleController extends BaseController
             'id' => $id,
             'title' => ($id ? 'Edit' : 'New') . ' Role',
             'breadcrumbs' => [
-                'Access Policies' => 'admin/roles',
+                \App\Core\Lang::get('common.roles') => 'admin/roles',
                 ($id ? 'Refine' : 'Initialize') . ' Policy' => null
             ]
         ]);

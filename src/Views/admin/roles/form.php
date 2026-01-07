@@ -1,25 +1,7 @@
-<style type="text/tailwindcss">
-    .section-title {
-        @apply text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-3;
-    }
-
-    .perm-grid {
-        @apply grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3;
-    }
-
-    .perm-item {
-        @apply flex items-center gap-3 p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all cursor-pointer;
-    }
-
-    .checkbox-custom {
-        @apply w-5 h-5 rounded bg-black/40 text-primary border-glass-border focus:ring-primary/20;
-    }
-</style>
-
 <header class="mb-12">
-    <h1 class="text-4xl font-black text-white italic tracking-tighter mb-2">Policy <span
+    <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">Policy <span
             class="text-primary">Architect</span></h1>
-    <p class="text-slate-500 font-medium">Define high-granularity permissions for system nodes.</p>
+    <p class="text-p-muted font-medium">Define high-granularity permissions for system nodes.</p>
 </header>
 
 <form action="<?php echo $baseUrl; ?>admin/roles/save" method="POST" class="space-y-10">
@@ -28,7 +10,7 @@
     <section class="glass-card">
         <div class="grid md:grid-cols-2 gap-8 items-end">
             <div>
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Policy
+                <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-3">Policy
                     Title</label>
                 <input type="text" name="name" value="<?php echo htmlspecialchars($role['name'] ?? ''); ?>"
                     placeholder="e.g. Content Editor" required class="form-input">
@@ -111,7 +93,7 @@
                             <div
                                 class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-xs font-black">
                                 #<?php echo $db['id']; ?></div>
-                            <h4 class="text-sm font-black text-white uppercase"><?php echo htmlspecialchars($db['name']); ?>
+                            <h4 class="text-sm font-black text-p-title uppercase"><?php echo htmlspecialchars($db['name']); ?>
                             </h4>
                             <label
                                 class="flex items-center gap-2 cursor-pointer ml-auto bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
@@ -123,7 +105,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Table Management -->
                             <div class="space-y-3">
-                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Structural
+                                <p class="text-[9px] font-black text-p-muted uppercase tracking-widest pl-1">Structural
                                     Permissions</p>
                                 <div class="grid grid-cols-2 gap-2">
                                     <?php
@@ -141,7 +123,7 @@
                             </div>
                             <!-- Data Management -->
                             <div class="space-y-3">
-                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Content
+                                <p class="text-[9px] font-black text-p-muted uppercase tracking-widest pl-1">Content
                                     Permissions (CRUD)</p>
                                 <div class="grid grid-cols-2 gap-2">
                                     <?php

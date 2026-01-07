@@ -1,29 +1,29 @@
 <?php use App\Core\Auth;
 use App\Core\Lang; ?>
 <header class="mb-12 text-center">
-    <h1 class="text-4xl font-black text-white italic tracking-tighter mb-2">
+    <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">
         <?php echo $id ? Lang::get('crud.edit') : Lang::get('crud.new'); ?>
         <span class="text-primary italic"><?php echo ucfirst($ctx['table']); ?></span>
     </h1>
-    <p class="text-slate-500 font-medium">Configurando registro estructural en la base de datos
+    <p class="text-p-muted font-medium">Configurando registro estructural en la base de datos
         <b><?php echo htmlspecialchars($ctx['database']['name']); ?></b>.
     </p>
 </header>
 
-<section class="max-w-4xl mx-auto">
-    <form action="<?php echo $baseUrl; ?>admin/crud/save" method="POST" id="crud-form" enctype="multipart/form-data">
+<section class="form-container">
+    <form action="<?php echo $baseUrl; ?>admin/crud/save" method="POST" id="crud-form" enctype="multipart/form-data" class="w-full">
         <input type="hidden" name="db_id" value="<?php echo $ctx['db_id']; ?>">
         <input type="hidden" name="table" value="<?php echo $ctx['table']; ?>">
         <input type="hidden" name="id" value="<?php echo $record['id'] ?? ''; ?>">
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <?php foreach ($ctx['fields'] as $field):
+        <div class="glass-card w-full">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                <?php foreach ($ctx['fields'] as $field):
                 if (!$field['is_editable'])
                     continue;
                 $val = $record[$field['field_name']] ?? '';
                 $isFullWidth = in_array($field['view_type'], ['wysiwyg', 'textarea', 'gallery', 'image']);
                 ?>
-                <div class="<?php echo $isFullWidth ? 'md:col-span-2' : ''; ?> space-y-3">
+                <div class="<?php echo $isFullWidth ? 'md:col-span-2' : ''; ?> space-y-4">
                     <label class="form-label flex items-center gap-2">
                         <?php echo htmlspecialchars($field['field_name']); ?>
                         <?php if ($field['is_required']): ?>
@@ -49,7 +49,7 @@ use App\Core\Lang; ?>
 
                         case 'image':
                         case 'gallery': ?>
-                            <div class="glass-card !bg-black/20 overflow-hidden">
+                            <div class="glass-card !bg-white/5 overflow-hidden">
                                 <div class="flex flex-col lg:flex-row gap-8">
                                     <div id="preview-container-<?php echo $field['field_name']; ?>"
                                         class="<?php echo empty($val) ? 'hidden' : ''; ?> w-full lg:w-48 aspect-square rounded-xl overflow-hidden border border-glass-border relative group">
@@ -63,9 +63,9 @@ use App\Core\Lang; ?>
                                             </p>
                                         </div>
                                         <button type="button" onclick="clearField('<?php echo $field['field_name']; ?>')"
-                                            class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                            class="absolute top-2 right-2 bg-red-500 text-p-title p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                                     d="M6 18L18 6M6 6l12 12"></path>
                                             </svg>
                                         </button>
@@ -74,7 +74,7 @@ use App\Core\Lang; ?>
                                     <div class="flex-1 space-y-6">
                                         <div class="flex flex-col gap-3">
                                             <label
-                                                class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                class="text-[10px] font-black text-p-muted uppercase tracking-widest flex items-center gap-2">
                                                 <span class="w-1 h-1 rounded-full bg-primary"></span>
                                                 <?php echo Lang::get('crud.resource_url'); ?>
                                             </label>
@@ -88,15 +88,18 @@ use App\Core\Lang; ?>
 
                                                 <button type="button"
                                                     onclick="openMediaGallery('<?php echo $field['field_name']; ?>')"
-                                                    class="btn-gallery whitespace-nowrap !py-2">
-                                                    <span>📁</span> <?php echo Lang::get('crud.gallery_btn'); ?>
+                                                    class="btn-gallery whitespace-nowrap !py-2 flex items-center gap-2">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9l-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <?php echo Lang::get('crud.gallery_btn'); ?>
                                                 </button>
                                             </div>
                                         </div>
 
                                         <div class="flex flex-col gap-3 pt-6 border-t border-white/5">
                                             <label
-                                                class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                class="text-[10px] font-black text-p-muted uppercase tracking-widest flex items-center gap-2">
                                                 <span class="w-1 h-1 rounded-full bg-primary/40"></span>
                                                 <?php echo Lang::get('crud.upload_new'); ?>
                                             </label>
@@ -111,21 +114,28 @@ use App\Core\Lang; ?>
                             <?php break;
 
                         case 'boolean': ?>
-                            <label class="flex items-center gap-4 cursor-pointer">
-                                <input type="checkbox" name="<?php echo $field['field_name']; ?>" value="1" <?php echo $val ? 'checked' : ''; ?> class="w-6 h-6 rounded bg-black/40 text-primary">
-                                <span class="text-sm font-bold uppercase"><?php echo Lang::get('crud.toggle_status'); ?></span>
-                            </label>
+                            <div class="flex items-center h-full pt-8">
+                                <label class="flex items-center gap-4 cursor-pointer group/toggle">
+                                    <div class="relative">
+                                        <input type="checkbox" name="<?php echo $field['field_name']; ?>" value="1" <?php echo $val ? 'checked' : ''; ?> class="sr-only peer">
+                                        <div class="w-14 h-7 bg-white/5 border border-glass-border rounded-full peer peer-checked:bg-primary/20 peer-checked:border-primary/50 transition-all duration-300"></div>
+                                        <div class="absolute left-1 top-1 w-5 h-5 bg-slate-500 rounded-full transition-all duration-300 peer-checked:left-8 peer-checked:bg-primary peer-checked:shadow-[0_0_10px_rgba(56,189,248,0.5)]"></div>
+                                    </div>
+                                    <span class="text-xs font-black uppercase tracking-widest text-p-muted group-hover/toggle:text-primary transition-colors"><?php echo Lang::get('crud.toggle_status'); ?></span>
+                                </label>
+                            </div>
                             <?php break;
 
                     endswitch; ?>
                 </div>
             <?php endforeach; ?>
-        </div>
+            </div>
 
-        <div class="pt-12 border-t border-glass-border flex justify-end gap-6">
-            <a href="<?php echo $baseUrl; ?>admin/crud/list?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>"
-                class="btn-primary !bg-slate-800 !text-slate-300"><?php echo Lang::get('common.abort'); ?></a>
-            <button type="submit" class="btn-primary"><?php echo Lang::get('common.commit'); ?></button>
+            <div class="pt-12 border-t border-glass-border flex justify-end gap-6">
+                <a href="<?php echo $baseUrl; ?>admin/crud/list?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>"
+                    class="btn-primary !bg-slate-800 !text-slate-300"><?php echo Lang::get('common.abort'); ?></a>
+                <button type="submit" class="btn-primary"><?php echo Lang::get('common.commit'); ?></button>
+            </div>
         </div>
     </form>
 </section>
@@ -135,22 +145,28 @@ use App\Core\Lang; ?>
     <div class="modal-content">
         <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
             <div>
-                <h2 class="text-3xl font-black text-white italic tracking-tighter">
-                    <?php echo Lang::get('media.explorer'); ?></h2>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1">
-                    <?php echo Lang::get('media.system'); ?></p>
+                <h2 class="text-3xl font-black text-p-title italic tracking-tighter">
+                    <?php echo Lang::get('media.explorer'); ?>
+                </h2>
+                <p class="text-[10px] text-p-muted font-bold uppercase tracking-[0.3em] mt-1">
+                    <?php echo Lang::get('media.system'); ?>
+                </p>
             </div>
             <div class="flex items-center gap-6">
                 <!-- Search Input -->
                 <div class="relative">
                     <input type="text" id="media-search" placeholder="<?php echo Lang::get('media.search'); ?>"
                         oninput="handleSearch(this.value)" class="search-input pl-10">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-p-muted">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </span>
                 </div>
                 <button onclick="closeMediaGallery()"
-                    class="text-slate-500 hover:text-white transition-colors bg-white/5 p-2 rounded-xl">
+                    class="text-p-muted hover:text-p-title transition-colors bg-white/5 p-2 rounded-xl">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12">
                         </path>
                     </svg>
                 </button>
@@ -164,7 +180,9 @@ use App\Core\Lang; ?>
                 <div class="mb-4">
                     <label
                         class="w-full flex flex-col items-center justify-center py-6 px-4 bg-primary/5 border border-dashed border-primary/30 rounded-2xl cursor-pointer hover:bg-primary/10 hover:border-primary/50 transition-all group">
-                        <span class="text-2xl mb-2 group-hover:scale-110 transition-transform">🚀</span>
+                        <svg class="w-8 h-8 mb-2 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
                         <span
                             class="text-[9px] font-black text-primary uppercase tracking-widest text-center"><?php echo Lang::get('media.upload'); ?></span>
                         <input type="file" class="hidden" onchange="handleDirectUpload(this.files[0])"
@@ -206,8 +224,10 @@ use App\Core\Lang; ?>
                 <div id="drop-overlay"
                     class="absolute inset-0 bg-primary/10 backdrop-blur-sm border-4 border-dashed border-primary rounded-2xl flex items-center justify-center z-50 pointer-events-none opacity-0 transition-opacity">
                     <div class="text-center">
-                        <div class="text-6xl mb-4 animate-bounce">⚡</div>
-                        <h3 class="text-2xl font-black text-white italic uppercase tracking-tighter">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-p-title animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <h3 class="text-2xl font-black text-p-title italic uppercase tracking-tighter">
                             <?php echo Lang::get('media.drop'); ?>
                         </h3>
                         <p class="text-[10px] text-primary font-black uppercase tracking-widest mt-2">Uploading to
@@ -219,13 +239,14 @@ use App\Core\Lang; ?>
 
         <div class="mt-8 pt-6 border-t border-glass-border flex justify-between items-center">
             <span id="gallery-status"
-                class="text-[10px] font-bold text-slate-500 uppercase tracking-widest"><?php echo Lang::get('media.scanning'); ?></span>
+                class="text-[10px] font-bold text-p-muted uppercase tracking-widest"><?php echo Lang::get('media.scanning'); ?></span>
             <button onclick="closeMediaGallery()"
                 class="btn-outline"><?php echo Lang::get('media.abort_selection'); ?></button>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
     let currentTargetField = null;
     let allMediaData = null;
@@ -233,12 +254,22 @@ use App\Core\Lang; ?>
     let activeTableFilter = 'all';
     let searchQuery = '';
 
-    tinymce.init({
-        selector: '.editor', language: 'es', skin: 'oxide-dark', content_css: 'dark', height: 400,
-        plugins: 'lists link image code table wordcount',
-        toolbar: 'undo redo | bold italic forecolor | alignleft aligncenter alignright | bullist numlist | removeformat',
-        branding: false, promotion: false
-    });
+    if (typeof tinymce !== 'undefined') {
+        tinymce.init({
+            selector: '.editor', language: 'es', skin: 'oxide-dark', content_css: 'dark', height: 400,
+            plugins: 'lists link image code table wordcount',
+            toolbar: 'undo redo | bold italic forecolor | alignleft aligncenter alignright | bullist numlist | removeformat',
+            branding: false, promotion: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                    if (typeof validateInput === 'function') {
+                        validateInput(document.querySelector('textarea.editor'));
+                    }
+                });
+            }
+        });
+    }
 
     function openMediaGallery(fieldName) {
         currentTargetField = fieldName;
@@ -255,20 +286,21 @@ use App\Core\Lang; ?>
     }
 
     function renderFilters() {
+        if(!allMediaData) return;
         const dateContainer = document.getElementById('filter-dates');
         const tableContainer = document.getElementById('filter-tables');
 
         const dates = [...new Set(allMediaData.files.map(f => f.date_folder))];
         const tables = [...new Set(allMediaData.files.map(f => f.table_folder))];
 
-        dateContainer.innerHTML = `<button onclick="setDateFilter('all')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeDateFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-slate-500 hover:bg-white/5'}"><?php echo Lang::get('media.all'); ?></button>`;
+        dateContainer.innerHTML = `<button onclick="setDateFilter('all')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeDateFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-p-muted hover:bg-white/5'}"><?php echo Lang::get('media.all'); ?></button>`;
         dates.forEach(d => {
-            dateContainer.innerHTML += `<button onclick="setDateFilter('${d}')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeDateFilter === d ? 'bg-primary/20 text-primary' : 'text-slate-500 hover:bg-white/5'}">${d}</button>`;
+            dateContainer.innerHTML += `<button onclick="setDateFilter('${d}')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeDateFilter === d ? 'bg-primary/20 text-primary' : 'text-p-muted hover:bg-white/5'}">${d}</button>`;
         });
 
-        tableContainer.innerHTML = `<button onclick="setTableFilter('all')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeTableFilter === 'all' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:bg-white/5'}"><?php echo Lang::get('media.all'); ?></button>`;
+        tableContainer.innerHTML = `<button onclick="setTableFilter('all')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeTableFilter === 'all' ? 'bg-emerald-500/20 text-emerald-400' : 'text-p-muted hover:bg-white/5'}"><?php echo Lang::get('media.all'); ?></button>`;
         tables.forEach(t => {
-            tableContainer.innerHTML += `<button onclick="setTableFilter('${t}')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeTableFilter === t ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:bg-white/5'}">${t}</button>`;
+            tableContainer.innerHTML += `<button onclick="setTableFilter('${t}')" class="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${activeTableFilter === t ? 'bg-emerald-500/20 text-emerald-400' : 'text-p-muted hover:bg-white/5'}">${t}</button>`;
         });
     }
 
@@ -302,14 +334,12 @@ use App\Core\Lang; ?>
             .then(res => res.json())
             .then(data => {
                 if (data.url) {
-                    // Refresh gallery and select the new file
                     fetch('<?php echo $baseUrl; ?>admin/media/list')
                         .then(res => res.json())
                         .then(galleryData => {
                             allMediaData = galleryData;
                             renderFilters();
                             renderGrid();
-                            // Optional: auto-select the new one
                             selectMedia(data.url);
                         });
                 } else {
@@ -320,11 +350,12 @@ use App\Core\Lang; ?>
                 alert('Upload failed: ' + err.message);
             })
             .finally(() => {
-                status.className = 'text-[10px] font-bold text-slate-500 uppercase tracking-widest';
+                status.className = 'text-[10px] font-bold text-p-muted uppercase tracking-widest';
             });
     }
 
     function renderGrid() {
+        if(!allMediaData) return;
         const grid = document.getElementById('mediaGrid');
         const status = document.getElementById('gallery-status');
         grid.innerHTML = '';
@@ -337,7 +368,7 @@ use App\Core\Lang; ?>
         status.innerText = `<?php echo Lang::get('media.sync'); ?>`.replace(':count', filtered.length);
 
         if (filtered.length === 0) {
-            grid.innerHTML = '<div class="col-span-full py-20 text-center text-slate-500 uppercase font-black tracking-widest opacity-30"><?php echo Lang::get('media.null'); ?></div>';
+            grid.innerHTML = '<div class="col-span-full py-20 text-center text-p-muted uppercase font-black tracking-widest opacity-30"><?php echo Lang::get('media.null'); ?></div>';
             return;
         }
 
@@ -350,7 +381,7 @@ use App\Core\Lang; ?>
                 <img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                     <p class="text-[9px] font-black text-primary truncate uppercase tracking-widest mb-1">${item.name}</p>
-                    <p class="text-[7px] text-slate-400 font-bold uppercase">${item.date_folder} / ${item.table_folder}</p>
+                    <p class="text-[7px] text-p-muted font-bold uppercase">${item.date_folder} / ${item.table_folder}</p>
                 </div>
             `;
             grid.appendChild(div);
@@ -370,7 +401,7 @@ use App\Core\Lang; ?>
         }
 
         container.classList.remove('hidden');
-        if (img) img.src = url;
+        if (img) img.src = (url.startsWith('http') ? url : '<?php echo $baseUrl; ?>' + url);
         pathTxt.innerText = url;
 
         const fileInput = document.getElementById('file-' + fieldName);
@@ -390,53 +421,49 @@ use App\Core\Lang; ?>
         document.getElementById('file-' + fieldName).value = '';
     }
 
-    // Smart Validation Engine
+    function validateInput(input, isBlur = false) {
+        if(!input) return;
+        const container = input.closest('div');
+        const label = container ? container.querySelector('.form-label') : null;
+        let isValid = true;
+        let errorMsg = '';
+
+        if (input.hasAttribute('required') && !input.value.trim()) {
+            isValid = false;
+        }
+
+        const type = input.getAttribute('data-type');
+        if (type === 'INTEGER' || type === 'REAL' || type === 'NUMERIC') {
+            if (input.value && isNaN(input.value)) {
+                isValid = false;
+                input.value = input.value.replace(/[^0-9.-]/g, '');
+            }
+        }
+
+        if (!isValid) {
+            input.classList.add('form-input-error');
+            input.classList.remove('form-input-valid');
+            if (label) label.classList.add('text-red-500');
+            if (isBlur) input.classList.add('animate-shake');
+        } else {
+            input.classList.remove('form-input-error', 'animate-shake');
+            if (label) label.classList.remove('text-red-500');
+            if (input.value.trim()) {
+                input.classList.add('form-input-valid');
+            } else {
+                input.classList.remove('form-input-valid');
+            }
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('crud-form');
         const inputs = form.querySelectorAll('input, select, textarea');
 
         inputs.forEach(input => {
+            if(input.classList.contains('editor')) return;
             input.addEventListener('input', () => validateInput(input));
             input.addEventListener('blur', () => validateInput(input, true));
         });
-
-        function validateInput(input, isBlur = false) {
-            const container = input.closest('div');
-            const label = container ? container.querySelector('.form-label') : null;
-            let isValid = true;
-            let errorMsg = '';
-
-            // 1. Check Required
-            if (input.hasAttribute('required') && !input.value.trim()) {
-                isValid = false;
-            }
-
-            // 2. Numeric Type Check (SQLite Types)
-            const type = input.getAttribute('data-type');
-            if (type === 'INTEGER' || type === 'REAL' || type === 'NUMERIC') {
-                if (input.value && isNaN(input.value)) {
-                    isValid = false;
-                    errorMsg = 'Numeric signal required';
-                    // Prevent typing non-numeric characters
-                    input.value = input.value.replace(/[^0-9.-]/g, '');
-                }
-            }
-
-            // Apply Styles
-            if (!isValid) {
-                input.classList.add('form-input-error');
-                input.classList.remove('form-input-valid');
-                if (label) label.classList.add('text-red-500');
-                if (isBlur) input.classList.add('animate-shake');
-            } else {
-                input.classList.remove('form-input-error', 'animate-shake');
-                if (label) label.classList.remove('text-red-500');
-                if (input.value.trim()) {
-                    input.classList.add('form-input-valid');
-                } else {
-                    input.classList.remove('form-input-valid');
-                }
-            }
-        }
     });
 </script>

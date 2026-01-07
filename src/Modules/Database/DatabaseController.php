@@ -36,7 +36,7 @@ ORDER BY d.id DESC");
         $this->view('admin/databases/index', [
             'title' => 'Databases - Architect',
             'databases' => $databases,
-            'breadcrumbs' => ['Cluster Storage' => null]
+            'breadcrumbs' => [\App\Core\Lang::get('databases.title') => null]
         ]);
     }
 
@@ -113,11 +113,19 @@ ORDER BY d.id DESC");
         $stmt->execute([$id]);
         $database = $stmt->fetch();
 
+        if (!$database) {
+            Auth::setFlashError("Database configuration not found.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
+
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
         } catch (\PDOException $e) {
+            Auth::setFlashError("Error connecting to database node: " . $e->getMessage());
             $tables = [];
         }
 
@@ -126,7 +134,7 @@ ORDER BY d.id DESC");
             'tables' => $tables,
             'database' => $database,
             'breadcrumbs' => [
-                'Cluster Storage' => 'admin/databases',
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
                 ($database['name'] ?? 'Database') => null
             ]
         ]);
@@ -228,7 +236,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
             'table_name' => $table_name,
             'allTables' => $allTables,
             'breadcrumbs' => [
-                'Cluster Storage' => 'admin/databases',
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
                 $database['name'] => 'admin/databases/view?id=' . $db_id,
                 'Architect: ' . $table_name => null
             ]

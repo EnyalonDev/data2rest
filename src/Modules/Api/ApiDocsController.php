@@ -26,7 +26,7 @@ class ApiDocsController extends BaseController
             'keys' => $keys,
             'databases' => $databases,
             'title' => 'API Management',
-            'breadcrumbs' => ['Gateways & Keys' => null]
+            'breadcrumbs' => [\App\Core\Lang::get('common.api') => null]
         ]);
     }
 
@@ -92,7 +92,7 @@ class ApiDocsController extends BaseController
             'tableDetails' => $tableDetails,
             'title' => 'API Documentation - ' . $database['name'],
             'breadcrumbs' => [
-                'Gateways & Keys' => 'admin/api',
+                \App\Core\Lang::get('common.api') => 'admin/api',
                 'Documentation: ' . $database['name'] => null
             ]
         ]);

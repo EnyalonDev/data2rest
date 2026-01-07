@@ -1,11 +1,11 @@
-# 🚀 API-Admin - Sistema de Gestión de Bases de Datos y APIs REST
+# 🚀 Data2Rest - Sistema de Gestión de Bases de Datos y APIs REST
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4.svg)
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-**API-Admin** es un sistema completo de gestión de bases de datos SQLite con generación automática de APIs REST, sistema de autenticación robusto, control de acceso basado en roles (RBAC) y una interfaz de administración moderna y elegante.
+**Data2Rest** es un sistema completo de gestión de bases de datos SQLite con generación automática de APIs REST, sistema de autenticación robusto, control de acceso basado en roles (RBAC) y una interfaz de administración moderna y elegante.
 
 ---
 
@@ -76,12 +76,12 @@
 1. **Clona o descarga** el proyecto en tu servidor web:
    ```bash
    cd /opt/homebrew/var/www/
-   git clone <repository-url> api-admin
+   git clone <repository-url> data2rest
    ```
 
 2. **Configura Apache** para permitir `.htaccess`:
    ```apache
-   <Directory "/opt/homebrew/var/www/api-admin">
+   <Directory "/opt/homebrew/var/www/data2rest">
        AllowOverride All
        Require all granted
    </Directory>
@@ -94,7 +94,7 @@
 
 4. **Accede a la aplicación** en tu navegador:
    ```
-   http://localhost/api-admin/
+   http://localhost/data2rest/
    ```
 
 5. **Instalación automática**: El sistema detectará que es la primera vez y creará automáticamente:
@@ -116,7 +116,7 @@ Contraseña: admin123
 ## 🏗️ Arquitectura del Sistema
 
 ```
-api-admin/
+data2rest/
 ├── public/                 # Punto de entrada público
 │   ├── index.php          # Router principal
 │   └── uploads/           # Archivos subidos
@@ -178,7 +178,7 @@ El archivo `src/Core/Config.php` contiene la configuración principal:
 ```php
 private static $config = [
     'db_path' => __DIR__ . '/../../data/system.sqlite',
-    'app_name' => 'Api-Admin',
+    'app_name' => 'Data2Rest',
     'base_url' => '',
     'upload_dir' => __DIR__ . '/../../public/uploads/',
     'allowed_roles' => ['admin', 'user'],
@@ -260,8 +260,8 @@ DELETE /api/v1/{database}/{table}/{id}   # Eliminar
 2. **Usa HTTPS** en producción
 3. **Configura permisos de archivos** apropiadamente:
    ```bash
-   chmod 755 /opt/homebrew/var/www/api-admin
-   chmod 644 /opt/homebrew/var/www/api-admin/data/*.sqlite
+   chmod 755 /opt/homebrew/var/www/data2rest
+   chmod 644 /opt/homebrew/var/www/data2rest/data/*.sqlite
    ```
 4. **Mantén PHP actualizado** a la última versión estable
 5. **Revisa logs regularmente** para detectar actividad sospechosa
@@ -301,12 +301,12 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 Si encuentras algún problema o tienes preguntas:
 
 1. Revisa la [documentación de módulos](docs/)
-2. Abre un [Issue](https://github.com/tu-usuario/api-admin/issues)
+2. Abre un [Issue](https://github.com/tu-usuario/data2rest/issues)
 3. Contacta al desarrollador
 
 ---
 
-**¡Gracias por usar API-Admin!** 🚀
+**¡Gracias por usar Data2Rest!** 🚀
 
 
 ---

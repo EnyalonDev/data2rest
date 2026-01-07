@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        <?php echo $title ?? 'Api-Admin'; ?>
+        <?php echo $title ?? 'Data2Rest'; ?>
     </title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -16,9 +16,12 @@
                 extend: {
                     colors: {
                         primary: '#38bdf8',
+                        'p-text': 'var(--p-text)',
+                        'p-muted': 'var(--p-muted)',
+                        'p-title': 'var(--p-title)',
+                        'glass-border': 'var(--p-border)',
+                        'bg-glass': 'var(--p-card)',
                         dark: '#0b1120',
-                        glass: 'rgba(30, 41, 59, 0.5)',
-                        'glass-border': 'rgba(255, 255, 255, 0.1)',
                     },
                     fontFamily: {
                         sans: ['Outfit', 'sans-serif'],
@@ -27,81 +30,166 @@
             }
         }
     </script>
-    <style type="text/tailwindcss">
-        @layer components {
-            .btn-primary {
-                @apply bg-primary text-dark font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    <style>
+        :root {
+            --p-text: #1e293b;
+            --p-title: #0f172a;
+            --p-muted: #64748b;
+            --p-bg: #f8fafc;
+            --p-card: #ffffff;
+            --p-border: rgba(15, 23, 42, 0.1);
+            --p-nav: rgba(255, 255, 255, 0.8);
+            --p-input: #ffffff;
+        }
+
+        .dark {
+            --p-text: #cbd5e1;
+            --p-title: #ffffff;
+            --p-muted: #94a3b8;
+            --p-bg: #0b1120;
+            --p-card: rgba(30, 41, 59, 0.6);
+            --p-border: rgba(255, 255, 255, 0.05);
+            --p-nav: rgba(11, 17, 32, 0.8);
+            --p-input: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--p-bg);
+            color: var(--p-text);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass-card {
+            background-color: var(--p-card);
+            border: 1px solid var(--p-border);
+            backdrop-filter: blur(20px);
+            border-radius: 2rem;
+            padding: 2rem;
+        }
+
+        .form-input {
+            background-color: var(--p-input);
+            color: var(--p-text);
+            border: 2px solid var(--p-border);
+            width: 100%;
+            border-radius: 1rem;
+            padding: 1rem 1.25rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
+        }
+
+        .form-label {
+            color: var(--p-muted);
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Custom UI */
+        .btn-primary {
+            background-color: #38bdf8;
+            color: #0b1120;
+            font-weight: 800;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .btn-outline {
+            border: 1px solid var(--p-border);
+            color: var(--p-muted);
+            font-weight: 800;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            text-transform: uppercase;
+            font-size: 10px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--p-text);
+        }
+
+        .animate-shake {
+            animation: shake 0.2s ease-in-out 2;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
             }
-            .glass-card {
-                @apply bg-glass backdrop-blur-xl border border-glass-border rounded-[2rem] p-8 transition-all duration-300;
+
+            25% {
+                transform: translateX(-5px);
             }
-            .nav-link {
-                @apply text-slate-400 hover:text-primary transition-colors duration-200 font-medium;
-            }
-            .form-input {
-                @apply w-full bg-black/40 border-2 border-glass-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all font-medium;
-            }
-            .form-label {
-                @apply block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 transition-colors;
-            }
-            .form-input-valid {
-                @apply border-emerald-500/50 ring-4 ring-emerald-500/10 bg-emerald-500/5;
-            }
-            .form-input-error {
-                @apply border-red-500/50 ring-4 ring-red-500/10 bg-red-500/5;
-            }
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-5px); }
-                75% { transform: translateX(5px); }
-            }
-            .animate-shake {
-                animation: shake 0.2s ease-in-out 0s 2;
+
+            75% {
+                transform: translateX(5px);
             }
         }
     </style>
     <?php include __DIR__ . '/partials/theme_engine.php'; ?>
 </head>
 
-<body class="bg-dark text-slate-200 min-h-screen font-sans selection:bg-primary/30">
+<body class="selection:bg-primary/30">
     <!-- Navbar -->
-    <nav
-        class="fixed top-0 w-full h-20 bg-dark/80 backdrop-blur-lg border-b border-glass-border z-50 flex items-center justify-between px-8">
+    <nav style="background-color: var(--p-nav);"
+        class="fixed top-0 w-full h-20 backdrop-blur-lg border-b border-glass-border z-50 flex items-center justify-between px-8">
         <div class="flex items-center gap-4">
             <a href="<?php echo $baseUrl; ?>" class="flex items-center gap-4">
                 <div
                     class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-dark text-2xl font-black">
-                    A</div>
+                    D</div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xl font-bold text-white tracking-tight">Api-Admin</span>
+                    <span class="text-xl font-bold text-p-title tracking-tight">Data2Rest</span>
                 </div>
             </a>
 
-            <span class="text-slate-600 font-medium">/</span>
+            <span class="text-p-muted opacity-40 font-medium">/</span>
             <a href="<?php echo $baseUrl; ?>"
-                class="text-slate-500 hover:text-primary transition-colors font-medium"><?php echo \App\Core\Lang::get('common.dashboard'); ?></a>
+                class="text-p-muted hover:text-primary transition-colors font-medium"><?php echo \App\Core\Lang::get('common.dashboard'); ?></a>
 
             <?php if (isset($breadcrumbs) && is_array($breadcrumbs)): ?>
                 <?php foreach ($breadcrumbs as $label => $link): ?>
-                    <span class="text-slate-600 font-medium">/</span>
+                    <span class="text-p-muted opacity-40 font-medium">/</span>
                     <?php if ($link): ?>
                         <a href="<?php echo $baseUrl . $link; ?>"
-                            class="text-slate-500 hover:text-primary transition-colors font-medium"><?php echo $label; ?></a>
+                            class="text-p-muted hover:text-primary transition-colors font-medium"><?php echo $label; ?></a>
                     <?php else: ?>
                         <span
-                            class="text-white font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4"><?php echo $label; ?></span>
+                            class="text-p-title font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4"><?php echo $label; ?></span>
                     <?php endif; ?>
                 <?php endforeach; ?>
             <?php elseif (isset($breadcrumb)): ?>
-                <span class="text-slate-600 font-medium">/</span>
+                <span class="text-p-muted opacity-40 font-medium">/</span>
                 <span
-                    class="text-white font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4"><?php echo $breadcrumb; ?></span>
+                    class="text-p-title font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4"><?php echo $breadcrumb; ?></span>
             <?php endif; ?>
         </div>
 
         <div class="flex items-center gap-6">
             <!-- Language Switcher -->
-            <div class="flex items-center bg-black/40 rounded-lg p-1 border border-glass-border">
+            <div class="flex items-center bg-black/40 rounded-lg p-1">
                 <a href="<?php echo $baseUrl; ?>lang/es"
                     class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all <?php echo \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white'; ?>">ES</a>
                 <a href="<?php echo $baseUrl; ?>lang/en"
@@ -112,12 +200,12 @@
 
             <?php include __DIR__ . '/partials/theme_toggle.php'; ?>
             <?php if (\App\Core\Auth::check()): ?>
-                <span class="hidden md:block text-sm text-slate-400"><?php echo \App\Core\Lang::get('common.welcome'); ?>,
-                    <b class="text-white">
+                <span class="hidden md:block text-sm text-p-muted"><?php echo \App\Core\Lang::get('common.welcome'); ?>,
+                    <b class="text-p-title">
                         <?php echo htmlspecialchars($_SESSION['username']); ?>
                     </b></span>
                 <a href="<?php echo $baseUrl; ?>logout"
-                    class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20"><?php echo \App\Core\Lang::get('common.logout'); ?></a>
+                    class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20"><?php echo \App\Core\Lang::get('common.logout'); ?></a>
             <?php endif; ?>
         </div>
     </nav>
@@ -128,7 +216,7 @@
         <!-- Footer -->
         <footer class="mt-24 pt-12 border-t border-glass-border flex flex-col items-center gap-4">
             <p class="text-slate-500 text-sm">
-                © 2026 Api-Admin Framework | Powered by <a href="https://nestorovallos.com" target="_blank"
+                © 2026 Data2Rest Framework | Powered by <a href="https://nestorovallos.com" target="_blank"
                     class="text-primary hover:underline font-bold">EnyalonDev</a>
             </p>
         </footer>

@@ -8,7 +8,7 @@
     }
 
     .input-dark {
-        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 transition-all font-medium;
+        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
     }
 
     .checkbox-custom {
@@ -16,14 +16,14 @@
     }
 
     .label-mini {
-        @apply block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1;
+        @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
     }
 </style>
 
 <header class="mb-12">
-    <h1 class="text-4xl font-black text-white italic tracking-tighter mb-2">Endpoint <span
+    <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">Endpoint <span
             class="text-primary">Constructor</span></h1>
-    <p class="text-slate-500 font-medium italic">Configure your search parameters, pagination and projection in
+    <p class="text-p-muted font-medium italic">Configure your search parameters, pagination and projection in
         real-time.</p>
 </header>
 
@@ -45,7 +45,7 @@
                     class="flex items-center gap-2 cursor-pointer bg-black/20 px-4 py-2 rounded-lg border border-white/5">
                     <input type="checkbox" id="include-key-param" onchange="updateAllUrls()" checked
                         class="checkbox-custom">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Use URL Parameter</span>
+                    <span class="text-[10px] font-bold text-p-muted uppercase">Use URL Parameter</span>
                 </label>
                 <div class="flex-1 md:hidden">
                     <code id="base-api-url-mobile"
@@ -54,7 +54,7 @@
             </div>
         </div>
         <div class="bg-black/30 p-4 rounded-xl border border-glass-border hidden md:block overflow-hidden">
-            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Base Endpoint Path</p>
+            <p class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">Base Endpoint Path</p>
             <code id="base-api-url"
                 class="text-[10px] text-primary/70 font-mono italic truncate block"><?php echo \App\Core\Auth::getFullBaseUrl(); ?>api/v1/<?php echo $database['id']; ?>/</code>
         </div>
@@ -68,10 +68,10 @@
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-xl">📦</div>
                     <div>
-                        <h2 class="text-2xl font-black text-white uppercase tracking-tight">
+                        <h2 class="text-2xl font-black text-p-title uppercase tracking-tight">
                             <?php echo htmlspecialchars($table); ?>
                         </h2>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active Data Entity</p>
+                        <p class="text-[10px] text-p-muted font-bold uppercase tracking-widest">Active Data Entity</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
@@ -94,7 +94,7 @@
                             </svg>
                         </button>
                         <a id="test-<?php echo $table; ?>" href="#" target="_blank"
-                            class="bg-white/5 hover:bg-white/10 p-2.5 rounded-xl text-slate-400 hover:text-white transition-all"
+                            class="bg-white/5 hover:bg-white/10 p-2.5 rounded-xl text-p-muted hover:text-p-title transition-all"
                             title="Launch Request">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -111,12 +111,12 @@
                         <h4 class="label-mini !mb-4 text-emerald-400">Paging & Optimization</h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-[9px] font-bold text-slate-500 block mb-1">LIMIT</label>
+                                <label class="text-[9px] font-bold text-p-muted block mb-1">LIMIT</label>
                                 <input type="number" data-param="limit" placeholder="50" oninput="updateAllUrls()"
                                     class="input-dark w-full">
                             </div>
                             <div>
-                                <label class="text-[9px] font-bold text-slate-500 block mb-1">OFFSET</label>
+                                <label class="text-[9px] font-bold text-p-muted block mb-1">OFFSET</label>
                                 <input type="number" data-param="offset" placeholder="0" oninput="updateAllUrls()"
                                     class="input-dark w-full">
                             </div>
@@ -136,7 +136,7 @@
                                 </select>
                                 <input type="text" placeholder="Value..." class="filter-val-input input-dark flex-1">
                                 <button onclick="addFilter('<?php echo $table; ?>')"
-                                    class="bg-white/5 hover:bg-white/10 p-2 rounded-lg text-white font-bold text-[10px]">Add</button>
+                                    class="bg-white/5 hover:bg-white/10 p-2 rounded-lg text-p-title font-bold text-[10px]">Add</button>
                             </div>
                             <div id="filter-container-<?php echo $table; ?>" class="flex flex-wrap gap-2">
                                 <!-- Dynamic filters here -->
@@ -153,7 +153,7 @@
                             <button onclick="toggleAllFields('<?php echo $table; ?>', true)"
                                 class="text-[9px] font-bold text-primary hover:underline uppercase">Select All</button>
                             <button onclick="toggleAllFields('<?php echo $table; ?>', false)"
-                                class="text-[9px] font-bold text-slate-500 hover:underline uppercase">Clear</button>
+                                class="text-[9px] font-bold text-p-muted hover:underline uppercase">Clear</button>
                         </div>
                     </div>
 
@@ -165,9 +165,9 @@
                                     class="field-checkbox checkbox-custom" checked>
                                 <div class="flex flex-col">
                                     <span
-                                        class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors"><?php echo $col['name']; ?></span>
+                                        class="text-xs font-bold text-slate-300 group-hover:text-p-title transition-colors"><?php echo $col['name']; ?></span>
                                     <span
-                                        class="text-[9px] font-medium text-slate-500 uppercase"><?php echo $col['type']; ?></span>
+                                        class="text-[9px] font-medium text-p-muted uppercase"><?php echo $col['type']; ?></span>
                                 </div>
                             </label>
                         <?php endforeach; ?>
@@ -211,7 +211,7 @@
             tableFilters[tableName].forEach((f, idx) => {
                 const tag = document.createElement('span');
                 tag.className = 'bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-2 animate-in fade-in zoom-in duration-300';
-                tag.innerHTML = `<span>${f.col}: ${f.val}</span><button onclick="removeFilter('${tableName}', ${idx})" class="hover:text-white">&times;</button>`;
+                tag.innerHTML = `<span>${f.col}: ${f.val}</span><button onclick="removeFilter('${tableName}', ${idx})" class="hover:text-p-title">&times;</button>`;
                 container.appendChild(tag);
             });
         }

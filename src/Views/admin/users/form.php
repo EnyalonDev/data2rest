@@ -1,9 +1,9 @@
 <?php use App\Core\Lang; ?>
 <header class="mb-12 text-center">
-    <h1 class="text-4xl font-black text-white italic tracking-tighter mb-2">
+    <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">
         <?php echo $id ? Lang::get('users.verify') : Lang::get('users.manifest'); ?>
     </h1>
-    <p class="text-slate-500 font-medium"><?php echo Lang::get('users.desc'); ?></p>
+    <p class="text-p-muted font-medium"><?php echo Lang::get('users.desc'); ?></p>
 </header>
 
 <form action="<?php echo $baseUrl; ?>admin/users/save" method="POST" class="space-y-8 max-w-4xl mx-auto">
@@ -26,7 +26,7 @@
                 <div id="strength-2" class="flex-1 bg-white/5 rounded-full transition-all duration-500"></div>
                 <div id="strength-3" class="flex-1 bg-white/5 rounded-full transition-all duration-500"></div>
             </div>
-            <p id="strength-text" class="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600 mt-2">
+            <p id="strength-text" class="text-[8px] font-black uppercase tracking-[0.2em] text-p-muted mt-2">
                 <?php echo Lang::get('users.security'); ?>: <?php echo Lang::get('users.security_levels.null'); ?>
             </p>
         </div>
@@ -42,7 +42,7 @@
         </div>
         <div class="pt-4 flex items-center justify-between">
             <span
-                class="text-[10px] font-black uppercase text-slate-400 tracking-widest"><?php echo Lang::get('users.status'); ?></span>
+                class="text-[10px] font-black uppercase text-p-muted tracking-widest"><?php echo Lang::get('users.status'); ?></span>
             <label class="flex items-center gap-4 cursor-pointer">
                 <input type="checkbox" name="status" value="1" <?php echo ($user['status'] ?? 1) ? 'checked' : ''; ?>
                     class="w-6 h-6 rounded bg-black/40 text-primary border-glass-border">

@@ -148,7 +148,7 @@ LIMIT 1");
             'records' => $records,
             'ctx' => $ctx,
             'breadcrumbs' => [
-                'Cluster Storage' => 'admin/databases',
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
                 $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],
                 'Records: ' . $ctx['table'] => null
             ]
@@ -197,7 +197,7 @@ LIMIT 1");
             'ctx' => $ctx,
             'foreignOptions' => $foreignOptions,
             'breadcrumbs' => [
-                'Cluster Storage' => 'admin/databases',
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
                 $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],
                 $ctx['table'] => "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}",
                 ($id ? 'Refine' : 'Initialize') . ' Record' => null

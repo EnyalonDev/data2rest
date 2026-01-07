@@ -6,7 +6,7 @@ use App\Core\Lang; ?>
     }
 
     .custom-select {
-        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50 transition-all cursor-pointer;
+        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-sm text-p-title focus:outline-none focus:border-primary/50 transition-all cursor-pointer;
     }
 
     .checkbox-custom {
@@ -15,8 +15,8 @@ use App\Core\Lang; ?>
 </style>
 
 <header class="mb-12">
-    <h1 class="text-4xl font-black text-white uppercase tracking-tighter"><?php echo Lang::get('fields.title'); ?></h1>
-    <p class="text-slate-500 mt-2">
+    <h1 class="text-4xl font-black text-p-title uppercase tracking-tighter"><?php echo Lang::get('fields.title'); ?></h1>
+    <p class="text-p-muted mt-2">
         <?php echo str_replace(':table', '<b class="text-primary">' . htmlspecialchars($table_name) . '</b>', Lang::get('fields.subtitle')); ?>
     </p>
 </header>
@@ -25,7 +25,7 @@ use App\Core\Lang; ?>
     <!-- Left: Configurations -->
     <div class="w-full lg:flex-1">
         <section class="glass-card">
-            <h3 class="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-4">
+            <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-8 flex items-center gap-4">
                 <?php echo Lang::get('fields.matrix'); ?> <span class="h-[1px] flex-1 bg-glass-border"></span>
             </h3>
 
@@ -40,12 +40,12 @@ use App\Core\Lang; ?>
                                 class="bg-primary/10 text-primary px-3 py-1 rounded-lg font-mono text-xs border border-primary/20">
                                 <?php echo $field['data_type']; ?>
                             </div>
-                            <h4 class="text-xl font-bold text-white tracking-tight">
+                            <h4 class="text-xl font-bold text-p-title tracking-tight">
                                 <?php echo htmlspecialchars($field['field_name']); ?>
                             </h4>
                             <?php if ($field['field_name'] == 'id' || $field['field_name'] == 'created_at' || $field['field_name'] == 'updated_at' || $field['field_name'] == 'fecha_de_creacion' || $field['field_name'] == 'fecha_edicion'): ?>
                                 <span
-                                    class="bg-white/10 text-[10px] text-slate-400 px-2 py-0.5 rounded uppercase font-black tracking-widest"><?php echo Lang::get('fields.system_field'); ?></span>
+                                    class="bg-white/10 text-[10px] text-p-muted px-2 py-0.5 rounded uppercase font-black tracking-widest"><?php echo Lang::get('fields.system_field'); ?></span>
                             <?php endif; ?>
                         </div>
                         <button type="submit"
@@ -55,7 +55,7 @@ use App\Core\Lang; ?>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div>
                             <label
-                                class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3"><?php echo Lang::get('fields.ui_rep'); ?></label>
+                                class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-3"><?php echo Lang::get('fields.ui_rep'); ?></label>
                             <select name="view_type" class="custom-select w-full" <?php echo ($field['field_name'] == 'id' || $field['field_name'] == 'fecha_de_creacion' || $field['field_name'] == 'fecha_edicion') ? 'disabled' : ''; ?>>
                                 <option value="text" <?php echo $field['view_type'] == 'text' ? 'selected' : ''; ?>>
                                     <?php echo Lang::get('fields.types.text'); ?>
@@ -83,21 +83,21 @@ use App\Core\Lang; ?>
 
                         <div class="flex flex-col gap-2">
                             <label
-                                class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1"><?php echo Lang::get('fields.constraints'); ?></label>
+                                class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-1"><?php echo Lang::get('fields.constraints'); ?></label>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" name="is_required" class="checkbox-custom" <?php echo ($field['is_required'] ?? false) ? 'checked' : ''; ?>>
                                 <span
-                                    class="text-[10px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase"><?php echo Lang::get('fields.required'); ?></span>
+                                    class="text-[10px] font-bold text-p-muted group-hover:text-p-title transition-colors uppercase"><?php echo Lang::get('fields.required'); ?></span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" name="is_visible" class="checkbox-custom" <?php echo ($field['is_visible'] ?? false) ? 'checked' : ''; ?>>
                                 <span
-                                    class="text-[10px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase"><?php echo Lang::get('fields.visible'); ?></span>
+                                    class="text-[10px] font-bold text-p-muted group-hover:text-p-title transition-colors uppercase"><?php echo Lang::get('fields.visible'); ?></span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" name="is_editable" class="checkbox-custom" <?php echo ($field['is_editable'] ?? false) ? 'checked' : ''; ?>     <?php echo ($field['field_name'] == 'id' || $field['field_name'] == 'fecha_de_creacion' || $field['field_name'] == 'fecha_edicion') ? 'disabled' : ''; ?>>
                                 <span
-                                    class="text-[10px] font-bold text-slate-400 group-hover:text-white transition-colors uppercase"><?php echo Lang::get('fields.editable'); ?></span>
+                                    class="text-[10px] font-bold text-p-muted group-hover:text-p-title transition-colors uppercase"><?php echo Lang::get('fields.editable'); ?></span>
                             </label>
                         </div>
 
@@ -110,7 +110,7 @@ use App\Core\Lang; ?>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label
-                                        class="block text-[9px] font-bold text-slate-500 uppercase mb-2"><?php echo Lang::get('fields.target_table'); ?></label>
+                                        class="block text-[9px] font-bold text-p-muted uppercase mb-2"><?php echo Lang::get('fields.target_table'); ?></label>
                                     <select name="related_table" class="custom-select w-full !py-1 text-xs">
                                         <option value=""><?php echo Lang::get('fields.select_table'); ?></option>
                                         <?php foreach ($allTables as $t): ?>
@@ -120,11 +120,11 @@ use App\Core\Lang; ?>
                                 </div>
                                 <div>
                                     <label
-                                        class="block text-[9px] font-bold text-slate-500 uppercase mb-2"><?php echo Lang::get('fields.display_field'); ?></label>
+                                        class="block text-[9px] font-bold text-p-muted uppercase mb-2"><?php echo Lang::get('fields.display_field'); ?></label>
                                     <input type="text" name="related_field"
                                         value="<?php echo htmlspecialchars($field['related_field'] ?? ''); ?>"
                                         placeholder="e.g. name"
-                                        class="w-full bg-black/40 border border-glass-border rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-primary/50">
+                                        class="w-full bg-black/40 border border-glass-border rounded-lg px-2 py-1 text-xs text-p-title focus:outline-none focus:border-primary/50">
                                 </div>
                             </div>
                         </div>
@@ -137,7 +137,7 @@ use App\Core\Lang; ?>
     <!-- Right: Add Field -->
     <aside class="w-full lg:w-[400px] sticky top-24">
         <section class="glass-card border-t-4 border-t-primary shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-8 border-b border-glass-border pb-4">
+            <h3 class="text-lg font-bold text-p-title mb-8 border-b border-glass-border pb-4">
                 <?php echo Lang::get('fields.inject'); ?>
             </h3>
             <form action="<?php echo $baseUrl; ?>admin/databases/fields/add" method="POST" class="space-y-6">
@@ -146,14 +146,14 @@ use App\Core\Lang; ?>
 
                 <div>
                     <label
-                        class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.sql_id'); ?></label>
+                        class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.sql_id'); ?></label>
                     <input type="text" name="field_name" placeholder="e.g. status" required
-                        class="w-full bg-black/40 border border-glass-border rounded-xl px-4 py-3 text-white focus:border-primary/50 transition-all font-mono text-sm">
+                        class="w-full bg-black/40 border border-glass-border rounded-xl px-4 py-3 text-p-title focus:border-primary/50 transition-all font-mono text-sm">
                 </div>
 
                 <div>
                     <label
-                        class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.data_type'); ?></label>
+                        class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.data_type'); ?></label>
                     <select name="data_type" class="custom-select w-full !py-3">
                         <option value="INTEGER">INTEGER (Numerics / IDs)</option>
                         <option value="TEXT" selected>TEXT (Strings / Text)</option>
@@ -163,7 +163,7 @@ use App\Core\Lang; ?>
 
                 <div>
                     <label
-                        class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.ui_comp'); ?></label>
+                        class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.ui_comp'); ?></label>
                     <select name="view_type" class="custom-select w-full !py-3">
                         <option value="text"><?php echo Lang::get('fields.types.text'); ?></option>
                         <option value="boolean"><?php echo Lang::get('fields.types.boolean'); ?></option>

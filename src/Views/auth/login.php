@@ -1,12 +1,13 @@
 <?php use App\Core\Auth;
 $baseUrl = Auth::getBaseUrl(); ?>
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Api-Admin</title>
+    <title>Login - Data2Rest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script>
@@ -16,9 +17,12 @@ $baseUrl = Auth::getBaseUrl(); ?>
                 extend: {
                     colors: {
                         primary: '#38bdf8',
+                        'p-text': 'var(--p-text)',
+                        'p-title': 'var(--p-title)',
+                        'p-muted': 'var(--p-muted)',
+                        'glass-border': 'var(--p-border)',
+                        'bg-glass': 'var(--p-card)',
                         dark: '#0b1120',
-                        glass: 'rgba(30, 41, 59, 0.4)',
-                        'glass-border': 'rgba(255, 255, 255, 0.1)',
                     },
                     fontFamily: {
                         sans: ['Outfit', 'sans-serif'],
@@ -27,16 +31,62 @@ $baseUrl = Auth::getBaseUrl(); ?>
             }
         }
     </script>
-    <style type="text/tailwindcss">
-        @layer components {
-            .form-input { @apply w-full bg-black/40 border-2 border-glass-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all font-medium; }
-            .glass-card { @apply bg-glass backdrop-blur-3xl border border-glass-border rounded-[2.5rem] p-10 shadow-2xl; }
+    <style>
+        :root {
+            --p-text: #1e293b;
+            --p-title: #0f172a;
+            --p-muted: #64748b;
+            --p-bg: #f8fafc;
+            --p-card: #ffffff;
+            --p-border: rgba(15, 23, 42, 0.1);
+            --p-input: #ffffff;
+        }
+
+        .dark {
+            --p-text: #cbd5e1;
+            --p-title: #ffffff;
+            --p-muted: #94a3b8;
+            --p-bg: #0b1120;
+            --p-card: rgba(30, 41, 59, 0.4);
+            --p-border: rgba(255, 255, 255, 0.1);
+            --p-input: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--p-bg);
+            color: var(--p-text);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .form-input {
+            background-color: var(--p-input);
+            color: var(--p-text);
+            border: 2px solid var(--p-border);
+            width: 100%;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
+        }
+
+        .glass-card {
+            background-color: var(--p-card);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--p-border);
+            border-radius: 2.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
     </style>
+    <?php include __DIR__ . '/../partials/theme_engine.php'; ?>
 </head>
 
-<body
-    class="bg-dark text-slate-200 min-h-screen font-sans flex items-center justify-center p-6 relative overflow-hidden">
+<body class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
     <!-- Animated background elements -->
     <div
         class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full -z-10 animate-pulse">
@@ -53,11 +103,11 @@ $baseUrl = Auth::getBaseUrl(); ?>
                 <div class="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
                 <div
                     class="relative w-20 h-20 bg-gradient-to-br from-primary to-blue-600 rounded-2xl items-center justify-center flex text-dark text-4xl font-black shadow-xl">
-                    A</div>
+                    D</div>
             </div>
-            <h1 class="text-5xl font-black text-white tracking-tighter uppercase italic leading-none">Data<span
+            <h1 class="text-5xl font-black text-p-title tracking-tighter uppercase italic leading-none">Data<span
                     class="text-primary italic">2</span>Rest</h1>
-            <p class="text-[10px] font-black tracking-[0.4em] text-slate-500 mt-4 uppercase opacity-50">Industrial Grade
+            <p class="text-[10px] font-black tracking-[0.4em] text-p-muted mt-4 uppercase opacity-50">Industrial Grade
                 Database Gateway</p>
         </div>
 
@@ -71,18 +121,18 @@ $baseUrl = Auth::getBaseUrl(); ?>
 
             <form action="<?php echo $baseUrl; ?>login" method="POST" class="space-y-6">
                 <div class="space-y-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Universal
+                    <label class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] ml-1">Universal
                         Identifier</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-lg">👤</span>
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-p-muted text-lg">👤</span>
                         <input type="text" name="username" placeholder="Username" required class="form-input pl-12">
                     </div>
                 </div>
                 <div class="space-y-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Security
+                    <label class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] ml-1">Security
                         Token</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-lg">🔑</span>
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-p-muted text-lg">🔑</span>
                         <input type="password" name="password" placeholder="••••••••" required class="form-input pl-12">
                     </div>
                 </div>
@@ -98,7 +148,7 @@ $baseUrl = Auth::getBaseUrl(); ?>
             </form>
 
             <div class="mt-8 pt-8 border-t border-glass-border text-center">
-                <p class="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] mb-4">Environment: <span
+                <p class="text-[10px] font-bold text-p-muted uppercase tracking-[0.2em] mb-4">Environment: <span
                         class="text-emerald-500">SECURE_CLUSTER</span></p>
                 <div class="flex justify-center gap-4">
                     <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -109,7 +159,7 @@ $baseUrl = Auth::getBaseUrl(); ?>
         </div>
 
         <footer class="mt-12 text-center opacity-40 hover:opacity-100 transition-opacity">
-            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+            <p class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em]">
                 © 2026 EnyalonDev Framework | <a href="https://nestorovallos.com" target="_blank"
                     class="text-primary hover:underline">Support Node</a>
             </p>

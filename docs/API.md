@@ -55,7 +55,7 @@ Todas las peticiones deben incluir el header `X-API-Key`:
 
 ```bash
 curl -H "X-API-Key: tu-api-key-aqui" \
-     http://localhost/api-admin/api/v1/midb/usuarios
+     http://localhost/data2rest/api/v1/midb/usuarios
 ```
 
 ### 3. Ejemplos de Uso
@@ -66,7 +66,7 @@ curl -H "X-API-Key: tu-api-key-aqui" \
 GET /api/v1/midb/usuarios
 
 curl -H "X-API-Key: abc123..." \
-     http://localhost/api-admin/api/v1/midb/usuarios
+     http://localhost/data2rest/api/v1/midb/usuarios
 ```
 
 **Respuesta:**
@@ -89,7 +89,7 @@ curl -X POST \
      -H "X-API-Key: abc123..." \
      -H "Content-Type: application/json" \
      -d '{"nombre":"Pedro López","email":"pedro@example.com"}' \
-     http://localhost/api-admin/api/v1/midb/usuarios
+     http://localhost/data2rest/api/v1/midb/usuarios
 ```
 
 ---

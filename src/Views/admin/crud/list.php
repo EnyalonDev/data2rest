@@ -94,13 +94,20 @@ use App\Core\Lang; ?>
 
 <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
     <div>
-        <div class="flex items-center gap-3 mb-2">
-            <span class="text-3xl">📄</span>
-            <h1 class="text-4xl font-black text-white italic tracking-tighter uppercase">
+        <div class="flex items-center gap-4 mb-2">
+            <div
+                class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                    </path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-black text-p-title italic tracking-tighter uppercase">
                 <?php echo str_replace(':table', htmlspecialchars(ucfirst($ctx['table'])), Lang::get('crud_list.title')); ?>
             </h1>
         </div>
-        <p class="text-slate-500 font-medium tracking-tight">
+        <p class="text-p-muted font-medium tracking-tight">
             <?php echo str_replace(':db', '<b>' . htmlspecialchars($ctx['database']['name']) . '</b>', Lang::get('crud_list.subtitle')); ?>
         </p>
     </div>
@@ -118,7 +125,7 @@ use App\Core\Lang; ?>
 
 <section class="glass-card !p-0 overflow-hidden shadow-2xl">
     <div class="px-8 py-5 bg-white/[0.03] border-b border-glass-border flex justify-between items-center">
-        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+        <h3 class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em]">
             <?php echo Lang::get('crud_list.matrix'); ?>
         </h3>
         <span
@@ -131,7 +138,7 @@ use App\Core\Lang; ?>
         <table class="w-full text-left">
             <thead>
                 <tr
-                    class="bg-black/40 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">
+                    class="bg-black/40 text-[10px] font-black text-p-muted uppercase tracking-widest border-b border-white/5">
                     <?php foreach ($ctx['fields'] as $field): ?>
                         <?php if ($field['is_visible']): ?>
                             <th class="px-8 py-5"><?php echo htmlspecialchars($field['field_name']); ?></th>
@@ -147,7 +154,12 @@ use App\Core\Lang; ?>
                     <tr>
                         <td colspan="<?php echo count($ctx['fields']) + 1; ?>" class="px-8 py-32 text-center">
                             <div class="flex flex-col items-center opacity-20">
-                                <span class="text-6xl mb-6 animate-pulse">📁</span>
+                                <svg class="w-16 h-16 mb-6 text-p-muted animate-pulse" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9l-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
                                 <p class="text-sm font-black uppercase tracking-[0.4em]">
                                     <?php echo Lang::get('crud_list.no_signal'); ?>
                                 </p>
@@ -202,19 +214,19 @@ use App\Core\Lang; ?>
                                 <div
                                     class="flex justify-end gap-3 translate-x-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
                                     <a href="<?php echo $baseUrl; ?>admin/crud/edit?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>&id=<?php echo $row['id']; ?>"
-                                        class="p-2 bg-white/5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-all"
+                                        class="p-2 bg-white/5 rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all"
                                         title="<?php echo Lang::get('common.edit'); ?>"><svg class="w-4 h-4" fill="none"
                                             stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                             </path>
                                         </svg></a>
 
                                     <button onclick="confirmRecordDelete(<?php echo $row['id']; ?>)"
-                                        class="p-2 bg-white/5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                        class="p-2 bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all"
                                         title="<?php echo Lang::get('common.delete'); ?>"><svg class="w-4 h-4" fill="none"
                                             stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                             </path>
                                         </svg></button>

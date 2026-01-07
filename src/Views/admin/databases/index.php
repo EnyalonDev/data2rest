@@ -1,19 +1,21 @@
 <?php use App\Core\Lang; ?>
 <header class="mb-12">
-    <h1 class="text-5xl font-black text-white italic tracking-tighter uppercase">
-        <?php echo Lang::get('databases.title'); ?></h1>
-    <p class="text-slate-500 font-medium tracking-tight"><?php echo Lang::get('databases.subtitle'); ?></p>
+    <h1 class="text-5xl font-black text-p-title italic tracking-tighter uppercase">
+        <?php echo Lang::get('databases.title'); ?>
+    </h1>
+    <p class="text-p-muted font-medium tracking-tight"><?php echo Lang::get('databases.subtitle'); ?></p>
 </header>
 
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <div class="lg:col-span-1">
         <div class="glass-card sticky top-24">
-            <h2 class="text-xl font-bold text-white mb-6 uppercase italic tracking-tighter">
-                <?php echo Lang::get('databases.new_node'); ?></h2>
+            <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter">
+                <?php echo Lang::get('databases.new_node'); ?>
+            </h2>
             <form action="<?php echo $baseUrl; ?>admin/databases/create" method="POST" class="space-y-4">
                 <div class="flex flex-col gap-2">
                     <label
-                        class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1"><?php echo Lang::get('databases.node_name'); ?></label>
+                        class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1"><?php echo Lang::get('databases.node_name'); ?></label>
                     <input type="text" name="name" placeholder="<?php echo Lang::get('databases.node_placeholder'); ?>"
                         required class="input-glass w-full">
                 </div>
@@ -29,13 +31,18 @@
                 <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div class="flex items-center gap-6 relative z-10">
                     <div
-                        class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform duration-500 border border-primary/20">
-                        💾</div>
+                        class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500 border border-primary/20 text-primary">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                            </path>
+                        </svg>
+                    </div>
                     <div>
-                        <h3 class="text-xl font-bold text-white mb-1 tracking-tight uppercase italic">
+                        <h3 class="text-xl font-bold text-p-title mb-1 tracking-tight uppercase italic">
                             <?php echo htmlspecialchars($db['name']); ?>
                         </h3>
-                        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">
+                        <p class="text-[9px] text-p-muted font-black uppercase tracking-widest">
                             <?php echo htmlspecialchars($db['path']); ?>
                         </p>
                     </div>
@@ -47,7 +54,7 @@
                     </a>
                     <button
                         onclick="confirmDeleteDB(<?php echo $db['id']; ?>, '<?php echo htmlspecialchars($db['name']); ?>')"
-                        class="p-3 text-slate-500 hover:text-red-500 transition-colors">
+                        class="p-3 text-p-muted hover:text-red-500 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
