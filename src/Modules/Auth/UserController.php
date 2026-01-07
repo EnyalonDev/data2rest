@@ -4,26 +4,36 @@ namespace App\Modules\Auth;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\BaseController;
 use PDO;
 
-class UserController {
-    public function __construct() {
+class UserController extends BaseController
+{
+    public function __construct()
+    {
         Auth::requirePermission('module:users', 'manage');
     }
 
-    public function index() {
+    public function index()
+    {
         $db = Database::getInstance()->getConnection();
         $users = $db->query("SELECT u.*, r.name as role_name FROM users u 
                              LEFT JOIN roles r ON u.role_id = r.id 
                              ORDER BY u.id DESC")->fetchAll();
-        require_once __DIR__ . '/../../Views/admin/users/index.php';
+
+        $this->view('admin/users/index', [
+            'users' => $users,
+            'title' => 'Users - Control Center',
+            'breadcrumbs' => ['Personnel Control' => null]
+        ]);
     }
 
-    public function form() {
+    public function form()
+    {
         $id = $_GET['id'] ?? null;
         $user = null;
         $db = Database::getInstance()->getConnection();
-        
+
         if ($id) {
             $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
             $stmt->execute([$id]);
@@ -31,11 +41,23 @@ class UserController {
         }
 
         $roles = $db->query("SELECT * FROM roles ORDER BY id ASC")->fetchAll();
-        require_once __DIR__ . '/../../Views/admin/users/form.php';
+
+        $this->view('admin/users/form', [
+            'user' => $user,
+            'roles' => $roles,
+            'id' => $id,
+            'title' => ($id ? 'Edit' : 'New') . ' User',
+            'breadcrumbs' => [
+                'Personnel Control' => 'admin/users',
+                ($id ? 'Edit' : 'New') . ' Agent' => null
+            ]
+        ]);
     }
 
-    public function save() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+    public function save()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST')
+            return;
 
         $db = Database::getInstance()->getConnection();
         $id = $_POST['id'] ?? null;
@@ -58,15 +80,16 @@ class UserController {
             $stmt->execute([$username, $password, $role_id, $status]);
         }
 
-        header('Location: ' . Auth::getBaseUrl() . 'admin/users');
+        $this->redirect('admin/users');
     }
 
-    public function delete() {
+    public function delete()
+    {
         $id = $_GET['id'] ?? null;
         if ($id && $id != $_SESSION['user_id']) {
             $db = Database::getInstance()->getConnection();
             $db->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
         }
-        header('Location: ' . Auth::getBaseUrl() . 'admin/users');
+        $this->redirect('admin/users');
     }
 }

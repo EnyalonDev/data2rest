@@ -4,19 +4,16 @@ namespace App\Modules\Api;
 
 use App\Core\Database;
 use App\Core\Auth;
+use App\Core\BaseController;
 use PDO;
 
-class RestController
+class RestController extends BaseController
 {
-    public function __construct()
-    {
-    }
-
     private function authenticate()
     {
         $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
         if (!$apiKey) {
-            $this->jsonResponse(['error' => 'API Key required (X-API-KEY header or api_key param)'], 401);
+            $this->json(['error' => 'API Key required (X-API-KEY header or api_key param)'], 401);
         }
 
         $db = Database::getInstance()->getConnection();
@@ -25,7 +22,7 @@ class RestController
         $keyData = $stmt->fetch();
 
         if (!$keyData) {
-            $this->jsonResponse(['error' => 'Invalid or inactive API Key'], 403);
+            $this->json(['error' => 'Invalid or inactive API Key'], 403);
         }
 
         return $keyData;
@@ -43,7 +40,7 @@ class RestController
         $database = $stmt->fetch();
 
         if (!$database)
-            $this->jsonResponse(['error' => 'Database container not found'], 404);
+            $this->json(['error' => 'Database container not found'], 404);
 
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
@@ -76,10 +73,10 @@ class RestController
                     break;
 
                 default:
-                    $this->jsonResponse(['error' => 'Method not allowed'], 405);
+                    $this->json(['error' => 'Method not allowed'], 405);
             }
         } catch (\PDOException $e) {
-            $this->jsonResponse(['error' => 'Database error: ' . $e->getMessage()], 500);
+            $this->json(['error' => 'Database error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -131,8 +128,8 @@ class RestController
             $stmt->execute([$id]);
             $result = $stmt->fetch();
             if (!$result)
-                $this->jsonResponse(['error' => 'Record not found'], 404);
-            $this->jsonResponse($result);
+                $this->json(['error' => 'Record not found'], 404);
+            $this->json($result);
         } else {
             // Pagination
             $limit = (int) ($params['limit'] ?? 50);
@@ -178,7 +175,7 @@ class RestController
             $total->execute(array_slice($values, 0, count($where)));
             $totalCount = $total->fetchColumn();
 
-            $this->jsonResponse([
+            $this->json([
                 'metadata' => [
                     'total_records' => (int) $totalCount,
                     'limit' => $limit,
@@ -225,7 +222,7 @@ class RestController
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
         if (empty($input))
-            $this->jsonResponse(['error' => 'No data provided'], 400);
+            $this->json(['error' => 'No data provided'], 400);
 
         if (!isset($input['fecha_de_creacion']))
             $input['fecha_de_creacion'] = date('Y-m-d H:i:s');
@@ -233,23 +230,24 @@ class RestController
             $input['fecha_edicion'] = date('Y-m-d H:i:s');
 
         $keys = array_map(function ($k) {
-            return preg_replace('/[^a-zA-Z0-9_]/', '', $k); }, array_keys($input));
+            return preg_replace('/[^a-zA-Z0-9_]/', '', $k);
+        }, array_keys($input));
         $cols = implode(', ', $keys);
         $vals = implode(', ', array_fill(0, count($keys), '?'));
 
         $stmt = $targetDb->prepare("INSERT INTO $table ($cols) VALUES ($vals)");
         $stmt->execute(array_values($input));
 
-        $this->jsonResponse(['success' => true, 'id' => $targetDb->lastInsertId()], 201);
+        $this->json(['success' => true, 'id' => $targetDb->lastInsertId()], 201);
     }
 
     private function handleUpdateRequest($targetDb, $table, $id)
     {
         if (!$id)
-            $this->jsonResponse(['error' => 'ID required'], 400);
+            $this->json(['error' => 'ID required'], 400);
         $input = json_decode(file_get_contents('php://input'), true);
         if (empty($input))
-            $this->jsonResponse(['error' => 'No data'], 400);
+            $this->json(['error' => 'No data'], 400);
 
         $input['fecha_edicion'] = date('Y-m-d H:i:s');
         $sets = [];
@@ -261,23 +259,15 @@ class RestController
 
         $stmt = $targetDb->prepare($sql);
         $stmt->execute(array_merge(array_values($input), [$id]));
-        $this->jsonResponse(['success' => true]);
+        $this->json(['success' => true]);
     }
 
     private function handleDeleteRequest($targetDb, $table, $id)
     {
         if (!$id)
-            $this->jsonResponse(['error' => 'ID required'], 400);
+            $this->json(['error' => 'ID required'], 400);
         $stmt = $targetDb->prepare("DELETE FROM $table WHERE id = ?");
         $stmt->execute([$id]);
-        $this->jsonResponse(['success' => true]);
-    }
-
-    private function jsonResponse($data, $code = 200)
-    {
-        http_response_code($code);
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
+        $this->json(['success' => true]);
     }
 }

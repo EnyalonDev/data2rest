@@ -3,30 +3,36 @@
 namespace App\Modules\Auth;
 
 use App\Core\Auth;
+use App\Core\BaseController;
 
-class LoginController {
-    public function showLoginForm() {
+class LoginController extends BaseController
+{
+    public function showLoginForm()
+    {
         if (Auth::check()) {
-            header('Location: ' . Auth::getBaseUrl());
-            exit;
+            $this->redirect('');
         }
-        require_once __DIR__ . '/../../Views/auth/login.php';
+        $this->view('auth/login', ['title' => 'Login'], null);
     }
 
-    public function login() {
+    public function login()
+    {
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
 
         if (Auth::login($username, $password)) {
-            header('Location: ' . Auth::getBaseUrl());
-            exit;
+            $this->redirect('');
         }
 
-        $error = "Invalid username or password";
-        require_once __DIR__ . '/../../Views/auth/login.php';
+        $this->view('auth/login', [
+            'title' => 'Login',
+            'error' => "Invalid username or password"
+        ], null);
     }
 
-    public function logout() {
+    public function logout()
+    {
         Auth::logout();
+        $this->redirect('login');
     }
 }

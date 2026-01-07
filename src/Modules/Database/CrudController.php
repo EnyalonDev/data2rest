@@ -5,11 +5,12 @@ namespace App\Modules\Database;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
+use App\Core\BaseController;
 use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 
-class CrudController
+class CrudController extends BaseController
 {
     public function __construct()
     {
@@ -59,6 +60,7 @@ class CrudController
                         'view_type' => 'text',
                         'is_visible' => 1,
                         'is_editable' => ($col['name'] !== 'id') ? 1 : 0,
+                        'is_required' => 0,
                         'is_foreign_key' => 0
                     ];
                 }
@@ -80,10 +82,10 @@ class CrudController
             return $preferredField;
 
         $db = Database::getInstance()->getConnection();
-        $stmtCheck = $db->prepare("SELECT field_name FROM fields_config 
-                                   WHERE db_id = ? AND table_name = ? 
-                                   AND LOWER(field_name) IN ('nombre', 'name', 'title', 'titulo', 'label', 'descripcion', 'description') 
-                                   LIMIT 1");
+        $stmtCheck = $db->prepare("SELECT field_name FROM fields_config
+WHERE db_id = ? AND table_name = ?
+AND LOWER(field_name) IN ('nombre', 'name', 'title', 'titulo', 'label', 'descripcion', 'description')
+LIMIT 1");
         $stmtCheck->execute([$db_id, $tableName]);
         $found = $stmtCheck->fetchColumn();
 
@@ -141,7 +143,16 @@ class CrudController
             die("Error accessing data: " . $e->getMessage());
         }
 
-        require_once __DIR__ . '/../../Views/admin/crud/list.php';
+        $this->view('admin/crud/list', [
+            'title' => 'List - ' . $ctx['table'],
+            'records' => $records,
+            'ctx' => $ctx,
+            'breadcrumbs' => [
+                'Cluster Storage' => 'admin/databases',
+                $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],
+                'Records: ' . $ctx['table'] => null
+            ]
+        ]);
     }
 
     public function form()
@@ -179,7 +190,19 @@ class CrudController
             die("Error fetching form data: " . $e->getMessage());
         }
 
-        require_once __DIR__ . '/../../Views/admin/crud/form.php';
+        $this->view('admin/crud/form', [
+            'title' => ($id ? 'Edit' : 'New') . ' Entry - ' . $ctx['table'],
+            'id' => $id,
+            'record' => $record,
+            'ctx' => $ctx,
+            'foreignOptions' => $foreignOptions,
+            'breadcrumbs' => [
+                'Cluster Storage' => 'admin/databases',
+                $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],
+                $ctx['table'] => "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}",
+                ($id ? 'Refine' : 'Initialize') . ' Record' => null
+            ]
+        ]);
     }
 
     public function save()
@@ -248,9 +271,13 @@ class CrudController
                         $data['fecha_edicion'] = $now;
                 }
                 $keys = array_map(function ($k) {
-                    return preg_replace('/[^a-zA-Z0-9_]/', '', $k); }, array_keys($data));
+                    return preg_replace('/[^a-zA-Z0-9_]/', '', $k);
+                }, array_keys($data));
                 $placeholders = array_fill(0, count($keys), '?');
-                $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $placeholders) . ")");
+                $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(
+                    ', ',
+                    $placeholders
+                ) . ")");
                 $stmt->execute(array_values($data));
             }
 
@@ -314,9 +341,15 @@ class CrudController
             }
         }
         usort($files, function ($a, $b) {
-            return $b['mtime'] - $a['mtime']; });
+            return $b['mtime'] - $a['mtime'];
+        });
         header('Content-Type: application/json');
-        echo json_encode(['files' => $files, 'available_dates' => array_values(array_unique($dates)), 'available_tables' => array_values(array_unique($tables))]);
+        echo json_encode([
+            'files' => $files,
+            'available_dates' => array_values(array_unique($dates)),
+            'available_tables' =>
+                array_values(array_unique($tables))
+        ]);
         exit;
     }
 }

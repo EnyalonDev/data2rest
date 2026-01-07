@@ -16,10 +16,8 @@ $router->add('GET', '/login', 'Auth\\LoginController@showLoginForm');
 $router->add('POST', '/login', 'Auth\\LoginController@login');
 $router->add('GET', '/logout', 'Auth\\LoginController@logout');
 
-$router->add('GET', '/', function() {
-    Auth::requireLogin();
-    require_once __DIR__ . '/../src/Views/admin/dashboard.php';
-});
+$router->add('GET', '/', 'Auth\\DashboardController@index');
+$router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
 
 // --- Module: Database Management ---
 $router->add('GET', '/admin/databases', 'Database\\DatabaseController@index');

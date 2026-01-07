@@ -5,9 +5,10 @@ namespace App\Modules\Database;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
+use App\Core\BaseController;
 use PDO;
 
-class DatabaseController
+class DatabaseController extends BaseController
 {
     public function __construct()
     {
@@ -21,18 +22,22 @@ class DatabaseController
         if (Auth::isAdmin()) {
             $databases = $db->query("SELECT * FROM databases ORDER BY id DESC")->fetchAll();
         } else {
-            $stmt = $db->prepare("SELECT d.* FROM databases d 
-                                JOIN roles r ON ? = r.id
-                                WHERE r.permissions LIKE '%db:\"' || d.id || '\"%' OR r.permissions LIKE '%all\":true%'
-                                ORDER BY d.id DESC");
+            $stmt = $db->prepare("SELECT d.* FROM databases d
+JOIN roles r ON ? = r.id
+WHERE r.permissions LIKE '%db:\"' || d.id || '\"%' OR r.permissions LIKE '%all\":true%'
+ORDER BY d.id DESC");
             // This is a bit hacky due to JSON in sqlite, we might need to improve the perm check in SQL
-            // For now, let's fetch all and filter in PHP for safety
+// For now, let's fetch all and filter in PHP for safety
             $all = $db->query("SELECT * FROM databases ORDER BY id DESC")->fetchAll();
             $databases = array_filter($all, function ($d) {
                 return Auth::hasPermission("db:{$d['id']}", 'view');
             });
         }
-        require_once __DIR__ . '/../../Views/admin/databases/index.php';
+        $this->view('admin/databases/index', [
+            'title' => 'Databases - Architect',
+            'databases' => $databases,
+            'breadcrumbs' => ['Cluster Storage' => null]
+        ]);
     }
 
     public function create()
@@ -116,7 +121,15 @@ class DatabaseController
             $tables = [];
         }
 
-        require_once __DIR__ . '/../../Views/admin/databases/tables.php';
+        $this->view('admin/databases/tables', [
+            'title' => 'Tables - ' . ($database['name'] ?? 'DB'),
+            'tables' => $tables,
+            'database' => $database,
+            'breadcrumbs' => [
+                'Cluster Storage' => 'admin/databases',
+                ($database['name'] ?? 'Database') => null
+            ]
+        ]);
     }
 
     public function createTable()
@@ -138,16 +151,19 @@ class DatabaseController
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
             $targetDb->exec("CREATE TABLE $table_name (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fecha_de_creacion TEXT,
-                fecha_edicion TEXT
-            )");
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+fecha_de_creacion TEXT,
+fecha_edicion TEXT
+)");
 
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible) VALUES (?, ?, 'id', 'INTEGER', 'text', 0, 1)");
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
+is_visible, is_required) VALUES (?, ?, 'id', 'INTEGER', 'text', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible) VALUES (?, ?, 'fecha_de_creacion', 'TEXT', 'text', 0, 1)");
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
+is_visible, is_required) VALUES (?, ?, 'fecha_de_creacion', 'TEXT', 'text', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1)");
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
+is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
 
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
@@ -205,7 +221,18 @@ class DatabaseController
             $allTables = [];
         }
 
-        require_once __DIR__ . '/../../Views/admin/databases/fields.php';
+        $this->view('admin/databases/fields', [
+            'title' => 'Config Fields - ' . ($table_name),
+            'configFields' => $configFields,
+            'database' => $database,
+            'table_name' => $table_name,
+            'allTables' => $allTables,
+            'breadcrumbs' => [
+                'Cluster Storage' => 'admin/databases',
+                $database['name'] => 'admin/databases/view?id=' . $db_id,
+                'Architect: ' . $table_name => null
+            ]
+        ]);
     }
 
     public function addField()
@@ -230,7 +257,7 @@ class DatabaseController
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
             $targetDb->exec("ALTER TABLE $table_name ADD COLUMN $field_name $data_type");
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_required) VALUES (?, ?, ?, ?, ?, 0)");
             $stmt->execute([$db_id, $table_name, $field_name, $data_type, $view_type]);
             header('Location: ' . Auth::getBaseUrl() . "admin/databases/fields?db_id=$db_id&table=$table_name");
         } catch (\PDOException $e) {
@@ -259,11 +286,20 @@ class DatabaseController
         $related_table = $_POST['related_table'] ?? null;
         $related_field = $_POST['related_field'] ?? null;
 
-        $stmt = $db->prepare("UPDATE fields_config SET 
-            view_type = ?, is_required = ?, is_visible = ?, is_editable = ?,
-            is_foreign_key = ?, related_table = ?, related_field = ?
-            WHERE id = ?");
-        $stmt->execute([$view_type, $is_required, $is_visible, $is_editable, $is_foreign_key, $related_table, $related_field, $config_id]);
+        $stmt = $db->prepare("UPDATE fields_config SET
+view_type = ?, is_required = ?, is_visible = ?, is_editable = ?,
+is_foreign_key = ?, related_table = ?, related_field = ?
+WHERE id = ?");
+        $stmt->execute([
+            $view_type,
+            $is_required,
+            $is_visible,
+            $is_editable,
+            $is_foreign_key,
+            $related_table,
+            $related_field,
+            $config_id
+        ]);
 
         $stmt = $db->prepare("SELECT table_name FROM fields_config WHERE id = ?");
         $stmt->execute([$config_id]);
@@ -310,20 +346,27 @@ class DatabaseController
                             $viewType = 'image';
                         } elseif (preg_match('/(descripcion|description|content|contenido|mensaje|message|bio|body|text)/i', $lowerName)) {
                             $viewType = 'textarea';
-                        } elseif (preg_match('/(status|activo|active|visible|enabled|public|borrado|deleted)/i', $lowerName) && strpos($dataType, 'INT') !== false) {
+                        } elseif (
+                            preg_match('/(status|activo|active|visible|enabled|public|borrado|deleted)/i', $lowerName) &&
+                            strpos($dataType, 'INT') !== false
+                        ) {
                             $viewType = 'boolean';
                         }
 
                         $isEditable = ($col['name'] === 'id') ? 0 : 1;
                         $isVisible = 1;
 
-                        $stmtInsert = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        $stmtInsert = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
+is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
                         $stmtInsert->execute([$id, $table, $col['name'], $dataType, $viewType, $isEditable, $isVisible]);
                         $syncedFields++;
                     }
                 }
             }
-            Auth::setFlashError("Sincronización completada: $syncedTables tablas y $syncedFields campos detectados y registrados.", 'success');
+            Auth::setFlashError(
+                "Sincronización completada: $syncedTables tablas y $syncedFields campos detectados y registrados.",
+                'success'
+            );
         } catch (\PDOException $e) {
             Auth::setFlashError("Error de sincronización: " . $e->getMessage());
         }

@@ -5,22 +5,33 @@ namespace App\Modules\Api;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
+use App\Core\BaseController;
 use PDO;
 
-class ApiDocsController {
-    public function __construct() {
+class ApiDocsController extends BaseController
+{
+    public function __construct()
+    {
         Auth::requireLogin();
     }
 
-    public function index() {
+    public function index()
+    {
         Auth::requirePermission('module:api', 'view_keys');
         $db = Database::getInstance()->getConnection();
         $keys = $db->query("SELECT * FROM api_keys ORDER BY id DESC")->fetchAll();
         $databases = $db->query("SELECT * FROM databases ORDER BY name ASC")->fetchAll();
-        require_once __DIR__ . '/../../Views/admin/api/index.php';
+
+        $this->view('admin/api/index', [
+            'keys' => $keys,
+            'databases' => $databases,
+            'title' => 'API Management',
+            'breadcrumbs' => ['Gateways & Keys' => null]
+        ]);
     }
 
-    public function createKey() {
+    public function createKey()
+    {
         Auth::requirePermission('module:api', 'manage_keys');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_POST['name'] ?? 'New Key';
@@ -29,10 +40,11 @@ class ApiDocsController {
             $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, status) VALUES (?, ?, 1)");
             $stmt->execute([$key, $name]);
         }
-        header('Location: ' . Auth::getBaseUrl() . 'admin/api');
+        $this->redirect('admin/api');
     }
 
-    public function deleteKey() {
+    public function deleteKey()
+    {
         Auth::requirePermission('module:api', 'manage_keys');
         $id = $_GET['id'] ?? null;
         if ($id) {
@@ -40,10 +52,11 @@ class ApiDocsController {
             $stmt = $db->prepare("DELETE FROM api_keys WHERE id = ?");
             $stmt->execute([$id]);
         }
-        header('Location: ' . Auth::getBaseUrl() . 'admin/api');
+        $this->redirect('admin/api');
     }
 
-    public function docs() {
+    public function docs()
+    {
         $db_id = $_GET['db_id'] ?? null;
         Auth::requirePermission('module:api', 'view_docs');
         Auth::requireDatabaseAccess($db_id);
@@ -53,7 +66,9 @@ class ApiDocsController {
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
-        if (!$database) {die("Database not found");}
+        if (!$database) {
+            die("Database not found");
+        }
 
         $apiKeys = $db->query("SELECT name, key_value FROM api_keys WHERE status = 1 ORDER BY name ASC")->fetchAll();
 
@@ -61,7 +76,7 @@ class ApiDocsController {
             $targetDb = new PDO('sqlite:' . $database['path']);
             $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
+
             $tableDetails = [];
             foreach ($tables as $table) {
                 $stmt = $targetDb->query("PRAGMA table_info($table)");
@@ -71,6 +86,15 @@ class ApiDocsController {
             die("Error connecting to database: " . $e->getMessage());
         }
 
-        require_once __DIR__ . '/../../Views/admin/api/docs.php';
+        $this->view('admin/api/docs', [
+            'database' => $database,
+            'apiKeys' => $apiKeys,
+            'tableDetails' => $tableDetails,
+            'title' => 'API Documentation - ' . $database['name'],
+            'breadcrumbs' => [
+                'Gateways & Keys' => 'admin/api',
+                'Documentation: ' . $database['name'] => null
+            ]
+        ]);
     }
 }
