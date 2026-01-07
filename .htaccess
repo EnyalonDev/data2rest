@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirigir la raíz de la carpeta a public/
+    RewriteRule ^$ public/ [L]
+    
+    # Redirigir todo lo demás a public/index.php si no es un archivo real
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/index.php [L,QSA]
+</IfModule>
