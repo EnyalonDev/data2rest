@@ -115,6 +115,13 @@ class Installer
                     details TEXT,
                     response_time FLOAT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                // System Settings table
+                "CREATE TABLE system_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT UNIQUE NOT NULL,
+                    value TEXT,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )"
             ];
 
@@ -137,6 +144,18 @@ class Installer
             $password = password_hash('admin123', PASSWORD_DEFAULT);
             $stmt = $db->prepare("INSERT INTO users (username, password, role_id) VALUES ('admin', ?, ?)");
             $stmt->execute([$password, $adminRoleId]);
+
+            // Insert Default System Settings
+            $defaultSettings = [
+                'dev_mode' => 'off',
+                'media_trash_retention' => '30',
+                'app_language' => 'es'
+            ];
+
+            $stmt = $db->prepare("INSERT INTO system_settings (key, value) VALUES (?, ?)");
+            foreach ($defaultSettings as $key => $val) {
+                $stmt->execute([$key, $val]);
+            }
 
         } catch (PDOException $e) {
             die("Auto-Installation Error: " . $e->getMessage());
