@@ -33,6 +33,39 @@ use App\Core\Lang; ?>
     </div>
 </div>
 
+<?php if ($stats['total_databases'] == 0): ?>
+    <!-- Getting Started Banner -->
+    <div class="glass-card mb-12 relative overflow-hidden group border-primary/30">
+        <div
+            class="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 blur-[80px] rounded-full group-hover:bg-primary/30 transition-all duration-700">
+        </div>
+        <div class="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+            <div
+                class="w-24 h-24 bg-primary text-dark rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-primary/40 animate-bounce">
+                🚀
+            </div>
+            <div class="flex-1 text-center md:text-left">
+                <h2 class="text-3xl md:text-4xl font-black text-p-title mb-4 tracking-tight uppercase italic">
+                    <?php echo Lang::get('dashboard.welcome_title'); ?>
+                </h2>
+                <p class="text-p-muted font-medium mb-8 max-w-xl leading-relaxed">
+                    <?php echo Lang::get('dashboard.welcome_text'); ?>
+                </p>
+                <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                    <a href="<?php echo $baseUrl; ?>admin/demo/load"
+                        class="btn-primary flex items-center gap-2 !py-4 !px-8 text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                        <span>✨</span> <?php echo Lang::get('dashboard.load_demo'); ?>
+                    </a>
+                    <a href="<?php echo $baseUrl; ?>admin/databases"
+                        class="px-8 py-4 rounded-xl border border-glass-border text-xs font-black uppercase tracking-widest text-p-muted hover:text-white hover:bg-white/5 transition-all">
+                        <?php echo Lang::get('databases.new_node'); ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Main Modules -->
     <div class="lg:col-span-2 space-y-8">
@@ -137,3 +170,44 @@ use App\Core\Lang; ?>
         </div>
     </aside>
 </div>
+
+<?php if (Auth::isAdmin()): ?>
+    <!-- Danger Zone -->
+    <div class="mt-16 pt-16 border-t border-glass-border">
+        <h2 class="text-xs font-black text-red-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3 justify-center">
+            <span class="w-12 h-[1px] bg-red-500/20"></span> ⚠️ DANGER ZONE <span class="w-12 h-[1px] bg-red-500/20"></span>
+        </h2>
+        <div class="max-w-xl mx-auto text-center">
+            <button onclick="triggerResetSystem()"
+                class="px-8 py-4 rounded-xl border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all duration-300">
+                ⚡ <?php echo Lang::get('dashboard.reset_system'); ?>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function triggerResetSystem() {
+            // First Confirmation
+            showModal({
+                title: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_title')), ENT_QUOTES); ?>',
+                message: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_msg_1')), ENT_QUOTES); ?>',
+                type: 'confirm',
+                stayOpen: true, // Prevent flickering by not closing before the next modal
+                confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('common.confirm')), ENT_QUOTES); ?>',
+                onConfirm: function () {
+                    // Second Confirmation (The "Are you really sure?" step with checkbox)
+                    showModal({
+                        title: '☢️ <?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_title')), ENT_QUOTES); ?>',
+                        message: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_msg_2')), ENT_QUOTES); ?>',
+                        type: 'confirm',
+                        confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_confirm_btn')), ENT_QUOTES); ?>',
+                        safetyCheck: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.confirm_checkbox')), ENT_QUOTES); ?>',
+                        onConfirm: function () {
+                            window.location.href = '<?php echo $baseUrl; ?>admin/system/reset';
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+<?php endif; ?>

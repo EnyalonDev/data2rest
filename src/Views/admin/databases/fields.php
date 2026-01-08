@@ -84,6 +84,9 @@ use App\Core\Lang; ?>
                                 <option value="boolean" <?php echo $field['view_type'] == 'boolean' ? 'selected' : ''; ?>>
                                     <?php echo Lang::get('fields.types.boolean'); ?>
                                 </option>
+                                <option value="datetime" <?php echo $field['view_type'] == 'datetime' ? 'selected' : ''; ?>>
+                                    <?php echo Lang::get('fields.types.datetime'); ?>
+                                </option>
                             </select>
                         </div>
 

@@ -12,18 +12,36 @@ use App\Core\Lang; ?>
                 <p id="modal-type-label" class="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em]"></p>
             </div>
         </div>
-        <p id="modal-message" class="text-slate-400 mb-10 leading-relaxed font-medium"></p>
+        <p id="modal-message" class="text-slate-400 mb-6 leading-relaxed font-medium"></p>
+
+        <!-- Safety Checkbox -->
+        <div id="modal-safety-container" class="hidden mb-10 p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" id="modal-safety-checkbox"
+                    class="w-5 h-5 rounded border-glass-border bg-white/5 text-primary focus:ring-primary/20 transition-all cursor-pointer">
+                <span id="modal-safety-text"
+                    class="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors"></span>
+            </label>
+        </div>
+
         <div class="flex justify-end gap-4" id="modal-actions">
             <button onclick="closeModal()" id="modal-dismiss-btn"
                 class="px-6 py-3 rounded-xl border border-glass-border text-xs font-black uppercase hover:bg-white/5 transition-all text-slate-400 hover:text-white"><?php echo Lang::get('common.dismiss'); ?></button>
             <button id="modal-confirm-btn"
-                class="hidden px-8 py-3 rounded-xl bg-primary text-dark font-black text-xs uppercase hover:scale-105 transition-all shadow-xl shadow-primary/20"><?php echo Lang::get('common.confirm'); ?></button>
+                class="hidden px-8 py-3 rounded-xl bg-primary text-dark font-black text-xs uppercase hover:scale-105 transition-all shadow-xl shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"><?php echo Lang::get('common.confirm'); ?></button>
         </div>
     </div>
 </div>
 
 <script>
+    let modalTimeout = null;
+
     function showModal(options) {
+        if (modalTimeout) {
+            clearTimeout(modalTimeout);
+            modalTimeout = null;
+        }
+
         const modal = document.getElementById('system-modal');
         const content = document.getElementById('modal-content');
         const title = document.getElementById('modal-title');
@@ -32,6 +50,10 @@ use App\Core\Lang; ?>
         const label = document.getElementById('modal-type-label');
         const confirmBtn = document.getElementById('modal-confirm-btn');
         const dismissBtn = document.getElementById('modal-dismiss-btn');
+
+        const safetyContainer = document.getElementById('modal-safety-container');
+        const safetyCheckbox = document.getElementById('modal-safety-checkbox');
+        const safetyText = document.getElementById('modal-safety-text');
 
         title.innerText = options.title || 'System Alert';
         msg.innerText = options.message || '';
@@ -44,9 +66,22 @@ use App\Core\Lang; ?>
         if (options.dismissText) dismissBtn.innerText = options.dismissText;
         else dismissBtn.innerText = '<?php echo Lang::get('common.dismiss'); ?>';
 
-        // Reset buttons
+        // Reset buttons & Safety
         confirmBtn.classList.add('hidden');
+        confirmBtn.disabled = false;
         confirmBtn.onclick = null;
+        safetyContainer.classList.add('hidden');
+        safetyCheckbox.checked = false;
+
+        // Safety Check Logic
+        if (options.safetyCheck) {
+            safetyContainer.classList.remove('hidden');
+            safetyText.innerText = options.safetyCheck;
+            confirmBtn.disabled = true;
+            safetyCheckbox.onchange = (e) => {
+                confirmBtn.disabled = !e.target.checked;
+            };
+        }
 
         // Icon & Color
         if (options.type === 'error' || options.type === 'modal') {
@@ -58,7 +93,9 @@ use App\Core\Lang; ?>
             confirmBtn.classList.remove('hidden');
             confirmBtn.onclick = () => {
                 if (options.onConfirm) options.onConfirm();
-                closeModal();
+                // ONLY close if we're not immediately showing another modal
+                // Dashboard logic handles sequential modals with timeouts
+                if (!options.stayOpen) closeModal();
             };
         }
 
@@ -75,9 +112,11 @@ use App\Core\Lang; ?>
         const content = document.getElementById('modal-content');
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
-        setTimeout(() => {
+
+        modalTimeout = setTimeout(() => {
             modal.classList.remove('flex');
             modal.classList.add('hidden');
+            modalTimeout = null;
         }, 300);
     }
 

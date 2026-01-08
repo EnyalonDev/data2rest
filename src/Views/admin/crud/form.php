@@ -60,8 +60,7 @@ use App\Core\Lang; ?>
                             <textarea name="<?php echo $field['field_name']; ?>" class="editor"><?php echo $val; ?></textarea>
                             <?php break;
 
-                        case 'image':
-                        case 'gallery': ?>
+                        case 'image': ?>
                             <div class="glass-card !bg-white/5 overflow-hidden">
                                 <div class="flex flex-col lg:flex-row gap-8">
                                     <div id="preview-container-<?php echo $field['field_name']; ?>"
@@ -126,6 +125,43 @@ use App\Core\Lang; ?>
                             </div>
                             <?php break;
 
+                        case 'gallery': ?>
+                            <div class="glass-card !bg-white/5 p-6">
+                                <div class="flex items-center justify-between mb-6">
+                                    <label class="text-[10px] font-black text-p-muted uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1 h-1 rounded-full bg-primary"></span>
+                                        <?php echo Lang::get('fields.types.gallery'); ?>
+                                    </label>
+                                    <button type="button" onclick="openMediaGallery('<?php echo $field['field_name']; ?>', true)"
+                                        class="text-[10px] font-black uppercase text-primary border border-primary/20 px-4 py-2 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all">
+                                        + <?php echo Lang::get('crud.gallery_btn'); ?>
+                                    </button>
+                                </div>
+                                
+                                <div id="gallery-previews-<?php echo $field['field_name']; ?>" 
+                                    class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[100px] p-4 rounded-xl bg-black/20 border border-white/5">
+                                    <?php 
+                                    $images = !empty($val) ? explode(',', $val) : [];
+                                    foreach ($images as $img): if(empty(trim($img))) continue; ?>
+                                        <div class="relative aspect-square rounded-lg overflow-hidden border border-white/10 group">
+                                            <img src="<?php echo (strpos($img, 'http') === 0) ? $img : $baseUrl . $img; ?>" class="w-full h-full object-cover">
+                                            <button type="button" onclick="removeGalleryImage('<?php echo $field['field_name']; ?>', '<?php echo $img; ?>')"
+                                                class="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg>
+                                            </button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                    <?php if(empty($images)): ?>
+                                        <div class="col-span-full flex flex-col items-center justify-center py-6 opacity-20">
+                                            <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="1.5"></path></svg>
+                                            <span class="text-[9px] font-black uppercase tracking-widest">No Selection</span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <input type="hidden" name="gallery_<?php echo $field['field_name']; ?>" id="gallery-<?php echo $field['field_name']; ?>" value="<?php echo htmlspecialchars($val); ?>">
+                            </div>
+                            <?php break;
+
                         case 'boolean': ?>
                             <div class="flex items-center h-full pt-8">
                                 <label class="flex items-center gap-4 cursor-pointer group/toggle">
@@ -137,6 +173,19 @@ use App\Core\Lang; ?>
                                     <span class="text-xs font-black uppercase tracking-widest text-p-muted group-hover/toggle:text-primary transition-colors"><?php echo Lang::get('crud.toggle_status'); ?></span>
                                 </label>
                             </div>
+                            <?php break;
+
+                        case 'datetime': 
+                            // Format Y-m-d H:i:s to Y-m-d\TH:i for datetime-local input
+                            $formattedDate = '';
+                            if (!empty($val)) {
+                                $date = new DateTime($val);
+                                $formattedDate = $date->format('Y-m-d\TH:i');
+                            }
+                            ?>
+                            <input type="datetime-local" name="<?php echo $field['field_name']; ?>"
+                                value="<?php echo $formattedDate; ?>" <?php echo $field['is_required'] ? 'required' : ''; ?>
+                                class="form-input">
                             <?php break;
 
                     endswitch; 
@@ -254,8 +303,12 @@ use App\Core\Lang; ?>
         <div class="mt-8 pt-6 border-t border-glass-border flex justify-between items-center">
             <span id="gallery-status"
                 class="text-[10px] font-bold text-p-muted uppercase tracking-widest"><?php echo Lang::get('media.scanning'); ?></span>
-            <button onclick="closeMediaGallery()"
-                class="btn-outline"><?php echo Lang::get('media.abort_selection'); ?></button>
+            <div class="flex gap-4">
+                <button onclick="closeMediaGallery()"
+                    class="btn-outline"><?php echo Lang::get('media.abort_selection'); ?></button>
+                <button id="gallery-done-btn" onclick="closeMediaGallery()"
+                    class="btn-primary !py-2 hidden"><?php echo Lang::get('common.commit'); ?></button>
+            </div>
         </div>
     </div>
 </div>
@@ -263,6 +316,7 @@ use App\Core\Lang; ?>
 <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
     let currentTargetField = null;
+    let isMultiMode = false;
     let allMediaData = null;
     let activeDateFilter = 'all';
     let activeTableFilter = 'all';
@@ -285,10 +339,14 @@ use App\Core\Lang; ?>
         });
     }
 
-    function openMediaGallery(fieldName) {
+    function openMediaGallery(fieldName, isMulti = false) {
         currentTargetField = fieldName;
+        isMultiMode = isMulti;
         const modal = document.getElementById('mediaModal');
+        const doneBtn = document.getElementById('gallery-done-btn');
+        
         modal.style.display = 'flex';
+        doneBtn.style.display = isMulti ? 'block' : 'none';
 
         fetch('<?php echo $baseUrl; ?>admin/media/list')
             .then(res => res.json())
@@ -297,6 +355,109 @@ use App\Core\Lang; ?>
                 renderFilters();
                 renderGrid();
             });
+    }
+
+    function renderGrid() {
+        if(!allMediaData) return;
+        const grid = document.getElementById('mediaGrid');
+        const status = document.getElementById('gallery-status');
+        grid.innerHTML = '';
+
+        let filtered = allMediaData.files;
+        if (activeDateFilter !== 'all') filtered = filtered.filter(f => f.date_folder === activeDateFilter);
+        if (activeTableFilter !== 'all') filtered = filtered.filter(f => f.table_folder === activeTableFilter);
+        if (searchQuery) filtered = filtered.filter(f => f.name.toLowerCase().includes(searchQuery));
+
+        status.innerText = `<?php echo Lang::get('media.sync'); ?>`.replace(':count', filtered.length);
+
+        const currentVal = document.getElementById('gallery-' + currentTargetField)?.value || '';
+        const selectedImages = currentVal.split(',').filter(x => x.trim());
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div class="col-span-full py-20 text-center text-p-muted uppercase font-black tracking-widest opacity-30"><?php echo Lang::get('media.null'); ?></div>';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const isSelected = selectedImages.includes(item.url);
+            const div = document.createElement('div');
+            div.className = `group relative aspect-square bg-black/40 rounded-2xl overflow-hidden cursor-pointer border ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-glass-border'} hover:border-primary/50 transition-all shadow-xl`;
+            div.onclick = () => selectMedia(item.url);
+
+            div.innerHTML = `
+                <img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${isSelected ? 'opacity-50' : ''}">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                    <p class="text-[9px] font-black text-primary truncate uppercase tracking-widest mb-1">${item.name}</p>
+                    <p class="text-[7px] text-p-muted font-bold uppercase">${item.date_folder} / ${item.table_folder}</p>
+                </div>
+                ${isSelected ? `
+                    <div class="absolute top-2 right-2 bg-primary text-black p-1 rounded-full">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg>
+                    </div>
+                ` : ''}
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    function selectMedia(url) {
+        const input = document.getElementById('gallery-' + currentTargetField);
+        
+        if (isMultiMode) {
+            let currentImages = input.value.split(',').filter(x => x.trim());
+            if (currentImages.includes(url)) {
+                currentImages = currentImages.filter(x => x !== url);
+            } else {
+                currentImages.push(url);
+            }
+            input.value = currentImages.join(',');
+            refreshGalleryPreviews(currentTargetField);
+            renderGrid();
+        } else {
+            input.value = url;
+            updatePreviewFromUrl(currentTargetField, url);
+            closeMediaGallery();
+        }
+    }
+
+    function refreshGalleryPreviews(fieldName) {
+        const container = document.getElementById('gallery-previews-' + fieldName);
+        const input = document.getElementById('gallery-' + fieldName);
+        const images = input.value.split(',').filter(x => x.trim());
+        
+        let html = '';
+        images.forEach(img => {
+            const fullUrl = (img.startsWith('http') ? img : '<?php echo $baseUrl; ?>' + img);
+            html += `
+                <div class="relative aspect-square rounded-lg overflow-hidden border border-white/10 group">
+                    <img src="${fullUrl}" class="w-full h-full object-cover">
+                    <button type="button" onclick="removeGalleryImage('${fieldName}', '${img}')"
+                        class="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg>
+                    </button>
+                </div>
+            `;
+        });
+
+        if (images.length === 0) {
+            html = `
+                <div class="col-span-full flex flex-col items-center justify-center py-6 opacity-20">
+                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="1.5"></path></svg>
+                    <span class="text-[9px] font-black uppercase tracking-widest">No Selection</span>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+        if (typeof validateInput === 'function') validateInput(input);
+    }
+
+    function removeGalleryImage(fieldName, url) {
+        const input = document.getElementById('gallery-' + fieldName);
+        let currentImages = input.value.split(',').filter(x => x.trim());
+        currentImages = currentImages.filter(x => x !== url);
+        input.value = currentImages.join(',');
+        refreshGalleryPreviews(fieldName);
     }
 
     function renderFilters() {
@@ -368,40 +529,6 @@ use App\Core\Lang; ?>
             });
     }
 
-    function renderGrid() {
-        if(!allMediaData) return;
-        const grid = document.getElementById('mediaGrid');
-        const status = document.getElementById('gallery-status');
-        grid.innerHTML = '';
-
-        let filtered = allMediaData.files;
-        if (activeDateFilter !== 'all') filtered = filtered.filter(f => f.date_folder === activeDateFilter);
-        if (activeTableFilter !== 'all') filtered = filtered.filter(f => f.table_folder === activeTableFilter);
-        if (searchQuery) filtered = filtered.filter(f => f.name.toLowerCase().includes(searchQuery));
-
-        status.innerText = `<?php echo Lang::get('media.sync'); ?>`.replace(':count', filtered.length);
-
-        if (filtered.length === 0) {
-            grid.innerHTML = '<div class="col-span-full py-20 text-center text-p-muted uppercase font-black tracking-widest opacity-30"><?php echo Lang::get('media.null'); ?></div>';
-            return;
-        }
-
-        filtered.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'group relative aspect-square bg-black/40 rounded-2xl overflow-hidden cursor-pointer border border-glass-border hover:border-primary/50 transition-all shadow-xl';
-            div.onclick = () => selectMedia(item.url);
-
-            div.innerHTML = `
-                <img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                    <p class="text-[9px] font-black text-primary truncate uppercase tracking-widest mb-1">${item.name}</p>
-                    <p class="text-[7px] text-p-muted font-bold uppercase">${item.date_folder} / ${item.table_folder}</p>
-                </div>
-            `;
-            grid.appendChild(div);
-        });
-    }
-
     function closeMediaGallery() { document.getElementById('mediaModal').style.display = 'none'; }
 
     function updatePreviewFromUrl(fieldName, url) {
@@ -420,13 +547,6 @@ use App\Core\Lang; ?>
 
         const fileInput = document.getElementById('file-' + fieldName);
         if (fileInput) fileInput.required = false;
-    }
-
-    function selectMedia(url) {
-        const input = document.getElementById('gallery-' + currentTargetField);
-        input.value = url;
-        updatePreviewFromUrl(currentTargetField, url);
-        closeMediaGallery();
     }
 
     function clearField(fieldName) {

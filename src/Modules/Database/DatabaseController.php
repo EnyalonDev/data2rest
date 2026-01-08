@@ -123,7 +123,17 @@ ORDER BY d.id DESC");
             $targetDb = new PDO('sqlite:' . $database['path']);
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            $tables = [];
+            foreach ($tableNames as $tableName) {
+                try {
+                    $count = $targetDb->query("SELECT COUNT(*) FROM $tableName")->fetchColumn();
+                } catch (\Exception $e) {
+                    $count = 0;
+                }
+                $tables[$tableName] = $count;
+            }
         } catch (\PDOException $e) {
             Auth::setFlashError("Error connecting to database node: " . $e->getMessage());
             $tables = [];
@@ -427,8 +437,8 @@ WHERE id = ?");
                         $dataType = strtoupper($col['type']);
                         $lowerName = strtolower($col['name']);
 
-                        if (preg_match('/(imagen|image|foto|photo|img|avatar|logo|thumbnail|picture)/i', $lowerName)) {
-                            $viewType = 'image';
+                        if (preg_match('/(imagen|image|foto|photo|img|avatar|logo|thumbnail|picture|gallery|galeria)/i', $lowerName)) {
+                            $viewType = preg_match('/gallery|galeria/i', $lowerName) ? 'gallery' : 'image';
                         } elseif (preg_match('/(descripcion|description|content|contenido|mensaje|message|bio|body|text)/i', $lowerName)) {
                             $viewType = 'textarea';
                         } elseif (
@@ -436,6 +446,11 @@ WHERE id = ?");
                             strpos($dataType, 'INT') !== false
                         ) {
                             $viewType = 'boolean';
+                        } elseif (
+                            preg_match('/(fecha|date|time|timestamp|momento|horario)/i', $lowerName) ||
+                            preg_match('/(DATETIME|DATE|TIMESTAMP)/i', $dataType)
+                        ) {
+                            $viewType = 'datetime';
                         }
 
                         // Protect audit fields from manual editing

@@ -111,10 +111,29 @@ use App\Core\Lang; ?>
             <?php echo str_replace(':db', '<b>' . htmlspecialchars($ctx['database']['name']) . '</b>', Lang::get('crud_list.subtitle')); ?>
         </p>
     </div>
-    <div class="flex gap-4">
+    <div class="flex flex-wrap gap-4">
         <a href="<?php echo $baseUrl; ?>admin/databases/view?id=<?php echo $ctx['db_id']; ?>"
-            class="btn-primary !bg-slate-800 !text-slate-300">
+            class="btn-primary !bg-slate-800 !underline !text-slate-300">
             &larr; <?php echo Lang::get('common.back'); ?>
+        </a>
+        <a href="<?php echo $baseUrl; ?>admin/databases/fields?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>"
+            class="btn-primary !bg-slate-800 !text-slate-300 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z">
+                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <?php echo Lang::get('fields.title'); ?>
+        </a>
+        <a href="<?php echo $baseUrl; ?>admin/api/docs?db_id=<?php echo $ctx['db_id']; ?>#table-<?php echo $ctx['table']; ?>"
+            class="btn-primary !bg-emerald-500/10 !text-emerald-400 border border-emerald-500/20 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <?php echo Lang::get('tables.api_docs'); ?>
         </a>
         <a href="<?php echo $baseUrl; ?>admin/crud/new?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>"
             class="btn-primary">
@@ -174,7 +193,7 @@ use App\Core\Lang; ?>
                                     <td class="px-8 py-6">
                                         <?php
                                         $val = $row[$field['field_name']] ?? '';
-                                        if (($field['view_type'] === 'image' || $field['view_type'] === 'gallery') && !empty($val)):
+                                        if ($field['view_type'] === 'image' && !empty($val)):
                                             $imgUrl = (strpos($val, 'http') === 0) ? $val : $baseUrl . $val;
                                             ?>
                                             <div class="hover-preview-container">
@@ -186,11 +205,52 @@ use App\Core\Lang; ?>
                                                     <img src="<?php echo $imgUrl; ?>" class="max-w-[280px] rounded-lg shadow-2xl">
                                                 </div>
                                             </div>
+                                        <?php elseif ($field['view_type'] === 'gallery' && !empty($val)):
+                                            $images = explode(',', $val);
+                                            ?>
+                                            <div class="flex -space-x-4">
+                                                <?php foreach (array_slice($images, 0, 3) as $img):
+                                                    $imgUrl = (strpos($img, 'http') === 0) ? $img : $baseUrl . $img;
+                                                    ?>
+                                                    <div
+                                                        class="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-slate-900 shadow-xl group/gal">
+                                                        <img src="<?php echo $imgUrl; ?>"
+                                                            class="w-full h-full object-cover hover:scale-110 transition-transform">
+                                                    </div>
+                                                <?php endforeach; ?>
+                                                <?php if (count($images) > 3): ?>
+                                                    <div
+                                                        class="w-10 h-10 rounded-lg bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-[10px] font-black text-primary">
+                                                        +<?php echo count($images) - 3; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php elseif ($field['view_type'] === 'boolean'): ?>
                                             <span
                                                 class="inline-flex px-3 py-1 rounded-full text-[9px] font-black border <?php echo $val ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'; ?> uppercase tracking-widest">
                                                 <?php echo $val ? Lang::get('common.active') : Lang::get('common.offline'); ?>
                                             </span>
+                                        <?php elseif ($field['view_type'] === 'datetime' && !empty($val)): ?>
+                                            <div class="flex flex-col gap-1">
+                                                <div class="flex items-center gap-2 text-p-title font-bold text-[11px]">
+                                                    <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                        </path>
+                                                    </svg>
+                                                    <?php echo date('d/m/Y', strtotime($val)); ?>
+                                                </div>
+                                                <div
+                                                    class="flex items-center gap-2 text-p-muted font-black text-[9px] uppercase tracking-tighter">
+                                                    <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <?php echo date('H:i:s', strtotime($val)); ?>
+                                                </div>
+                                            </div>
                                         <?php else: ?>
                                             <div class="hover-preview-container">
                                                 <div
@@ -249,7 +309,6 @@ use App\Core\Lang; ?>
             typeLabel: '<?php echo Lang::get('crud_list.delete_confirm_btn'); ?>',
             onConfirm: () => {
                 window.location.href = `<?php echo $baseUrl; ?>admin/crud/delete?db_id=<?php echo $ctx['db_id']; ?>&table=<?php echo $ctx['table']; ?>&id=${id}`;
-            }
-        });
+            }});
     }
 </script>

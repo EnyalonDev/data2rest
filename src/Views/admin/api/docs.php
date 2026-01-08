@@ -63,7 +63,8 @@
 
 <div class="space-y-12">
     <?php foreach ($tableDetails as $table => $columns): ?>
-        <section class="glass-card group" data-table="<?php echo htmlspecialchars($table); ?>">
+        <section id="table-<?php echo htmlspecialchars($table); ?>" class="glass-card group"
+            data-table="<?php echo htmlspecialchars($table); ?>">
             <div class="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 border-b border-white/5 pb-6">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-xl">📦</div>

@@ -1,0 +1,3 @@
+# Keep this directory in git
+# Only system.sqlite should be committed
+# All other databases are user-generated and should be ignored

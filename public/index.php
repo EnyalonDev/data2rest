@@ -38,6 +38,8 @@ $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@man
 $router->add('POST', '/admin/databases/fields/add', 'Database\\DatabaseController@addField');
 $router->add('GET', '/admin/databases/fields/delete', 'Database\\DatabaseController@deleteField');
 $router->add('POST', '/admin/databases/fields/update', 'Database\\DatabaseController@updateFieldConfig');
+$router->add('GET', '/admin/demo/load', 'Database\\SystemController@loadDemo');
+$router->add('GET', '/admin/system/reset', 'Database\\SystemController@resetSystem');
 
 // --- Dynamic CRUD ---
 $router->add('GET', '/admin/crud/list', 'Database\\CrudController@list');

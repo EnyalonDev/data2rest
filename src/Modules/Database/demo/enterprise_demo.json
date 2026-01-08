@@ -1,0 +1,667 @@
+{
+    "database": {
+        "name": "Modern Enterprise ERP"
+    },
+    "tables": {
+        "company_profile": {
+            "columns": [
+                "name TEXT",
+                "brand_message TEXT",
+                "tax_id TEXT",
+                "address TEXT",
+                "phone TEXT",
+                "logo TEXT",
+                "cover_image TEXT"
+            ],
+            "data": [
+                {
+                    "name": "Data2Rest Solutions Inc.",
+                    "brand_message": "Innovating Beyond Limits",
+                    "tax_id": "TAX-998877",
+                    "address": "Tech Valley 101, Silicon Road",
+                    "phone": "+1 555-0987"
+                }
+            ]
+        },
+        "departments": {
+            "columns": [
+                "name TEXT",
+                "code TEXT",
+                "description TEXT"
+            ],
+            "data": [
+                {
+                    "name": "Engineering",
+                    "code": "ENG",
+                    "description": "Building the future software"
+                },
+                {
+                    "name": "Marketing",
+                    "code": "MKT",
+                    "description": "Spreading the message globally"
+                },
+                {
+                    "name": "Human Resources",
+                    "code": "HR",
+                    "description": "Managing the best talent"
+                }
+            ]
+        },
+        "employees": {
+            "columns": [
+                "full_name TEXT",
+                "role TEXT",
+                "email TEXT",
+                "department_id INTEGER",
+                "salary REAL",
+                "avatar TEXT",
+                "join_date TEXT",
+                "status INTEGER"
+            ],
+            "data": [
+                {
+                    "full_name": "John Smith",
+                    "role": "Senior Engineer",
+                    "email": "john@data2rest.corp",
+                    "department_id": 1,
+                    "salary": 85000,
+                    "join_date": "2026-01-10",
+                    "status": 1
+                },
+                {
+                    "full_name": "Sarah Parker",
+                    "role": "UI/UX Designer",
+                    "email": "sarah@data2rest.corp",
+                    "department_id": 1,
+                    "salary": 72000,
+                    "join_date": "2026-01-10",
+                    "status": 1
+                },
+                {
+                    "full_name": "Robert Downey",
+                    "role": "Marketing Expert",
+                    "email": "robert@data2rest.corp",
+                    "department_id": 2,
+                    "salary": 65000,
+                    "join_date": "2026-01-20",
+                    "status": 1
+                }
+            ]
+        },
+        "projects": {
+            "columns": [
+                "title TEXT",
+                "description TEXT",
+                "budget REAL",
+                "start_date TEXT",
+                "lead_employee_id INTEGER",
+                "gallery TEXT",
+                "status INTEGER"
+            ],
+            "data": [
+                {
+                    "title": "Neural Network Integration",
+                    "description": "Implementing AI layers into core services.",
+                    "budget": 125000,
+                    "start_date": "2026-01-05",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Cloud Infrastructure Migration",
+                    "description": "Moving legacy systems to AWS.",
+                    "budget": 450000,
+                    "start_date": "2026-02-12",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Mobile App V2",
+                    "description": "Redesigning the mobile user experience.",
+                    "budget": 85000,
+                    "start_date": "2026-03-01",
+                    "lead_employee_id": 1,
+                    "status": 0
+                },
+                {
+                    "title": "Secure Gateway 5000",
+                    "description": "Advanced firewall and threat detection.",
+                    "budget": 210000,
+                    "start_date": "2026-01-20",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "E-Commerce Refactor",
+                    "description": "Improving checkout flow and performance.",
+                    "budget": 65000,
+                    "start_date": "2026-04-15",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Data Warehouse Scaling",
+                    "description": "Optimizing big data queries.",
+                    "budget": 320000,
+                    "start_date": "2026-05-10",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Zero Trust Security",
+                    "description": "Implementing zero trust architecture.",
+                    "budget": 175000,
+                    "start_date": "2026-06-01",
+                    "lead_employee_id": 3,
+                    "status": 0
+                },
+                {
+                    "title": "Customer Portal Redesign",
+                    "description": "New dashboard for B2B clients.",
+                    "budget": 45000,
+                    "start_date": "2026-02-25",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Blockchain Ledger Trace",
+                    "description": "Implementing immutable transaction logs.",
+                    "budget": 280000,
+                    "start_date": "2026-01-15",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Automated QA Testing",
+                    "description": "End-to-end testing suite for all modules.",
+                    "budget": 55000,
+                    "start_date": "2026-03-10",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Predictive Analytics Tool",
+                    "description": "Sales forecasting using ML models.",
+                    "budget": 190000,
+                    "start_date": "2026-04-05",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Inventory IoT Tracking",
+                    "description": "Smart sensors for warehouse management.",
+                    "budget": 340000,
+                    "start_date": "2026-05-20",
+                    "lead_employee_id": 3,
+                    "status": 0
+                },
+                {
+                    "title": "Cybersecurity Audit 2026",
+                    "description": "Annual system vulnerability assessment.",
+                    "budget": 120000,
+                    "start_date": "2026-01-30",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Multilingual Support API",
+                    "description": "Dynamic translation layer for the app.",
+                    "budget": 75000,
+                    "start_date": "2026-06-15",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "FinTech Payment Gateway",
+                    "description": "Internal processing for global payments.",
+                    "budget": 500000,
+                    "start_date": "2026-02-01",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Real-time Collaboration",
+                    "description": "WebSocket implementation for teams.",
+                    "budget": 95000,
+                    "start_date": "2026-07-01",
+                    "lead_employee_id": 2,
+                    "status": 0
+                },
+                {
+                    "title": "AI Chatbot Assistant",
+                    "description": "Natural language support for users.",
+                    "budget": 150000,
+                    "start_date": "2026-03-20",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "System Uptime Monitor",
+                    "description": "Distributed monitoring for server clusters.",
+                    "budget": 35000,
+                    "start_date": "2026-08-10",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Visual Data Studio",
+                    "description": "Graphing and reporting dashboard.",
+                    "budget": 110000,
+                    "start_date": "2026-04-20",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Legacy Code Cleanup",
+                    "description": "Refactoring critical production modules.",
+                    "budget": 60000,
+                    "start_date": "2026-09-01",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Smart Contracts Engine",
+                    "description": "Automated legally binding agreements.",
+                    "budget": 240000,
+                    "start_date": "2026-02-15",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Global CDN Setup",
+                    "description": "Edge caching for worldwide users.",
+                    "budget": 180000,
+                    "start_date": "2026-10-05",
+                    "lead_employee_id": 3,
+                    "status": 0
+                },
+                {
+                    "title": "HR Onboarding App",
+                    "description": "Simplifying the talent intake process.",
+                    "budget": 40000,
+                    "start_date": "2026-11-12",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Virtual Office VR",
+                    "description": "Immersive remote working environment.",
+                    "budget": 300000,
+                    "start_date": "2026-12-01",
+                    "lead_employee_id": 1,
+                    "status": 0
+                },
+                {
+                    "title": "Edge Computing Node",
+                    "description": "Processing data closer to the source.",
+                    "budget": 220000,
+                    "start_date": "2026-01-10",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Marketing Automation",
+                    "description": "Dynamic campaigns based on behavior.",
+                    "budget": 70000,
+                    "start_date": "2026-02-28",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "API Rate Limiter",
+                    "description": "Protecting endpoints from abuse.",
+                    "budget": 25000,
+                    "start_date": "2026-03-15",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Big Data Visualization",
+                    "description": "Complex charts for large datasets.",
+                    "budget": 135000,
+                    "start_date": "2026-04-01",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Bio-metric Auth",
+                    "description": "Fingerprint and FaceID integration.",
+                    "budget": 160000,
+                    "start_date": "2026-05-05",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Green IT Initiative",
+                    "description": "Reducing server carbon footprint.",
+                    "budget": 50000,
+                    "start_date": "2026-06-10",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Supply Chain Visibility",
+                    "description": "Transparency from source to customer.",
+                    "budget": 290000,
+                    "start_date": "2026-07-20",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Voice Voice Search",
+                    "description": "Voice recognition for app queries.",
+                    "budget": 80000,
+                    "start_date": "2026-08-05",
+                    "lead_employee_id": 1,
+                    "status": 0
+                },
+                {
+                    "title": "Personalized UX AI",
+                    "description": "Tailoring UI based on user patterns.",
+                    "budget": 145000,
+                    "start_date": "2026-09-15",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Asset Management V3",
+                    "description": "Hardware and license tracking software.",
+                    "budget": 55000,
+                    "start_date": "2026-10-01",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Microservices Migration",
+                    "description": "Breaking the monolith into services.",
+                    "budget": 480000,
+                    "start_date": "2026-11-05",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Internal Wiki AI",
+                    "description": "Searching doc logs with LLMs.",
+                    "budget": 65000,
+                    "start_date": "2026-12-10",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Quantum Safe Crypto",
+                    "description": "Preparing for future threats.",
+                    "budget": 350000,
+                    "start_date": "2026-01-12",
+                    "lead_employee_id": 3,
+                    "status": 0
+                },
+                {
+                    "title": "Sales CRM Lite",
+                    "description": "Streamlined customer tracking.",
+                    "budget": 30000,
+                    "start_date": "2026-02-14",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "Incident Response Hub",
+                    "description": "Centralized alerts and procedures.",
+                    "budget": 90000,
+                    "start_date": "2026-03-22",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Feature Flag System",
+                    "description": "Decoupling deploy from release.",
+                    "budget": 45000,
+                    "start_date": "2026-04-18",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "DevOps Dashboard",
+                    "description": "Visibility into CI/CD pipelines.",
+                    "budget": 115000,
+                    "start_date": "2026-05-30",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Serverless Functions",
+                    "description": "Scaling specific compute logic.",
+                    "budget": 75000,
+                    "start_date": "2026-06-25",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Automated Backup V2",
+                    "description": "Geo-redundant snapshot system.",
+                    "budget": 105000,
+                    "start_date": "2026-07-12",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Partner Marketplace",
+                    "description": "Platform for third-party add-ons.",
+                    "budget": 200000,
+                    "start_date": "2026-08-20",
+                    "lead_employee_id": 2,
+                    "status": 0
+                },
+                {
+                    "title": "Feedback Loop AI",
+                    "description": "Closing the gap between user and dev.",
+                    "budget": 85000,
+                    "start_date": "2026-09-05",
+                    "lead_employee_id": 1,
+                    "status": 1
+                },
+                {
+                    "title": "Identity Hub Core",
+                    "description": "Single sign-on for all systems.",
+                    "budget": 225000,
+                    "start_date": "2026-10-15",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Compliance Checker",
+                    "description": "Auto Audit for GDPR/SOC2.",
+                    "budget": 130000,
+                    "start_date": "2026-11-20",
+                    "lead_employee_id": 2,
+                    "status": 1
+                },
+                {
+                    "title": "GPU Render Cluster",
+                    "description": "High performance visualization nodes.",
+                    "budget": 380000,
+                    "start_date": "2026-12-05",
+                    "lead_employee_id": 1,
+                    "status": 0
+                },
+                {
+                    "title": "Event Mesh Layer",
+                    "description": "Asynchronous messaging backbone.",
+                    "budget": 160000,
+                    "start_date": "2026-01-08",
+                    "lead_employee_id": 3,
+                    "status": 1
+                },
+                {
+                    "title": "Knowledge Graph V1",
+                    "description": "Mapping expertise across company.",
+                    "budget": 95000,
+                    "start_date": "2026-02-10",
+                    "lead_employee_id": 2,
+                    "status": 1
+                }
+            ]
+        },
+        "clients": {
+            "columns": [
+                "company_name TEXT",
+                "contact_person TEXT",
+                "email TEXT",
+                "logo TEXT"
+            ],
+            "data": [
+                {
+                    "company_name": "Global Tech Partners",
+                    "contact_person": "Alice Cooper",
+                    "email": "alice@globaltech.com"
+                },
+                {
+                    "company_name": "Innovative Startups",
+                    "contact_person": "Bob Marley",
+                    "email": "bob@innovative.com"
+                },
+                {
+                    "company_name": "Cyberdyne Systems",
+                    "contact_person": "Sarah Connor",
+                    "email": "s.connor@cyberdyne.io"
+                },
+                {
+                    "company_name": "Stark Industries",
+                    "contact_person": "Pepper Potts",
+                    "email": "pepper@stark.com"
+                },
+                {
+                    "company_name": "Wayne Enterprises",
+                    "contact_person": "Lucius Fox",
+                    "email": "lucius@wayne.com"
+                },
+                {
+                    "company_name": "Oscorp Tech",
+                    "contact_person": "Harry Osborn",
+                    "email": "harry@oscorp.biz"
+                },
+                {
+                    "company_name": "Umbrella Corp",
+                    "contact_person": "Albert Wesker",
+                    "email": "wesker@umbrella.com"
+                },
+                {
+                    "company_name": "Aperture Science",
+                    "contact_person": "Cave Johnson",
+                    "email": "cave@aperture.com"
+                },
+                {
+                    "company_name": "Black Mesa",
+                    "contact_person": "Eli Vance",
+                    "email": "eli@blackmesa.org"
+                },
+                {
+                    "company_name": "Massive Dynamic",
+                    "contact_person": "Nina Sharp",
+                    "email": "nina@massivedynamic.com"
+                },
+                {
+                    "company_name": "Hooli",
+                    "contact_person": "Gavin Belson",
+                    "email": "gavin@hooli.xyz"
+                },
+                {
+                    "company_name": "Pied Piper",
+                    "contact_person": "Richard Hendricks",
+                    "email": "richard@piedpiper.com"
+                },
+                {
+                    "company_name": "E-Corp",
+                    "contact_person": "Tyrell Wellick",
+                    "email": "tyrell@ecorp.com"
+                },
+                {
+                    "company_name": "Soylent Corp",
+                    "contact_person": "Robert Neville",
+                    "email": "neville@soylent.com"
+                },
+                {
+                    "company_name": "Initech",
+                    "contact_person": "Peter Gibbons",
+                    "email": "peter@initech.net"
+                },
+                {
+                    "company_name": "Dunder Mifflin",
+                    "contact_person": "Michael Scott",
+                    "email": "michael@dundermifflin.com"
+                },
+                {
+                    "company_name": "Prestige Worldwide",
+                    "contact_person": "Dale Doback",
+                    "email": "dale@prestige.com"
+                },
+                {
+                    "company_name": "Veridian Dynamics",
+                    "contact_person": "Linda Zwordling",
+                    "email": "linda@veridian.com"
+                },
+                {
+                    "company_name": "Weyland-Yutani",
+                    "contact_person": "Ellen Ripley",
+                    "email": "ripley@weyland.com"
+                },
+                {
+                    "company_name": "Tyrell Corporation",
+                    "contact_person": "Eldon Tyrell",
+                    "email": "eldon@tyrell.corp"
+                },
+                {
+                    "company_name": "Vought International",
+                    "contact_person": "Stan Edgar",
+                    "email": "stan@vought.com"
+                },
+                {
+                    "company_name": "Globex Corporation",
+                    "contact_person": "Hank Scorpio",
+                    "email": "hank@globex.com"
+                }
+            ]
+        },
+        "invoices": {
+            "columns": [
+                "invoice_number TEXT",
+                "client_id INTEGER",
+                "total REAL",
+                "status INTEGER"
+            ],
+            "data": [
+                {
+                    "invoice_number": "INV-2024-001",
+                    "client_id": 1,
+                    "total": 1500.5,
+                    "status": 1
+                },
+                {
+                    "invoice_number": "INV-2024-002",
+                    "client_id": 2,
+                    "total": 2800.0,
+                    "status": 0
+                }
+            ]
+        }
+    },
+    "foreign_keys": [
+        {
+            "table": "employees",
+            "field": "department_id",
+            "related_table": "departments",
+            "related_field": "name"
+        },
+        {
+            "table": "projects",
+            "field": "lead_employee_id",
+            "related_table": "employees",
+            "related_field": "full_name"
+        },
+        {
+            "table": "invoices",
+            "field": "client_id",
+            "related_table": "clients",
+            "related_field": "company_name"
+        }
+    ]
+}
