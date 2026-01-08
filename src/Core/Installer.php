@@ -78,6 +78,9 @@ class Installer
                     is_required INTEGER DEFAULT 0,
                     is_visible INTEGER DEFAULT 1,
                     is_editable INTEGER DEFAULT 1,
+                    is_foreign_key INTEGER DEFAULT 0,
+                    related_table TEXT,
+                    related_field TEXT,
                     options TEXT,
                     FOREIGN KEY (db_id) REFERENCES databases(id)
                 )",
