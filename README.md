@@ -187,7 +187,14 @@ Gestión visual integral de bases de datos SQLite y flujos de datos.
 - Diseño de esquemas (Tablas y Columnas)
 - Tipos de datos avanzados e interfaces de carga
 - CRUD dinámico con validaciones
-- **Tutoriales**: Configuración de relaciones, gestión de archivos multimedia
+- **Tutoriales**: Configuración de relaciones
+
+### 4. [Módulo de Media Library](docs/MEDIA.md) (Nuevo ✨)
+Gestión avanzada de archivos con edición de imágenes integrada.
+- **Editor de Imágenes**: Recorte, filtros y optimización nativa.
+- **Papelera de Reciclaje**: Sistema de recuperación y retención configurable.
+- **Rastreador de Uso**: Identificación de archivos huérfanos y referencias en BD.
+- **Interfaz Fluida**: Vista de mosaico/lista y panel de inspección flotante.
 
 ---
 

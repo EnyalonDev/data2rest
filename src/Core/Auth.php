@@ -132,6 +132,23 @@ class Auth
     }
 
     /**
+     * Checks if development mode is active in system settings.
+     * 
+     * @return bool
+     */
+    public static function isDevMode()
+    {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'dev_mode'");
+            $val = $stmt->fetchColumn();
+            return $val === 'on';
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Redirects to the login page if the user is not authenticated.
      */
     public static function requireLogin()

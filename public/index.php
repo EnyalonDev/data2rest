@@ -37,6 +37,9 @@ $router->add('GET', '/lang/{lang}', function ($lang) {
 
 // System routes
 $router->add('GET', '/admin/system/info', 'System\\SystemController@info');
+$router->add('POST', '/admin/system/dev-mode', 'System\\SystemController@toggleDevMode');
+$router->add('POST', '/admin/system/clear-cache', 'System\\SystemController@clearCache');
+$router->add('POST', '/admin/system/clear-sessions', 'System\\SystemController@clearSessions');
 
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
@@ -62,8 +65,23 @@ $router->add('GET', '/admin/crud/new', 'Database\\CrudController@form');
 $router->add('GET', '/admin/crud/edit', 'Database\\CrudController@form');
 $router->add('POST', '/admin/crud/save', 'Database\\CrudController@save');
 $router->add('GET', '/admin/crud/delete', 'Database\\CrudController@delete');
-$router->add('GET', '/admin/media/list', 'Database\\CrudController@mediaList');
-$router->add('POST', '/admin/media/upload', 'Database\\CrudController@mediaUpload');
+// --- Module: Media Library ---
+$router->add('GET', '/admin/media', 'Media\\MediaController@index');
+$router->add('GET', '/admin/media/api/list', 'Media\\MediaController@list');
+$router->add('GET', '/admin/media/api/usage', 'Media\\MediaController@usage');
+$router->add('POST', '/admin/media/api/upload', 'Media\\MediaController@upload');
+$router->add('POST', '/admin/media/api/delete', 'Media\\MediaController@delete');
+$router->add('POST', '/admin/media/api/bulk-delete', 'Media\\MediaController@bulkDelete');
+$router->add('POST', '/admin/media/api/bulk-move', 'Media\\MediaController@bulkMove');
+$router->add('POST', '/admin/media/api/rename', 'Media\\MediaController@rename');
+$router->add('POST', '/admin/media/api/edit', 'Media\\MediaController@edit');
+$router->add('POST', '/admin/media/api/settings', 'Media\\MediaController@updateSettings');
+$router->add('POST', '/admin/media/api/restore', 'Media\\MediaController@restore');
+$router->add('POST', '/admin/media/api/purge', 'Media\\MediaController@purge');
+
+// Legacy compatibility for CRUD forms
+$router->add('GET', '/admin/media/list', 'Media\\MediaController@mediaList');
+$router->add('POST', '/admin/media/upload', 'Media\\MediaController@mediaUpload');
 
 // --- Module: API REST Panel ---
 $router->add('GET', '/admin/api', 'Api\\ApiDocsController@index');

@@ -390,14 +390,14 @@ Esto permitirá que al insertar un producto, el sistema muestre un selector con 
   - Azure Blob Storage
   - Configuración por tabla
 
-- [ ] **Procesamiento de Imágenes**
+- [x] **Procesamiento de Imágenes**
   - Redimensionamiento automático
   - Thumbnails
   - Compresión
   - Filtros y efectos
   - Múltiples versiones
 
-- [ ] **Gestión de Archivos Mejorada**
+- [x] **Gestión de Archivos Mejorada**
   - Galería de medios
   - Búsqueda de archivos
   - Organización en carpetas

@@ -116,6 +116,26 @@ use App\Core\Lang; ?>
                 </a>
             <?php endif; ?>
 
+            <!-- Media Library Module -->
+            <a href="<?php echo $baseUrl; ?>admin/media"
+                class="glass-card group hover:scale-[1.02] hover:border-primary/50 !p-8">
+                <div
+                    class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 text-primary">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-p-title mb-2">Media Library</h3>
+                <p class="text-xs text-p-muted mb-6 leading-relaxed">
+                    Manage files, images, and track asset usage across your databases.
+                </p>
+                <div class="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <?php echo Lang::get('dashboard.enter'); ?> <span>&rarr;</span>
+                </div>
+            </a>
+
             <!-- Users Module -->
             <?php if (Auth::hasPermission('module:users', 'view')): ?>
                 <a href="<?php echo $baseUrl; ?>admin/users"
@@ -182,6 +202,11 @@ use App\Core\Lang; ?>
             📊 <?php echo Lang::get('dashboard.system_info'); ?>
         </button>
         <?php if (Auth::isAdmin()): ?>
+            <?php $isDev = Auth::isDevMode(); ?>
+            <button onclick="toggleDevMode()" id="btn-dev-mode"
+                class="px-8 py-4 rounded-xl border <?php echo $isDev ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-500/30 text-amber-500'; ?> text-[10px] font-black uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-white transition-all duration-300">
+                🛠️ DEV MODE: <?php echo $isDev ? 'ON' : 'OFF'; ?>
+            </button>
             <button onclick="triggerResetSystem()"
                 class="px-8 py-4 rounded-xl border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all duration-300">
                 ⚡ <?php echo Lang::get('dashboard.reset_system'); ?>
@@ -191,6 +216,27 @@ use App\Core\Lang; ?>
 </div>
 
 <script>
+    function toggleDevMode() {
+        fetch('<?php echo $baseUrl; ?>admin/system/dev-mode', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const btn = document.getElementById('btn-dev-mode');
+                    const isActive = data.dev_mode === 'on';
+                    btn.className = `px-8 py-4 rounded-xl border ${isActive ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-500/30 text-amber-500'} text-[10px] font-black uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-white transition-all duration-300`;
+                    btn.innerHTML = `🛠️ DEV MODE: ${isActive ? 'ON' : 'OFF'}`;
+
+                    // Show a quick notification or just reload to see the change in layout
+                    showModal({
+                        title: 'Modo Desarrollo',
+                        message: `El Modo Desarrollo ahora está ${isActive ? 'ACTIVO' : 'DESACTIVADO'}. Se han habilitado herramientas de mantenimiento en el pie de página.`,
+                        type: 'success',
+                        onConfirm: () => window.location.reload()
+                    });
+                }
+            });
+    }
+
     function showSystemInfo() {
         fetch('<?php echo $baseUrl; ?>admin/system/info')
             .then(res => res.json())
@@ -216,7 +262,7 @@ use App\Core\Lang; ?>
                     const label = key.replace(/_/g, ' ').toUpperCase();
                     const help = helpMap[key] || '';
                     let extraWarning = '';
-                    
+
                     if (key === 'upload_max_filesize') {
                         const warningText = '<?php echo addslashes(Lang::get('dashboard.file_size_warning')); ?>'.replace(':value', value);
                         extraWarning = `<div class="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl"><p class="text-xs font-bold text-amber-500 uppercase tracking-tighter italic">${warningText}</p></div>`;

@@ -342,59 +342,6 @@ LIMIT 1");
     }
 
     /**
-     * Lists media files (images, documents) for the media library.
-     */
-    public function mediaList()
-    {
-        // Media list is accessible to anyone logged in for now, but let's at least check login
-        Auth::requireLogin();
-        $uploadBase = Config::get('upload_dir');
-        $fullBaseUrl = Auth::getFullBaseUrl();
-        $files = [];
-        $dates = [];
-        $tables = [];
-
-        if (is_dir($uploadBase)) {
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploadBase));
-            foreach ($iterator as $file) {
-                if ($file->isFile()) {
-                    $path = $file->getPathname();
-                    $relativePath = str_replace($uploadBase, '', $path);
-                    $parts = explode(DIRECTORY_SEPARATOR, $relativePath);
-                    if (count($parts) >= 3) {
-                        $dateFolder = $parts[0];
-                        $tableFolder = $parts[1];
-                        $dates[] = $dateFolder;
-                        $tables[] = $tableFolder;
-                        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', 'mp4', 'mov'];
-                        if (in_array($ext, $allowedExtensions)) {
-                            $files[] = [
-                                'url' => $fullBaseUrl . 'uploads/' . str_replace(DIRECTORY_SEPARATOR, '/', $relativePath),
-                                'name' => $file->getFilename(),
-                                'extension' => $ext,
-                                'date_folder' => $dateFolder,
-                                'table_folder' => $tableFolder,
-                                'mtime' => $file->getMTime()
-                            ];
-                        }
-                    }
-                }
-            }
-        }
-        usort($files, function ($a, $b) {
-            return $b['mtime'] - $a['mtime'];
-        });
-        header('Content-Type: application/json');
-        echo json_encode([
-            'files' => $files,
-            'available_dates' => array_values(array_unique($dates)),
-            'available_tables' =>
-                array_values(array_unique($tables))
-        ]);
-        exit;
-    }
-    /**
      * Sanitizes a filename for SEO and filesystem compatibility.
      */
     protected function sanitizeFilename($filename)
@@ -418,47 +365,5 @@ LIMIT 1");
             $name = 'file';
 
         return $name . $ext;
-    }
-
-    /**
-     * Handles file uploads to the system.
-     */
-    public function mediaUpload()
-    {
-        Auth::requireLogin();
-        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            $this->json(['error' => 'No file uploaded or upload error'], 400);
-        }
-
-        $uploadBase = Config::get('upload_dir');
-        $dateFolder = date('Y-m-d');
-        $tableFolder = 'explorer';
-        $relativeDir = "$dateFolder/$tableFolder/";
-        $absoluteDir = $uploadBase . $relativeDir;
-
-        if (!is_dir($absoluteDir)) {
-            mkdir($absoluteDir, 0777, true);
-        }
-
-        $file = $_FILES['file'];
-        $safeName = $this->sanitizeFilename($file['name']);
-
-        // Handle collisions: if file exists, add short unique id
-        if (file_exists($absoluteDir . $safeName)) {
-            $info = pathinfo($safeName);
-            $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
-        }
-
-        if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
-            $url = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $safeName;
-            $this->json([
-                'url' => $url,
-                'name' => $safeName,
-                'date_folder' => $dateFolder,
-                'table_folder' => $tableFolder
-            ]);
-        }
-
-        $this->json(['error' => 'Failed to move uploaded file'], 500);
     }
 }
