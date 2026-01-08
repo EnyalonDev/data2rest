@@ -8,6 +8,10 @@ use App\Core\Config;
 use App\Core\BaseController;
 use PDO;
 
+/**
+ * Database Management Controller
+ * Handles the creation, deletion, and structural management of SQLite databases, tables, and fields.
+ */
 class DatabaseController extends BaseController
 {
     public function __construct()
@@ -15,6 +19,9 @@ class DatabaseController extends BaseController
         Auth::requireLogin();
     }
 
+    /**
+     * Lists all databases registered in the system.
+     */
     public function index()
     {
         Auth::requirePermission('module:databases', 'view');
@@ -40,6 +47,12 @@ ORDER BY d.id DESC");
         ]);
     }
 
+    /**
+     * Creates a new SQLite database file and registers it in the system.
+     * Requires 'module:databases' permission with 'create' action.
+     *
+     * @return void Redirects to sync page or dies on error.
+     */
     public function create()
     {
         Auth::requirePermission('module:databases', 'create');
@@ -80,6 +93,9 @@ ORDER BY d.id DESC");
         }
     }
 
+    /**
+     * Deletes a database entry and its physical SQLite file.
+     */
     public function delete()
     {
         Auth::requirePermission('module:databases', 'delete');
@@ -103,6 +119,9 @@ ORDER BY d.id DESC");
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
     }
 
+    /**
+     * Lists all tables within a specific database.
+     */
     public function viewTables()
     {
         $id = $_GET['id'] ?? null;
@@ -150,6 +169,9 @@ ORDER BY d.id DESC");
         ]);
     }
 
+    /**
+     * Adds a new table to a specific database.
+     */
     public function createTable()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -190,6 +212,9 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         }
     }
 
+    /**
+     * Removes a table from the database.
+     */
     public function deleteTable()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -216,6 +241,9 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
     }
 
+    /**
+     * Displays and manages the fields (columns) of a specific table.
+     */
     public function manageFields()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -253,6 +281,9 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         ]);
     }
 
+    /**
+     * Adds a new field structure to the system metadata for a table.
+     */
     public function addField()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -283,6 +314,9 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         }
     }
 
+    /**
+     * Removes a field from the table metadata and potentially the physical database.
+     */
     public function deleteField()
     {
         $config_id = $_GET['config_id'] ?? null;
@@ -335,6 +369,9 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         $this->redirect("admin/databases/fields?db_id=$db_id&table=$table_name");
     }
 
+    /**
+     * Updates the configuration (UI type, constraints) for existing fields.
+     */
     public function updateFieldConfig()
     {
         $config_id = $_POST['config_id'] ?? null;
@@ -376,6 +413,10 @@ WHERE id = ?");
         $table_name = $stmt->fetchColumn();
         header('Location: ' . Auth::getBaseUrl() . "admin/databases/fields?db_id=$db_id&table=$table_name");
     }
+    /**
+     * Synchronizes the physical database structure with the system's metadata.
+     * Handles ALTER TABLE operations, additions, and deletions.
+     */
     public function syncDatabase()
     {
         $id = $_GET['id'] ?? null;

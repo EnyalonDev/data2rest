@@ -2,8 +2,15 @@
 
 namespace App\Core;
 
+/**
+ * Authentication and Authorization Manager
+ * Handles user sessions, login/logout logic, and permission verification.
+ */
 class Auth
 {
+    /**
+     * Initializes the session if it hasn't been started yet.
+     */
     public static function init()
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -11,9 +18,17 @@ class Auth
         }
     }
 
+    /**
+     * Attempts to log in a user.
+     * 
+     * @param string $username
+     * @param string $password
+     * @return bool True if login successful, false otherwise
+     */
     public static function login($username, $password)
     {
         $db = Database::getInstance()->getConnection();
+        // Fetch user with their role and group permissions
         $stmt = $db->prepare("SELECT u.*, r.permissions as role_perms, g.permissions as group_perms FROM users u 
                              LEFT JOIN roles r ON u.role_id = r.id 
                              LEFT JOIN groups g ON u.group_id = g.id
@@ -22,11 +37,13 @@ class Auth
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
+            // Set session variables
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role_id'] = $user['role_id'];
             $_SESSION['group_id'] = $user['group_id'] ?? null;
 
+            // Decode and merge permissions from role and group
             $rolePerms = json_decode($user['role_perms'] ?? '[]', true);
             $groupPerms = json_decode($user['group_perms'] ?? '[]', true);
             $_SESSION['permissions'] = self::mergePermissions($rolePerms, $groupPerms);
@@ -36,6 +53,9 @@ class Auth
         return false;
     }
 
+    /**
+     * Logs out the current user and clears the session.
+     */
     public static function logout()
     {
         session_destroy();
@@ -44,20 +64,34 @@ class Auth
         exit;
     }
 
+    /**
+     * Checks if a user is currently logged in.
+     * 
+     * @return bool
+     */
     public static function check()
     {
         return isset($_SESSION['user_id']);
     }
 
+    /**
+     * Verifies if the current user has a specific permission.
+     * 
+     * @param string $resource The resource identifier (e.g., 'module:users' or 'db:1')
+     * @param string|null $action The action to check (e.g., 'read', 'write')
+     * @return bool
+     */
     public static function hasPermission($resource, $action = null)
     {
         if (!isset($_SESSION['permissions']))
             return false;
         $perms = $_SESSION['permissions'];
 
+        // Super-admin bypass
         if (isset($perms['all']) && $perms['all'] === true)
             return true;
 
+        // Check module-level permissions
         if (strpos($resource, 'module:') === 0) {
             $module = substr($resource, 7);
             if (!isset($perms['modules'][$module]))
@@ -67,6 +101,7 @@ class Auth
             return in_array($action, $perms['modules'][$module]);
         }
 
+        // Check database-level permissions
         if (strpos($resource, 'db:') === 0) {
             $db_id = substr($resource, 3);
             if (!isset($perms['databases'][$db_id]))
@@ -84,6 +119,11 @@ class Auth
         return false;
     }
 
+    /**
+     * Checks if the current user has administrative (all) permissions.
+     * 
+     * @return bool
+     */
     public static function isAdmin()
     {
         if (!isset($_SESSION['permissions']))
@@ -91,6 +131,9 @@ class Auth
         return isset($_SESSION['permissions']['all']) && $_SESSION['permissions']['all'] === true;
     }
 
+    /**
+     * Redirects to the login page if the user is not authenticated.
+     */
     public static function requireLogin()
     {
         if (!self::check()) {
@@ -100,6 +143,9 @@ class Auth
         }
     }
 
+    /**
+     * Restricts access to administrators only.
+     */
     public static function requireAdmin()
     {
         self::requireLogin();
@@ -111,11 +157,22 @@ class Auth
         }
     }
 
+    /**
+     * Sets a temporary notification message in the session.
+     * 
+     * @param string $msg
+     * @param string $type The message type (error, success, modal, etc.)
+     */
     public static function setFlashError($msg, $type = 'error')
     {
         $_SESSION['flash_msg'] = ['text' => $msg, 'type' => $type];
     }
 
+    /**
+     * Retrieves and clears the flash message from the session.
+     * 
+     * @return array|null
+     */
     public static function getFlashMsg()
     {
         $msg = $_SESSION['flash_msg'] ?? null;
@@ -123,6 +180,12 @@ class Auth
         return $msg;
     }
 
+    /**
+     * Enforces a specific permission requirement.
+     * 
+     * @param string $resource
+     * @param string|null $action
+     */
     public static function requirePermission($resource, $action = null)
     {
         self::requireLogin();
@@ -132,6 +195,11 @@ class Auth
         }
     }
 
+    /**
+     * Enforces access control for a specific database.
+     * 
+     * @param string $db_id
+     */
     public static function requireDatabaseAccess($db_id)
     {
         if (!self::hasPermission("db:$db_id")) {
@@ -140,6 +208,9 @@ class Auth
         }
     }
 
+    /**
+     * Redirects the user back to the previous page or the base URL.
+     */
     public static function redirectBack()
     {
         $referer = $_SERVER['HTTP_REFERER'] ?? self::getBaseUrl();
@@ -151,6 +222,11 @@ class Auth
         exit;
     }
 
+    /**
+     * Automatically detects the base URL relative path.
+     * 
+     * @return string
+     */
     public static function getBaseUrl()
     {
         $scriptName = $_SERVER['SCRIPT_NAME'];
@@ -158,6 +234,11 @@ class Auth
         return rtrim($baseDir, '/') . '/';
     }
 
+    /**
+     * Automatically detects the full absolute base URL including protocol and host.
+     * 
+     * @return string
+     */
     public static function getFullBaseUrl()
     {
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -165,6 +246,14 @@ class Auth
         $baseUrl = self::getBaseUrl();
         return $protocol . $host . $baseUrl;
     }
+
+    /**
+     * Merges two permission sets, prioritizing 'all' access and combining module/db actions.
+     * 
+     * @param array $p1 First set of permissions
+     * @param array $p2 Second set of permissions
+     * @return array Merged permission set
+     */
     private static function mergePermissions($p1, $p2)
     {
         $merged = [
@@ -195,3 +284,4 @@ class Auth
         return $merged;
     }
 }
+

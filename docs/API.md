@@ -80,16 +80,39 @@ curl -H "X-API-Key: abc123..." \
 ]
 ```
 
-#### Crear un Registro
+#### JavaScript (Fetch API)
+```javascript
+const response = await fetch('http://localhost/data2rest/api/v1/midb/usuarios', {
+    method: 'POST',
+    headers: {
+        'X-API-Key': 'tu-api-key-aqui',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        nombre: 'Pedro López',
+        email: 'pedro@example.com'
+    })
+});
+const data = await response.json();
+console.log(data);
+```
 
-```bash
-POST /api/v1/midb/usuarios
+#### Python (Requests)
+```python
+import requests
 
-curl -X POST \
-     -H "X-API-Key: abc123..." \
-     -H "Content-Type: application/json" \
-     -d '{"nombre":"Pedro López","email":"pedro@example.com"}' \
-     http://localhost/data2rest/api/v1/midb/usuarios
+url = "http://localhost/data2rest/api/v1/midb/usuarios"
+headers = {
+    "X-API-Key": "tu-api-key-aqui",
+    "Content-Type": "application/json"
+}
+data = {
+    "nombre": "Pedro López",
+    "email": "pedro@example.com"
+}
+
+response = requests.post(url, json=data, headers=headers)
+print(response.json())
 ```
 
 ---
@@ -140,6 +163,12 @@ Todas las consultas SQL utilizan prepared statements para prevenir inyección SQ
 ## 🚧 TODOs y Mejoras Propuestas
 
 ### 🎯 Prioridad Alta
+
+- [ ] **Soporte Multi-Database**
+  - Drivers para **MySQL, PostgreSQL y SQL Server**
+  - Configuración de cadena de conexión por "Nodo"
+  - Endpoints unificados independientemente del motor
+  - Sincronización de estructuras Multi-DBS
 
 - [ ] **Paginación de Resultados**
   - Implementar `?page=1&limit=50`

@@ -150,22 +150,25 @@ data2rest/
 El sistema está organizado en módulos independientes y bien documentados:
 
 ### 1. [Módulo de API REST](docs/API.md)
-Generación automática de endpoints REST con documentación interactiva.
-- Controladores REST
-- Gestión de API Keys
-- Documentación automática
+Generación automática de endpoints REST con documentación interactiva y ejemplos multiplataforma.
+- Controladores REST (GET, POST, PUT, DELETE)
+- Gestión de API Keys con validación de seguridad
+- Documentación dinámica con ejemplos prácticos
+- **Ejemplos incluidos**: cURL, JavaScript, Python
 
 ### 2. [Módulo de Autenticación](docs/AUTH.md)
-Sistema completo de login, usuarios, roles y permisos.
-- Login/Logout
-- Gestión de usuarios
-- Control de roles (RBAC)
+Sistema completo de login, usuarios, roles y permisos granulares.
+- Gestión de perfiles de usuario
+- Arquitecto de Políticas (Permisos por tabla y acción)
+- Grupos de trabajo y jerarquías
+- **Casos de uso**: Creación de roles restringidos, gestión de equipos
 
 ### 3. [Módulo de Bases de Datos](docs/DATABASE.md)
-Gestión visual de bases de datos SQLite y operaciones CRUD.
-- Creación de bases de datos
-- Gestión de tablas y campos
-- CRUD completo
+Gestión visual integral de bases de datos SQLite y flujos de datos.
+- Diseño de esquemas (Tablas y Columnas)
+- Tipos de datos avanzados e interfaces de carga
+- CRUD dinámico con validaciones
+- **Tutoriales**: Configuración de relaciones, gestión de archivos multimedia
 
 ---
 
@@ -314,6 +317,12 @@ Si encuentras algún problema o tienes preguntas:
 ## 🚧 TODOs y Mejoras Propuestas
 
 ### 🎯 Prioridad Alta
+
+- [ ] **Soporte Multi-Motor de Base de Datos**
+  - Implementación de drivers para **MySQL, PostgreSQL y MariaDB**
+  - Migración transparente entre motores
+  - Soporte para bases de datos remotas
+  - Panel de configuración de conexiones externas
 
 - [ ] **Sistema de Backup Automático**
   - Implementar backups programados de bases de datos

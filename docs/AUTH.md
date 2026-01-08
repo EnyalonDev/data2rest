@@ -67,6 +67,39 @@ Contraseña: admin123
 3. Define permisos específicos
 4. Asigna roles a usuarios
 
+### 4. Ejemplos de Implementación
+
+#### Verificación de Permisos en PHP
+```php
+use App\Core\Auth;
+
+// Requerir que el usuario esté logueado
+Auth::requireLogin();
+
+// Requerir permiso específico para una base de datos
+Auth::requireDatabaseAccess($db_id);
+
+// Verificar si tiene permiso de escritura en un módulo
+if (Auth::hasPermission("module:api", "manage")) {
+    // Realizar acción administrativa
+}
+```
+
+#### Estructura de una Política JSON (Arquitecto de Políticas)
+```json
+{
+  "all": false,
+  "modules": {
+    "databases": ["view", "manage"],
+    "api": ["view"]
+  },
+  "databases": {
+    "1": ["read", "insert", "update"],
+    "2": ["view"]
+  }
+}
+```
+
 ---
 
 ## 🔧 Controladores
@@ -152,6 +185,11 @@ CREATE TABLE roles (
 ## 🚧 TODOs y Mejoras Propuestas
 
 ### 🎯 Prioridad Alta
+
+- [ ] **Soporte de Autenticación para Múltiples Motores**
+  - Autenticación contra usuarios en **MySQL/PostgreSQL**
+  - Mapeo de grupos de sistema externos a roles locales
+  - Sincronización de perfiles multi-plataforma
 
 - [ ] **Autenticación de Dos Factores (2FA)**
   - TOTP con Google Authenticator

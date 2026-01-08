@@ -183,25 +183,18 @@ public/uploads/
 
 ## 📚 Ejemplos
 
-### Crear Tabla de Usuarios
+### Configuración de Relaciones (Foreign Keys)
+El sistema permite vincular tablas para crear estructuras relacionales complejas:
 
-1. Nombre: `usuarios`
-2. Campos:
-   - `nombre` (TEXT)
-   - `email` (TEXT)
-   - `edad` (INTEGER)
-   - `activo` (INTEGER, checkbox)
-   - `foto` (TEXT, file)
+1. **Tabla Destino**: `categorias` (id, nombre)
+2. **Tabla Origen**: `productos`
+3. **Configuración de Campo en `productos`**:
+   - **Nombre**: `categoria_id`
+   - **Tipo**: `INTEGER`
+   - **Relación**: Seleccionar tabla `categorias`
+   - **Display Field**: Seleccionar `nombre`
 
-### Crear Tabla de Productos
-
-1. Nombre: `productos`
-2. Campos:
-   - `titulo` (TEXT)
-   - `descripcion` (TEXT, textarea)
-   - `precio` (REAL)
-   - `stock` (INTEGER)
-   - `imagen` (TEXT, file)
+Esto permitirá que al insertar un producto, el sistema muestre un selector con los nombres de las categorías.
 
 ---
 
@@ -213,6 +206,12 @@ public/uploads/
 ## 🚧 TODOs y Mejoras Propuestas
 
 ### 🎯 Prioridad Alta
+
+- [ ] **Soporte Multi-Motor (Core)**
+  - Drivers para **MySQL, MariaDB y PostgreSQL**
+  - Migración asistida de SQLite a motores cliente-servidor
+  - Soporte para procedimientos almacenados específicos por motor
+  - Optimización de queries según dialecto SQL
 
 - [ ] **Backup y Restauración**
   - Backup automático programado

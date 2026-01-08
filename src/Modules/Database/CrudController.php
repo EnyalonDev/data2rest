@@ -10,6 +10,11 @@ use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 
+/**
+ * CRUD Controller
+ * Handles the Create, Read, Update, and Delete operations for database records,
+ * and also provides media management functionality.
+ */
 class CrudController extends BaseController
 {
     public function __construct()
@@ -17,7 +22,14 @@ class CrudController extends BaseController
         Auth::requireLogin();
     }
 
-    private function getContext($action = null)
+    /**
+     * Retrieves the operational context for the current request.
+     * Validates database and table existence and checks permissions.
+     * 
+     * @param string|null $action The CRUD action being performed (read, insert, update, delete)
+     * @return array Context information including DB object, table name, and configuration
+     */
+    protected function getContext($action = null)
     {
         $db_id = $_GET['db_id'] ?? $_POST['db_id'] ?? null;
         $table = $_GET['table'] ?? $_POST['table'] ?? null;
@@ -76,7 +88,13 @@ class CrudController extends BaseController
         ];
     }
 
-    private function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null)
+    /**
+     * Determines the display field for a related table in structural view.
+     * Used for rendering foreign key relationships reasonably to the user.
+     * 
+     * @return string Field name to use for display
+     */
+    protected function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null)
     {
         if (!empty($preferredField))
             return $preferredField;
@@ -106,6 +124,9 @@ LIMIT 1");
         return 'id';
     }
 
+    /**
+     * Renders a list view of records for a specific table.
+     */
     public function list()
     {
         $ctx = $this->getContext('crud_view');
@@ -155,6 +176,9 @@ LIMIT 1");
         ]);
     }
 
+    /**
+     * Renders the form to create or edit a record.
+     */
     public function form()
     {
         $id = $_GET['id'] ?? null;
@@ -205,6 +229,9 @@ LIMIT 1");
         ]);
     }
 
+    /**
+     * Processes form submission to save (insert or update) a record.
+     */
     public function save()
     {
         $id = $_POST['id'] ?? null;
@@ -287,6 +314,9 @@ LIMIT 1");
         }
     }
 
+    /**
+     * Deletes a record from a specific table.
+     */
     public function delete()
     {
         $ctx = $this->getContext('crud_delete');
@@ -304,6 +334,9 @@ LIMIT 1");
         header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
     }
 
+    /**
+     * Lists media files (images, documents) for the media library.
+     */
     public function mediaList()
     {
         // Media list is accessible to anyone logged in for now, but let's at least check login
@@ -352,6 +385,9 @@ LIMIT 1");
         ]);
         exit;
     }
+    /**
+     * Handles file uploads to the system.
+     */
     public function mediaUpload()
     {
         Auth::requireLogin();
