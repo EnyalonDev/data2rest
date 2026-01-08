@@ -171,43 +171,119 @@ use App\Core\Lang; ?>
     </aside>
 </div>
 
-<?php if (Auth::isAdmin()): ?>
-    <!-- Danger Zone -->
-    <div class="mt-16 pt-16 border-t border-glass-border">
-        <h2 class="text-xs font-black text-red-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3 justify-center">
-            <span class="w-12 h-[1px] bg-red-500/20"></span> ⚠️ DANGER ZONE <span class="w-12 h-[1px] bg-red-500/20"></span>
-        </h2>
-        <div class="max-w-xl mx-auto text-center">
+<div class="mt-16 pt-16 border-t border-glass-border">
+    <h2 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-8 flex items-center gap-3 justify-center">
+        <span class="w-12 h-[1px] bg-slate-800"></span> <?php echo Lang::get('common.system'); ?> <span
+            class="w-12 h-[1px] bg-slate-800"></span>
+    </h2>
+    <div class="max-w-2xl mx-auto flex flex-wrap justify-center gap-6">
+        <button onclick="showSystemInfo()"
+            class="px-8 py-4 rounded-xl border border-primary/30 text-primary text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-dark transition-all duration-300">
+            📊 <?php echo Lang::get('dashboard.system_info'); ?>
+        </button>
+        <?php if (Auth::isAdmin()): ?>
             <button onclick="triggerResetSystem()"
                 class="px-8 py-4 rounded-xl border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all duration-300">
                 ⚡ <?php echo Lang::get('dashboard.reset_system'); ?>
             </button>
-        </div>
+        <?php endif; ?>
     </div>
+</div>
 
-    <script>
-        function triggerResetSystem() {
-            // First Confirmation
-            showModal({
-                title: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_title')), ENT_QUOTES); ?>',
-                message: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_msg_1')), ENT_QUOTES); ?>',
-                type: 'confirm',
-                stayOpen: true, // Prevent flickering by not closing before the next modal
-                confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('common.confirm')), ENT_QUOTES); ?>',
-                onConfirm: function () {
-                    // Second Confirmation (The "Are you really sure?" step with checkbox)
-                    showModal({
-                        title: '☢️ <?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_title')), ENT_QUOTES); ?>',
-                        message: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_msg_2')), ENT_QUOTES); ?>',
-                        type: 'confirm',
-                        confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_confirm_btn')), ENT_QUOTES); ?>',
-                        safetyCheck: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.confirm_checkbox')), ENT_QUOTES); ?>',
-                        onConfirm: function () {
-                            window.location.href = '<?php echo $baseUrl; ?>admin/system/reset';
-                        }
-                    });
+<script>
+    function showSystemInfo() {
+        fetch('<?php echo $baseUrl; ?>admin/system/info')
+            .then(res => res.json())
+            .then(data => {
+                const helpMap = {
+                    'upload_max_filesize': '<?php echo addslashes(Lang::get('dashboard.help_upload')); ?>',
+                    'post_max_size': '<?php echo addslashes(Lang::get('dashboard.help_post')); ?>',
+                    'memory_limit': '<?php echo addslashes(Lang::get('dashboard.help_memory')); ?>',
+                    'max_execution_time': '<?php echo addslashes(Lang::get('dashboard.help_time')); ?>',
+                    'max_input_vars': '<?php echo addslashes(Lang::get('dashboard.help_vars')); ?>'
+                };
+
+                let html = `
+                        <div class="mb-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                            <p class="text-sm md:text-base text-slate-200 leading-relaxed font-medium">
+                                <?php echo addslashes(Lang::get('dashboard.system_intro')); ?>
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+                    `;
+
+                for (const [key, value] of Object.entries(data)) {
+                    const label = key.replace(/_/g, ' ').toUpperCase();
+                    const help = helpMap[key] || '';
+                    let extraWarning = '';
+                    
+                    if (key === 'upload_max_filesize') {
+                        const warningText = '<?php echo addslashes(Lang::get('dashboard.file_size_warning')); ?>'.replace(':value', value);
+                        extraWarning = `<div class="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl"><p class="text-xs font-bold text-amber-500 uppercase tracking-tighter italic">${warningText}</p></div>`;
+                    }
+
+                    html += `
+                            <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+                                <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
+                                <span class="text-lg font-black text-white block mb-2">${value}</span>
+                                ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
+                                ${extraWarning}
+                            </div>
+                        `;
                 }
+
+                html += `
+                        </div>
+                        <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
+                            <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
+                                <?php echo addslashes(Lang::get('dashboard.needs_more_capacity')); ?>
+                            </h4>
+                            <p class="text-sm text-p-muted leading-relaxed mb-6">
+                                <?php echo addslashes(Lang::get('dashboard.modify_values_text')); ?>
+                            </p>
+                            <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                <p class="text-xs md:text-sm text-p-muted leading-relaxed">
+                                    <?php echo addslashes(Lang::get('dashboard.recommendation')); ?>
+                                </p>
+                            </div>
+                        </div>
+                    `;
+
+                showModal({
+                    title: '<?php echo addslashes(Lang::get('dashboard.server_config')); ?>',
+                    message: '',
+                    type: 'modal',
+                    typeLabel: '<?php echo addslashes(Lang::get('dashboard.system_env_nodes')); ?>',
+                    maxWidth: 'max-w-4xl'
+                });
+
+                const msgContainer = document.getElementById('modal-message');
+                msgContainer.innerHTML = html;
+                msgContainer.classList.remove('text-slate-400'); // Let our styled HTML shine
             });
-        }
-    </script>
-<?php endif; ?>
+    }
+    function triggerResetSystem() {
+        // First Confirmation
+        showModal({
+            title: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_title')), ENT_QUOTES); ?>',
+            message: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_msg_1')), ENT_QUOTES); ?>',
+            type: 'confirm',
+            stayOpen: true, // Prevent flickering by not closing before the next modal
+            confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('common.confirm')), ENT_QUOTES); ?>',
+            onConfirm: function () {
+                // Second Confirmation (The "Are you really sure?" step with checkbox)
+                showModal({
+                    title: '☢️ <?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_title')), ENT_QUOTES); ?>',
+                    message: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_msg_2')), ENT_QUOTES); ?>',
+                    type: 'confirm',
+                    confirmText: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.reset_confirm_btn')), ENT_QUOTES); ?>',
+                    safetyCheck: '<?php echo htmlspecialchars(addslashes(Lang::get('dashboard.confirm_checkbox')), ENT_QUOTES); ?>',
+                    onConfirm: function () {
+                        window.location.href = '<?php echo $baseUrl; ?>admin/system/reset';
+                    }
+                });
+            }
+        });
+    }
+</script>

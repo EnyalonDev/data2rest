@@ -5,7 +5,18 @@
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-**Data2Rest** es un sistema completo de gestión de bases de datos SQLite con generación automática de APIs REST, sistema de autenticación robusto, control de acceso basado en roles (RBAC) y una interfaz de administración moderna y elegante.
+**Data2Rest** nació de una necesidad real: acelerar el desarrollo de backends para aplicaciones web y móviles. Mi objetivo era que, al momento de diseñar la base de datos, los endpoints necesarios estuvieran listos de inmediato. De esa visión surgió este sistema sencillo y práctico, ideal para desarrolladores independientes, estudiantes y equipos pequeños que necesitan lanzar MVPs o prototipos productivos en cuestión de minutos.
+
+Con Data2Rest, el backend se adapta a tu idea y no al revés. Olvídate de buscar ejemplos genéricos de APIs que no encajan con tu proyecto; aquí tú diseñas tu estructura de datos y el sistema genera automáticamente los endpoints REST listos para consumir desde cualquier cliente.
+
+### 🎯 Objetivo del Proyecto
+Proveer una herramienta de código abierto que elimine la fricción inicial al crear backends, reduciendo errores repetitivos y permitiendo a los desarrolladores centrarse en lo que realmente importa: el diseño de sus datos y la lógica de su negocio.
+
+**Ideal para:**
+*   👨‍💻 **Desarrolladores Independientes**: Crea prototipos y apps completas sin escribir boilerplate.
+*   🎓 **Estudiantes**: Aprende sobre estructuras de datos y APIs viendo resultados inmediatos.
+*   🚀 **MVPs y Startups**: Valida tus ideas de negocio con un backend funcional en tiempo récord.
+*   👥 **Equipos Pequeños**: Mejora la productividad compartiendo un núcleo de datos unificado.
 
 ---
 
@@ -54,6 +65,12 @@
 - **Animaciones fluidas** y micro-interacciones
 - **Tailwind CSS** para estilos consistentes
 - **Tipografía premium** con Google Fonts (Outfit)
+- **Soporte Multi-idioma (i18n)**: Español, Inglés y Portugués integrados
+
+### 🛠️ Diagnóstico y Herramientas
+- **Información del Servidor**: Panel de monitoreo de variables de entorno (PHP, límites de subida, etc.)
+- **Instalador Automático**: Configuración inicial sin intervención manual
+- **Carga de Demo**: Sistema de despliegue de datos de prueba empresarial
 
 ---
 
@@ -76,7 +93,7 @@
 1. **Clona o descarga** el proyecto en tu servidor web:
    ```bash
    cd /opt/homebrew/var/www/
-   git clone <repository-url> data2rest
+   git clone https://github.com/enyalondev/data2rest.git data2rest
    ```
 
 2. **Configura Apache** para permitir `.htaccess`:
@@ -104,12 +121,14 @@
 
 ### Credenciales por Defecto
 
+Al finalizar la instalación automática, podrás acceder con las siguientes credenciales:
+
 ```
 Usuario: admin
 Contraseña: admin123
 ```
 
-⚠️ **IMPORTANTE**: Cambia estas credenciales inmediatamente después del primer acceso.
+⚠️ **AVISO DE SEGURIDAD**: Aunque parezca un paso obvio, se **recomienda encarecidamente cambiar la contraseña** inmediatamente después de tu primer acceso para proteger la integridad de tu sistema y tus datos.
 
 ---
 
@@ -296,6 +315,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 - 🌐 Website: [nestorovallos.com](https://nestorovallos.com)
 - 📧 Email: contacto@nestorovallos.com
 - 💼 LinkedIn: [Néstor Ovallos](https://linkedin.com/in/nestorovallos)
+- 🐙 GitHub: [github.com/enyalondev/data2rest](https://github.com/enyalondev/data2rest)
 
 ---
 
@@ -304,7 +324,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 Si encuentras algún problema o tienes preguntas:
 
 1. Revisa la [documentación de módulos](docs/)
-2. Abre un [Issue](https://github.com/tu-usuario/data2rest/issues)
+2. Abre un [Issue](https://github.com/enyalondev/data2rest/issues)
 3. Contacta al desarrollador
 
 ---
@@ -380,10 +400,6 @@ Si encuentras algún problema o tienes preguntas:
   - Paletas de colores personalizadas
   - Logo y branding personalizado
 
-- [ ] **Soporte Multi-idioma (i18n)**
-  - Interfaz en español, inglés, etc.
-  - Traducción de mensajes del sistema
-  - Detección automática de idioma
 
 - [ ] **Notificaciones Push**
   - Notificaciones en navegador

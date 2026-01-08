@@ -187,6 +187,77 @@ use App\Core\Lang; ?>
                                 value="<?php echo $formattedDate; ?>" <?php echo $field['is_required'] ? 'required' : ''; ?>
                                 class="form-input">
                             <?php break;
+                        
+                        case 'file': ?>
+                            <div class="glass-card !bg-white/5 overflow-hidden">
+                                <div class="flex flex-col lg:flex-row gap-8">
+                                    <div id="preview-container-<?php echo $field['field_name']; ?>"
+                                        class="<?php echo empty($val) ? 'hidden' : ''; ?> w-full lg:w-48 flex items-center justify-center rounded-xl overflow-hidden border border-glass-border relative group bg-black/20">
+                                        
+                                        <div class="flex flex-col items-center gap-2 p-4">
+                                            <svg class="w-12 h-12 text-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            <p class="text-[10px] font-black uppercase text-p-muted text-center truncate w-full px-2" id="preview-filename-<?php echo $field['field_name']; ?>">
+                                                <?php echo basename($val); ?>
+                                            </p>
+                                        </div>
+
+                                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                                            <p id="preview-path-<?php echo $field['field_name']; ?>"
+                                                class="text-[8px] font-mono text-primary break-all text-center"><?php echo $val; ?>
+                                            </p>
+                                        </div>
+                                        <button type="button" onclick="clearField('<?php echo $field['field_name']; ?>')"
+                                            class="absolute top-2 right-2 bg-red-500 text-p-title p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                    d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="flex-1 space-y-6">
+                                        <div class="flex flex-col gap-3">
+                                            <label
+                                                class="text-[10px] font-black text-p-muted uppercase tracking-widest flex items-center gap-2">
+                                                <span class="w-1 h-1 rounded-full bg-primary"></span>
+                                                <?php echo Lang::get('crud.resource_url'); ?>
+                                            </label>
+                                            <div class="flex gap-4">
+                                                <input type="text" name="gallery_<?php echo $field['field_name']; ?>"
+                                                    id="gallery-<?php echo $field['field_name']; ?>"
+                                                    value="<?php echo htmlspecialchars($val); ?>"
+                                                    placeholder="<?php echo Lang::get('crud.url_placeholder'); ?>"
+                                                    class="form-input flex-1 !bg-white/5"
+                                                    oninput="updatePreviewFromUrl('<?php echo $field['field_name']; ?>', this.value)">
+
+                                                <button type="button"
+                                                    onclick="openMediaGallery('<?php echo $field['field_name']; ?>')"
+                                                    class="btn-gallery whitespace-nowrap !py-2 flex items-center gap-2">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9l-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <?php echo Lang::get('crud.gallery_btn'); ?>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col gap-3 pt-6 border-t border-white/5">
+                                            <label
+                                                class="text-[10px] font-black text-p-muted uppercase tracking-widest flex items-center gap-2">
+                                                <span class="w-1 h-1 rounded-full bg-primary/40"></span>
+                                                <?php echo Lang::get('crud.upload_new'); ?>
+                                            </label>
+                                            <input type="file" name="<?php echo $field['field_name']; ?>"
+                                                id="file-<?php echo $field['field_name']; ?>" <?php echo (($field['is_required'] ?? false) && empty($val)) ? 'required' : ''; ?>
+                                                class="text-xs w-full file:bg-primary/20 file:border file:border-primary/30 file:px-4 file:py-2 file:rounded-lg file:text-primary file:font-bold file:mr-4 file:cursor-pointer hover:file:bg-primary/30 transition-all"
+                                                onchange="if(this.value) { document.getElementById('gallery-<?php echo $field['field_name']; ?>').required = false; }">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php break;
 
                     endswitch; 
                     endif; ?>

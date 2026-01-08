@@ -155,6 +155,14 @@ Todas las consultas SQL utilizan prepared statements para prevenir inyección SQ
 
 ---
 
+## 📤 Subida de Archivos
+La API soporta la subida de archivos mediante `multipart/form-data`.
+- **Extensiones permitidas**: `jpg`, `jpeg`, `png`, `gif`, `webp`, `pdf`, `txt`, `doc`, `docx`, `odt`, `md`, `rar`, `zip`.
+- **Validación**: El sistema valida automáticamente la extensión tanto en el cliente como en el servidor.
+
+## 📊 Diagnóstico del Sistema
+- **GET** `/admin/system/info` - Devuelve variables críticas del entorno. *Requiere sesión de administrador activa.*
+
 [← Volver al README principal](../README.md)
 
 

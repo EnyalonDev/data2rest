@@ -3,6 +3,7 @@
 namespace App\Modules\Api;
 
 use App\Core\Database;
+use App\Core\Config;
 use App\Core\Auth;
 use App\Core\BaseController;
 use PDO;
@@ -11,7 +12,9 @@ class RestController extends BaseController
 {
     private function authenticate()
     {
-        $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
+
         if (!$apiKey) {
             $this->json(['error' => 'API Key required (X-API-KEY header or api_key param)'], 401);
         }
@@ -35,24 +38,30 @@ class RestController extends BaseController
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
 
         $sysDb = Database::getInstance()->getConnection();
-        $stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ?");
-        $stmt->execute([$db_id]);
+        // Support finding by ID or by name
+        $stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ? OR name = ? OR REPLACE(LOWER(name), ' ', '_') = ?");
+        $stmt->execute([$db_id, $db_id, strtolower($db_id)]);
         $database = $stmt->fetch();
 
-        if (!$database)
-            $this->json(['error' => 'Database container not found'], 404);
+        if (!$database) {
+            $this->json(['error' => "Database container '$db_id' not found"], 404);
+        }
 
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-            // Get field configurations to detect Foreign Keys
+            $sysDb = Database::getInstance()->getConnection();
             $stmtConf = $sysDb->prepare("SELECT * FROM fields_config WHERE db_id = ? AND table_name = ?");
             $stmtConf->execute([$db_id, $table]);
             $fieldsConfig = $stmtConf->fetchAll();
 
             $method = $_SERVER['REQUEST_METHOD'];
+            // Method spoofing for multipart/form-data (required for PATCH/PUT with files in PHP)
+            if ($method === 'POST' && isset($_POST['_method'])) {
+                $method = strtoupper($_POST['_method']);
+            }
 
             switch ($method) {
                 case 'GET':
@@ -221,12 +230,23 @@ class RestController extends BaseController
     private function handlePostRequest($targetDb, $table)
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        if (empty($input))
-            $this->json(['error' => 'No data provided'], 400);
 
-        if (!isset($input['fecha_de_creacion']))
+        // Process file uploads if present (images only for pages, general for others)
+        $allowedExt = ($table === 'web_pages') ? ['jpg', 'jpeg', 'png', 'webp'] : ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
+        $filesData = $this->processUploads($table, $allowedExt);
+        $input = array_merge($input, $filesData);
+
+        // Filter input to only include actual table columns
+        $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+        $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+        $input = array_intersect_key($input, array_flip($validCols));
+
+        if (empty($input))
+            $this->json(['error' => 'No valid data provided'], 400);
+
+        if (!isset($input['fecha_de_creacion']) && in_array('fecha_de_creacion', $validCols))
             $input['fecha_de_creacion'] = date('Y-m-d H:i:s');
-        if (!isset($input['fecha_edicion']))
+        if (!isset($input['fecha_edicion']) && in_array('fecha_edicion', $validCols))
             $input['fecha_edicion'] = date('Y-m-d H:i:s');
 
         $keys = array_map(function ($k) {
@@ -245,11 +265,29 @@ class RestController extends BaseController
     {
         if (!$id)
             $this->json(['error' => 'ID required'], 400);
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (empty($input))
-            $this->json(['error' => 'No data'], 400);
 
-        $input['fecha_edicion'] = date('Y-m-d H:i:s');
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+
+        // Process file uploads
+        $allowedExt = ($table === 'web_pages') ? ['jpg', 'jpeg', 'png', 'webp'] : ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
+        $filesData = $this->processUploads($table, $allowedExt);
+        $input = array_merge($input, $filesData);
+
+        // Filter input to only include actual table columns
+        $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+        $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+        $input = array_intersect_key($input, array_flip($validCols));
+
+        // id should not be updated manually
+        unset($input['id']);
+
+        if (empty($input))
+            $this->json(['error' => 'No valid data to update'], 400);
+
+        if (in_array('fecha_edicion', $validCols)) {
+            $input['fecha_edicion'] = date('Y-m-d H:i:s');
+        }
+
         $sets = [];
         foreach ($input as $key => $val) {
             $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
@@ -269,5 +307,48 @@ class RestController extends BaseController
         $stmt = $targetDb->prepare("DELETE FROM $table WHERE id = ?");
         $stmt->execute([$id]);
         $this->json(['success' => true]);
+    }
+
+    /**
+     * Processes files uploaded via multipart/form-data.
+     * Logic similar to CrudController but adapted for the API.
+     */
+    private function processUploads($table, $allowed = [])
+    {
+        if (empty($_FILES))
+            return [];
+
+        $data = [];
+        $uploadBase = Config::get('upload_dir');
+        $dateFolder = date('Y-m-d');
+        $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        $relativeDir = "$dateFolder/$safeTable/";
+        $absoluteDir = $uploadBase . $relativeDir;
+
+        if (empty($allowed)) {
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
+        }
+
+        foreach ($_FILES as $field => $file) {
+            if ($file['error'] === UPLOAD_ERR_OK) {
+                if (!is_dir($absoluteDir)) {
+                    mkdir($absoluteDir, 0777, true);
+                }
+
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($ext, $allowed)) {
+                    $this->json([
+                        'error' => "Invalid file extension '.$ext'. Allowed: " . implode(', ', $allowed)
+                    ], 400);
+                }
+
+                $newName = uniqid() . '.' . $ext;
+                if (move_uploaded_file($file['tmp_name'], $absoluteDir . $newName)) {
+                    $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $newName;
+                }
+            }
+        }
+        return $data;
     }
 }

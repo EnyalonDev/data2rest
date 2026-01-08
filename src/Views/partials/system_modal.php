@@ -66,7 +66,13 @@ use App\Core\Lang; ?>
         if (options.dismissText) dismissBtn.innerText = options.dismissText;
         else dismissBtn.innerText = '<?php echo Lang::get('common.dismiss'); ?>';
 
-        // Reset buttons & Safety
+        // Reset classes and state
+        content.className = 'glass-card w-full flex flex-col scale-95 opacity-0 transition-all duration-300 transform ' + (options.maxWidth || 'max-w-lg');
+        content.style.maxHeight = '90vh';
+
+        const msgContainer = document.getElementById('modal-message');
+        msgContainer.className = 'text-slate-400 mb-6 leading-relaxed font-medium overflow-y-auto custom-scrollbar pr-2';
+
         confirmBtn.classList.add('hidden');
         confirmBtn.disabled = false;
         confirmBtn.onclick = null;
@@ -85,16 +91,15 @@ use App\Core\Lang; ?>
 
         // Icon & Color
         if (options.type === 'error' || options.type === 'modal') {
-            icon.innerText = '⚠️';
-            icon.className = 'w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-red-500/10 text-red-500 border border-red-500/20';
+            icon.innerText = (options.type === 'error') ? '⚠️' : '📊';
+            icon.className = 'w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl ' +
+                (options.type === 'error' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-primary/10 text-primary border border-primary/20');
         } else if (options.type === 'confirm') {
             icon.innerText = '🛡️';
-            icon.className = 'w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20';
+            icon.className = 'w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20';
             confirmBtn.classList.remove('hidden');
             confirmBtn.onclick = () => {
                 if (options.onConfirm) options.onConfirm();
-                // ONLY close if we're not immediately showing another modal
-                // Dashboard logic handles sequential modals with timeouts
                 if (!options.stayOpen) closeModal();
             };
         }

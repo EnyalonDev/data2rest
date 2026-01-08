@@ -11,6 +11,18 @@ Auth::init();
 
 $router = new Router();
 
+// Handle CORS for all API requests
+if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/api/v1/') !== false) {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, X-API-KEY, X-API-Key, Authorization");
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit;
+    }
+}
+
 // --- Auth ---
 $router->add('GET', '/login', 'Auth\\LoginController@showLoginForm');
 $router->add('POST', '/login', 'Auth\\LoginController@login');
@@ -22,6 +34,9 @@ $router->add('GET', '/lang/{lang}', function ($lang) {
     header('Location: ' . $referer);
     exit;
 });
+
+// System routes
+$router->add('GET', '/admin/system/info', 'System\\SystemController@info');
 
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
@@ -79,9 +94,12 @@ $router->add('GET', '/admin/roles/delete', 'Auth\\RoleController@delete');
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('GET', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 $router->add('POST', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
+$router->add('POST', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 $router->add('PUT', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 $router->add('PATCH', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 $router->add('DELETE', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
+$router->add('OPTIONS', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
+$router->add('OPTIONS', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 
 // Dispatch
 $method = $_SERVER['REQUEST_METHOD'];
