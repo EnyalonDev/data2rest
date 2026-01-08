@@ -6,6 +6,7 @@ Thumbs.db
 
 # Databases (Keep the directory, ignore the files)
 /data/*.sqlite
+/data/*.db
 /data/*.sqlite-journal
 /data/*.sqlite-shm
 /data/*.sqlite-wal
