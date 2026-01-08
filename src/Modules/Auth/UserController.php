@@ -25,7 +25,10 @@ class UserController extends BaseController
         $this->view('admin/users/index', [
             'users' => $users,
             'title' => 'Users - Control Center',
-            'breadcrumbs' => [\App\Core\Lang::get('common.users') => null]
+            'breadcrumbs' => [
+                \App\Core\Lang::get('common.team') => 'admin/users',
+                \App\Core\Lang::get('common.users') => null
+            ]
         ]);
     }
 
@@ -51,6 +54,7 @@ class UserController extends BaseController
             'id' => $id,
             'title' => ($id ? 'Edit' : 'New') . ' User',
             'breadcrumbs' => [
+                \App\Core\Lang::get('common.team') => 'admin/users',
                 \App\Core\Lang::get('common.users') => 'admin/users',
                 ($id ? 'Edit' : 'New') . ' Agent' => null
             ]

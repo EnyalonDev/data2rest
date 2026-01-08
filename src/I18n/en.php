@@ -6,6 +6,7 @@ return [
         'users' => 'Users',
         'groups' => 'User Groups',
         'roles' => 'Roles',
+        'team' => 'Team Management',
         'api' => 'API Configuration',
         'save' => 'Save Changes',
         'cancel' => 'Cancel',

@@ -28,7 +28,10 @@ class GroupController extends BaseController
         $this->view('admin/groups/index', [
             'groups' => $groups,
             'title' => 'User Groups',
-            'breadcrumbs' => [\App\Core\Lang::get('common.groups') => null]
+            'breadcrumbs' => [
+                \App\Core\Lang::get('common.team') => 'admin/users',
+                \App\Core\Lang::get('common.groups') => null
+            ]
         ]);
     }
 
@@ -53,6 +56,7 @@ class GroupController extends BaseController
             'id' => $id,
             'title' => ($id ? 'Edit' : 'New') . ' Group',
             'breadcrumbs' => [
+                \App\Core\Lang::get('common.team') => 'admin/users',
                 \App\Core\Lang::get('common.groups') => 'admin/groups',
                 ($id ? 'Edit' : 'Create') . ' Group' => null
             ]
