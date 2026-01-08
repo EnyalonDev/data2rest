@@ -28,9 +28,31 @@ Este es el cliente oficial de demostración para **Data2Rest**, una Single Page 
 
 ## ⚙️ Configuración de la API
 
-El archivo `src/services/api.ts` contiene la configuración de conexión. Por defecto apunta a:
-- **Base URL**: `http://localhost:8000/api/v1/data2rest`
-- **Integración**: Asegúrate de tener tu servidor backend PHP corriendo.
+### Opción 1: Variables de Entorno (Recomendado)
+
+1. Crea un archivo `.env` en la raíz del proyecto:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edita `.env` y configura tus valores:
+   ```env
+   VITE_API_BASE_URL=http://localhost/data2rest/api/v1/modern-enterprise-erp
+   VITE_API_KEY=tu-api-key-aqui
+   ```
+
+3. Reinicia el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+
+### Opción 2: Configuración Manual
+
+Edita `src/services/api.ts` y actualiza:
+- **Base URL**: La URL de tu backend (por defecto: `http://localhost/data2rest/api/v1/modern-enterprise-erp`)
+- **API Key**: Crea una API Key desde el panel de administración del backend
+
+**📖 Para instrucciones detalladas, consulta [SETUP.md](./SETUP.md)**
 
 ## 📦 Despliegue en Vercel
 

@@ -9,9 +9,12 @@ export interface WebPage {
 
 export interface Service {
     id: number;
-    nombre: string;
-    descripcion: string;
-    icon_name: string;
+    nombre?: string;
+    descripcion?: string;
+    icon_name?: string;
+    title?: string;
+    description?: string;
+    icon?: string;
 }
 
 export interface ApiResponse<T> {

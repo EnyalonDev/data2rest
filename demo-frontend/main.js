@@ -1,6 +1,6 @@
 // --- Configuration ---
-const BASE_URL = 'http://localhost:8000/api/v1/data2rest'; // Update if needed
-const API_KEY = '553763f0-4660-4929-8473-19593259497e';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 // --- Application State ---
 const state = {
@@ -158,7 +158,8 @@ async function renderServices(container) {
         const response = await fetch(`${BASE_URL}/servicios`, {
             headers: { 'X-API-Key': API_KEY }
         });
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result; // Handle both direct array and wrapped response
         state.services = data;
 
         container.innerHTML = `
@@ -167,10 +168,10 @@ async function renderServices(container) {
                     ${data.map(s => `
                         <div class="feature-card">
                             <div class="feature-icon">
-                                <i data-lucide="${getIcon(s.icon_name)}"></i>
+                                <i data-lucide="${getIcon(s.icon || s.icon_name)}"></i>
                             </div>
-                            <h3 style="font-size: 1.4rem; margin-bottom: 0.8rem; font-weight: 700;">${s.nombre}</h3>
-                            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${s.descripcion}</p>
+                            <h3 style="font-size: 1.4rem; margin-bottom: 0.8rem; font-weight: 700;">${s.title || s.nombre}</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${s.description || s.descripcion}</p>
                             <span class="btn btn-ghost" style="font-size: 0.7rem; padding: 0.5rem 1rem;">System Core: ${s.id}</span>
                         </div>
                     `).join('')}
@@ -394,7 +395,10 @@ function getIcon(iconName) {
         'web': 'globe',
         'code': 'code-2',
         'mobile': 'smartphone',
-        'rocket': 'rocket'
+        'rocket': 'rocket',
+        'cloud-server': 'cloud',
+        'api': 'braces',
+        'chart-bar': 'bar-chart-3'
     };
-    return icons[iconName] || 'sparkles';
+    return icons[iconName] || iconName || 'sparkles';
 }

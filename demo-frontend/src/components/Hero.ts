@@ -1,5 +1,5 @@
-import { ApiService } from '../services/api';
-import { WebPage } from '../types';
+import { ApiService } from '../services/api.js';
+import type { WebPage } from '../types.js';
 
 export class Hero {
     private data: WebPage | null = null;

@@ -1,6 +1,6 @@
-import { ApiService } from '../services/api';
-import { WebPage } from '../types';
-import { showToast } from '../utils/toast';
+import { ApiService } from '../services/api.js';
+import type { WebPage } from '../types.js';
+import { showToast } from '../utils/toast.js';
 
 export class About {
     private data: WebPage | null = null;

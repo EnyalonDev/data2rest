@@ -320,7 +320,7 @@ use App\Core\Lang; ?>
                         <span
                             class="text-[9px] font-black text-primary uppercase tracking-widest text-center"><?php echo Lang::get('media.upload'); ?></span>
                         <input type="file" class="hidden" onchange="handleDirectUpload(this.files[0])"
-                            accept="image/*,video/*,application/pdf">
+                            accept="image/*,video/*,application/pdf,.zip,.rar,.doc,.docx,.txt">
                     </label>
                 </div>
                 <div>
@@ -342,6 +342,18 @@ use App\Core\Lang; ?>
                     </h4>
                     <div id="filter-tables" class="space-y-1">
                         <!-- Tables inject here -->
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-white/5">
+                    <h4 class="text-[10px] font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-primary/40"></span>
+                        Resource Type
+                    </h4>
+                    <div id="filter-types" class="space-y-1">
+                        <button onclick="setTypeFilter('all')" id="type-filter-all" class="type-filter-btn active w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all bg-primary/20 text-primary">All Resources</button>
+                        <button onclick="setTypeFilter('images')" id="type-filter-images" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5">Only Images</button>
+                        <button onclick="setTypeFilter('files')" id="type-filter-files" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5">Only Files</button>
                     </div>
                 </div>
             </aside>
@@ -391,6 +403,7 @@ use App\Core\Lang; ?>
     let allMediaData = null;
     let activeDateFilter = 'all';
     let activeTableFilter = 'all';
+    let activeTypeFilter = 'all'; // New: all, images, files
     let searchQuery = '';
 
     if (typeof tinymce !== 'undefined') {
@@ -428,6 +441,24 @@ use App\Core\Lang; ?>
             });
     }
 
+    function setTypeFilter(type) {
+        activeTypeFilter = type;
+        
+        // Update UI classes
+        document.querySelectorAll('.type-filter-btn').forEach(btn => {
+            btn.classList.remove('bg-primary/20', 'text-primary');
+            btn.classList.add('text-p-muted');
+        });
+        
+        const activeBtn = document.getElementById('type-filter-' + type);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-primary/20', 'text-primary');
+            activeBtn.classList.remove('text-p-muted');
+        }
+        
+        renderGrid();
+    }
+
     function renderGrid() {
         if(!allMediaData) return;
         const grid = document.getElementById('mediaGrid');
@@ -437,6 +468,15 @@ use App\Core\Lang; ?>
         let filtered = allMediaData.files;
         if (activeDateFilter !== 'all') filtered = filtered.filter(f => f.date_folder === activeDateFilter);
         if (activeTableFilter !== 'all') filtered = filtered.filter(f => f.table_folder === activeTableFilter);
+        
+        // Filter by Type
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        if (activeTypeFilter === 'images') {
+            filtered = filtered.filter(f => imageExtensions.includes(f.extension));
+        } else if (activeTypeFilter === 'files') {
+            filtered = filtered.filter(f => !imageExtensions.includes(f.extension));
+        }
+
         if (searchQuery) filtered = filtered.filter(f => f.name.toLowerCase().includes(searchQuery));
 
         status.innerText = `<?php echo Lang::get('media.sync'); ?>`.replace(':count', filtered.length);
@@ -451,18 +491,39 @@ use App\Core\Lang; ?>
 
         filtered.forEach(item => {
             const isSelected = selectedImages.includes(item.url);
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(item.extension);
             const div = document.createElement('div');
             div.className = `group relative aspect-square bg-black/40 rounded-2xl overflow-hidden cursor-pointer border ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-glass-border'} hover:border-primary/50 transition-all shadow-xl`;
             div.onclick = () => selectMedia(item.url);
 
+            let previewHtml = '';
+            if (isImage) {
+                previewHtml = `<img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${isSelected ? 'opacity-50' : ''}">`;
+            } else {
+                let icon = 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z'; // Default file
+                let color = 'text-p-muted';
+                
+                if (item.extension === 'pdf') { icon = 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'; color = 'text-red-400'; }
+                else if (['zip', 'rar'].includes(item.extension)) { icon = 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4'; color = 'text-yellow-500'; }
+                else if (['doc', 'docx'].includes(item.extension)) { icon = 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z'; color = 'text-blue-400'; }
+                else if (['mp4', 'mov'].includes(item.extension)) { icon = 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'; color = 'text-purple-400'; }
+
+                previewHtml = `
+                    <div class="w-full h-full flex flex-col items-center justify-center gap-3 p-4 bg-white/5 group-hover:bg-white/10 transition-colors">
+                        <svg class="w-12 h-12 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${icon}"></path></svg>
+                        <span class="text-[8px] font-black uppercase text-p-title tracking-widest bg-black/40 px-2 py-1 rounded-md border border-white/5 truncate w-full text-center">${item.extension}</span>
+                    </div>
+                `;
+            }
+
             div.innerHTML = `
-                <img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${isSelected ? 'opacity-50' : ''}">
+                ${previewHtml}
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                     <p class="text-[9px] font-black text-primary truncate uppercase tracking-widest mb-1">${item.name}</p>
                     <p class="text-[7px] text-p-muted font-bold uppercase">${item.date_folder} / ${item.table_folder}</p>
                 </div>
                 ${isSelected ? `
-                    <div class="absolute top-2 right-2 bg-primary text-black p-1 rounded-full">
+                    <div class="absolute top-2 right-2 bg-primary text-black p-1 rounded-full z-10">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg>
                     </div>
                 ` : ''}
@@ -499,9 +560,24 @@ use App\Core\Lang; ?>
         let html = '';
         images.forEach(img => {
             const fullUrl = (img.startsWith('http') ? img : '<?php echo $baseUrl; ?>' + img);
+            const ext = img.split('.').pop().toLowerCase();
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+            
+            let preview = '';
+            if (isImage) {
+                preview = `<img src="${fullUrl}" class="w-full h-full object-cover">`;
+            } else {
+                preview = `
+                    <div class="w-full h-full flex flex-col items-center justify-center p-2 bg-white/5 border border-white/5 rounded-lg">
+                        <svg class="w-6 h-6 text-primary/40 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-[6px] font-black uppercase text-p-muted truncate w-full text-center">${img.split('/').pop()}</span>
+                    </div>
+                `;
+            }
+
             html += `
                 <div class="relative aspect-square rounded-lg overflow-hidden border border-white/10 group">
-                    <img src="${fullUrl}" class="w-full h-full object-cover">
+                    ${preview}
                     <button type="button" onclick="removeGalleryImage('${fieldName}', '${img}')"
                         class="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg>
@@ -613,7 +689,30 @@ use App\Core\Lang; ?>
         }
 
         container.classList.remove('hidden');
-        if (img) img.src = (url.startsWith('http') ? url : '<?php echo $baseUrl; ?>' + url);
+        const ext = url.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+
+        if (isImage) {
+            if (img) {
+                img.src = (url.startsWith('http') ? url : '<?php echo $baseUrl; ?>' + url);
+                img.classList.remove('hidden');
+            }
+            const iconContainer = container.querySelector('.file-icon-preview');
+            if (iconContainer) iconContainer.remove();
+        } else {
+            if (img) img.classList.add('hidden');
+            let iconContainer = container.querySelector('.file-icon-preview');
+            if (!iconContainer) {
+                iconContainer = document.createElement('div');
+                iconContainer.className = 'file-icon-preview w-full h-full flex flex-col items-center justify-center p-4 bg-black/20';
+                container.appendChild(iconContainer);
+            }
+            iconContainer.innerHTML = `
+                <svg class="w-16 h-16 text-primary/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z"></path></svg>
+                <span class="text-[10px] font-black uppercase text-p-muted">${ext}</span>
+            `;
+        }
+
         pathTxt.innerText = url;
 
         const fileInput = document.getElementById('file-' + fieldName);
@@ -621,7 +720,11 @@ use App\Core\Lang; ?>
     }
 
     function clearField(fieldName) {
-        document.getElementById('preview-container-' + fieldName).classList.add('hidden');
+        const container = document.getElementById('preview-container-' + fieldName);
+        container.classList.add('hidden');
+        const iconContainer = container.querySelector('.file-icon-preview');
+        if (iconContainer) iconContainer.remove();
+        
         document.getElementById('gallery-' + fieldName).value = '__EMPTY__';
         document.getElementById('file-' + fieldName).value = '';
     }

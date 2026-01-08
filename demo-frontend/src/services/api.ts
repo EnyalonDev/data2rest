@@ -1,18 +1,18 @@
-import { WebPage, Service } from '../types';
+import type { WebPage, Service } from '../types.js';
 
-const BASE_URL = 'http://localhost:8000/api/v1/data2rest';
-const API_KEY = '553763f0-4660-4929-8473-19593259497e';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost/data2rest/api/v1/modern-enterprise-erp';
+const API_KEY = import.meta.env.VITE_API_KEY || '553763f0-4660-4929-8473-19593259497e';
 
 export const ApiService = {
     async getHero(): Promise<WebPage> {
-        const response = await fetch(`${BASE_URL}/web_pages/1`, {
+        const response = await fetch(`${BASE_URL}/web_pages/2`, {
             headers: { 'X-API-Key': API_KEY }
         });
         return await response.json();
     },
 
     async getAbout(): Promise<WebPage> {
-        const response = await fetch(`${BASE_URL}/web_pages/2`, {
+        const response = await fetch(`${BASE_URL}/web_pages/1`, {
             headers: { 'X-API-Key': API_KEY }
         });
         return await response.json();
@@ -22,7 +22,8 @@ export const ApiService = {
         const response = await fetch(`${BASE_URL}/servicios`, {
             headers: { 'X-API-Key': API_KEY }
         });
-        return await response.json();
+        const result = await response.json();
+        return result.data || result;
     },
 
     async contact(formData: FormData) {

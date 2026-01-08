@@ -1,7 +1,7 @@
-import { Hero } from './components/Hero';
-import { About } from './components/About';
-import { Services } from './components/Services';
-import { Contact } from './components/Contact';
+import { Hero } from './components/Hero.js';
+import { About } from './components/About.js';
+import { Services } from './components/Services.js';
+import { Contact } from './components/Contact.js';
 
 class App {
     private root = document.getElementById('app');

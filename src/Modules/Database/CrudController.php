@@ -262,9 +262,16 @@ LIMIT 1");
                         mkdir($absoluteDir, 0777, true);
 
                     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $newName = uniqid() . '.' . $ext;
-                    if (move_uploaded_file($file['tmp_name'], $absoluteDir . $newName)) {
-                        $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $newName;
+                    $safeName = $this->sanitizeFilename($file['name']);
+
+                    // Handle collisions
+                    if (file_exists($absoluteDir . $safeName)) {
+                        $info = pathinfo($safeName);
+                        $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
+                    }
+
+                    if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
+                        $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $safeName;
                     }
                 }
             }
@@ -360,10 +367,12 @@ LIMIT 1");
                         $dates[] = $dateFolder;
                         $tables[] = $tableFolder;
                         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                        if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) {
+                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', 'mp4', 'mov'];
+                        if (in_array($ext, $allowedExtensions)) {
                             $files[] = [
                                 'url' => $fullBaseUrl . 'uploads/' . str_replace(DIRECTORY_SEPARATOR, '/', $relativePath),
                                 'name' => $file->getFilename(),
+                                'extension' => $ext,
                                 'date_folder' => $dateFolder,
                                 'table_folder' => $tableFolder,
                                 'mtime' => $file->getMTime()
@@ -386,6 +395,32 @@ LIMIT 1");
         exit;
     }
     /**
+     * Sanitizes a filename for SEO and filesystem compatibility.
+     */
+    protected function sanitizeFilename($filename)
+    {
+        $info = pathinfo($filename);
+        $name = $info['filename'];
+        $ext = isset($info['extension']) ? '.' . strtolower($info['extension']) : '';
+
+        // Lowercase and remove accents/special chars
+        $name = mb_strtolower($name, 'UTF-8');
+        $name = preg_replace('/[^\w\s-]/u', '', $name);
+        // Replace spaces and underscores with hyphens
+        $name = preg_replace('/[\s_]+/', '-', $name);
+        // Remove multiple hyphens
+        $name = preg_replace('/-+/', '-', $name);
+        // Trim hyphens
+        $name = trim($name, '-');
+
+        // If for some reason name is empty, use 'file'
+        if (empty($name))
+            $name = 'file';
+
+        return $name . $ext;
+    }
+
+    /**
      * Handles file uploads to the system.
      */
     public function mediaUpload()
@@ -397,7 +432,7 @@ LIMIT 1");
 
         $uploadBase = Config::get('upload_dir');
         $dateFolder = date('Y-m-d');
-        $tableFolder = 'explorer'; // Default target for explorer uploads
+        $tableFolder = 'explorer';
         $relativeDir = "$dateFolder/$tableFolder/";
         $absoluteDir = $uploadBase . $relativeDir;
 
@@ -406,14 +441,19 @@ LIMIT 1");
         }
 
         $file = $_FILES['file'];
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $newName = uniqid() . '.' . $ext;
+        $safeName = $this->sanitizeFilename($file['name']);
 
-        if (move_uploaded_file($file['tmp_name'], $absoluteDir . $newName)) {
-            $url = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $newName;
+        // Handle collisions: if file exists, add short unique id
+        if (file_exists($absoluteDir . $safeName)) {
+            $info = pathinfo($safeName);
+            $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
+        }
+
+        if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
+            $url = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $safeName;
             $this->json([
                 'url' => $url,
-                'name' => $newName,
+                'name' => $safeName,
                 'date_folder' => $dateFolder,
                 'table_folder' => $tableFolder
             ]);
