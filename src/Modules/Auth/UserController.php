@@ -89,6 +89,11 @@ class UserController extends BaseController
         $db = Database::getInstance()->getConnection();
         $id = $_POST['id'] ?? null;
         $username = $_POST['username'];
+
+        // Sanitize username: replace spaces and special characters with underscores
+        $username = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($username));
+        $username = trim($username, '_');
+
         $role_id = $_POST['role_id'];
         $status = isset($_POST['status']) ? 1 : 0;
         $group_id = !empty($_POST['group_id']) ? $_POST['group_id'] : null;

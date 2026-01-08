@@ -57,7 +57,9 @@ ORDER BY d.id DESC");
     {
         Auth::requirePermission('module:databases', 'create');
         $name = $_POST['name'] ?? 'New Database';
-        $sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', strtolower($name));
+        // Sanitize name: replace spaces/special chars with underscores
+        $sanitized = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($name));
+        $sanitized = trim(strtolower($sanitized), '_');
         $storagePath = Config::get('db_storage_path');
 
         // Priority: Check if a file with this name already exists in data/
@@ -176,7 +178,10 @@ ORDER BY d.id DESC");
     {
         $db_id = $_POST['db_id'] ?? null;
         Auth::requirePermission("db:$db_id", 'create_table');
-        $table_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['table_name'] ?? '');
+
+        $table_name = $_POST['table_name'] ?? '';
+        $table_name = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($table_name));
+        $table_name = trim(strtolower($table_name), '_');
 
         if (!$db_id || empty($table_name)) {
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
@@ -288,8 +293,14 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     {
         $db_id = $_POST['db_id'] ?? null;
         Auth::requirePermission("db:$db_id", 'manage_fields');
-        $table_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['table_name'] ?? '');
-        $field_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['field_name'] ?? '');
+        $table_name = $_POST['table_name'] ?? '';
+        $field_name = $_POST['field_name'] ?? '';
+
+        // Sanitize names
+        $table_name = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($table_name));
+        $table_name = trim(strtolower($table_name), '_');
+        $field_name = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($field_name));
+        $field_name = trim(strtolower($field_name), '_');
         $data_type = $_POST['data_type'] ?? 'TEXT';
         $view_type = $_POST['view_type'] ?? 'text';
 
