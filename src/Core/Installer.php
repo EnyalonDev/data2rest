@@ -5,8 +5,10 @@ namespace App\Core;
 use PDO;
 use PDOException;
 
-class Installer {
-    public static function check() {
+class Installer
+{
+    public static function check()
+    {
         $dbPath = Config::get('db_path');
         $dataDir = dirname($dbPath);
         $uploadDir = Config::get('upload_dir');
@@ -25,18 +27,40 @@ class Installer {
         }
     }
 
-    private static function initDatabase($dbPath) {
+    private static function initDatabase($dbPath)
+    {
         try {
             $db = new PDO('sqlite:' . $dbPath);
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $queries = [
+                // Roles table
+                "CREATE TABLE roles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    permissions TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                // Groups table
+                "CREATE TABLE groups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    permissions TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                // Users table with role_id and group_id
                 "CREATE TABLE users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE,
                     password TEXT,
-                    role TEXT DEFAULT 'user',
-                    status INTEGER DEFAULT 1
+                    role_id INTEGER,
+                    group_id INTEGER,
+                    status INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (role_id) REFERENCES roles(id),
+                    FOREIGN KEY (group_id) REFERENCES groups(id)
                 )",
                 "CREATE TABLE databases (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,10 +119,21 @@ class Installer {
                 $db->exec($query);
             }
 
+            // Create default admin role with all permissions
+            $adminPermissions = json_encode(['all' => true]);
+            $stmt = $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Administrator', 'Full system access', ?)");
+            $stmt->execute([$adminPermissions]);
+            $adminRoleId = $db->lastInsertId();
+
+            // Create default user role with limited permissions
+            $userPermissions = json_encode(['all' => false, 'modules' => [], 'databases' => []]);
+            $stmt = $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('User', 'Standard user access', ?)");
+            $stmt->execute([$userPermissions]);
+
             // Create default admin user (password: admin123)
             $password = password_hash('admin123', PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO users (username, password, role) VALUES ('admin', ?, 'admin')");
-            $stmt->execute([$password]);
+            $stmt = $db->prepare("INSERT INTO users (username, password, role_id) VALUES ('admin', ?, ?)");
+            $stmt->execute([$password, $adminRoleId]);
 
         } catch (PDOException $e) {
             die("Auto-Installation Error: " . $e->getMessage());
