@@ -614,7 +614,7 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     public function exportSql()
     {
         $id = $_GET['id'] ?? null;
-        Auth::requirePermission('module:databases.view_tables');
+        Auth::requirePermission('module:databases.create_db');
 
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
