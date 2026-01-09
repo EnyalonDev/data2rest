@@ -1,9 +1,10 @@
+<?php use App\Core\Lang; ?>
 <div class="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="mb-8">
         <h1 class="text-4xl font-black text-p-title tracking-tight mb-2">
-            <?php echo $project ? 'Edit Project' : 'New Project'; ?>
+            <?php echo $project ? Lang::get('projects.edit') : Lang::get('projects.new'); ?>
         </h1>
-        <p class="text-p-muted font-medium">Configure project details and subscription plan.</p>
+        <p class="text-p-muted font-medium"><?php echo Lang::get('projects.form_subtitle'); ?></p>
     </div>
 
     <form action="<?php echo $baseUrl; ?>admin/projects/save" method="POST" class="space-y-6">
@@ -15,33 +16,36 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <!-- Project Name -->
                 <div class="col-span-2">
-                    <label class="form-label mb-2">Project Name</label>
+                    <label class="form-label mb-2"><?php echo Lang::get('projects.name'); ?></label>
                     <input type="text" name="name" value="<?php echo htmlspecialchars($project['name'] ?? ''); ?>"
-                        class="form-input" placeholder="Enter project name..." required>
+                        class="form-input" placeholder="<?php echo Lang::get('projects.name_placeholder'); ?>" required>
                 </div>
 
                 <!-- Description -->
                 <div class="col-span-2">
-                    <label class="form-label mb-2">Description</label>
+                    <label class="form-label mb-2"><?php echo Lang::get('projects.description'); ?></label>
                     <textarea name="description" rows="3" class="form-input resize-none"
-                        placeholder="Project goals or notes..."><?php echo htmlspecialchars($project['description'] ?? ''); ?></textarea>
+                        placeholder="<?php echo Lang::get('projects.desc_placeholder'); ?>"><?php echo htmlspecialchars($project['description'] ?? ''); ?></textarea>
                 </div>
 
                 <!-- Plan Selection -->
                 <div>
-                    <label class="form-label mb-2">Subscription Plan</label>
+                    <label class="form-label mb-2"><?php echo Lang::get('projects.plan'); ?></label>
                     <select name="plan_type" class="form-input">
-                        <option value="monthly" <?php echo ($project['plan_type'] ?? '') == 'monthly' ? 'selected' : ''; ?>>Monthly Plan</option>
-                        <option value="quarterly" <?php echo ($project['plan_type'] ?? '') == 'quarterly' ? 'selected' : ''; ?>>Quarterly Plan</option>
-                        <option value="semiannual" <?php echo ($project['plan_type'] ?? '') == 'semiannual' ? 'selected' : ''; ?>>Semiannual Plan</option>
+                        <option value="monthly" <?php echo ($project['plan_type'] ?? '') == 'monthly' ? 'selected' : ''; ?>>
+                            <?php echo Lang::get('projects.monthly_plan'); ?>
+                        </option>
+                        <option value="quarterly" <?php echo ($project['plan_type'] ?? '') == 'quarterly' ? 'selected' : ''; ?>><?php echo Lang::get('projects.quarterly_plan'); ?></option>
+                        <option value="semiannual" <?php echo ($project['plan_type'] ?? '') == 'semiannual' ? 'selected' : ''; ?>><?php echo Lang::get('projects.semiannual_plan'); ?></option>
                         <option value="annual" <?php echo ($project['plan_type'] ?? '') == 'annual' ? 'selected' : ''; ?>>
-                            Annual Plan</option>
+                            <?php echo Lang::get('projects.annual_plan'); ?>
+                        </option>
                     </select>
                 </div>
 
                 <!-- Start Date -->
                 <div>
-                    <label class="form-label mb-2">Plan Activation Date</label>
+                    <label class="form-label mb-2"><?php echo Lang::get('projects.activation_date'); ?></label>
                     <input type="datetime-local" name="start_date"
                         value="<?php echo date('Y-m-d\TH:i', strtotime($project['start_date'] ?? 'now')); ?>"
                         class="form-input">
@@ -52,7 +56,7 @@
             <div class="mb-12">
                 <div class="flex items-center justify-between mb-8 border-b border-glass-border pb-4">
                     <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] flex items-center gap-3">
-                        <span class="w-8 h-[1px] bg-slate-800"></span> Gestión de Equipo
+                        <span class="w-8 h-[1px] bg-slate-800"></span> <?php echo Lang::get('common.team'); ?>
                     </h3>
                 </div>
 
@@ -61,8 +65,10 @@
                     <div class="space-y-6">
                         <div class="flex items-center gap-2 mb-2">
                             <span
-                                class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase rounded-md border border-emerald-500/20">Asignados</span>
-                            <h4 class="text-sm font-bold text-p-title">Usuarios con Acceso</h4>
+                                class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase rounded-md border border-emerald-500/20"><?php echo Lang::get('projects.assigned'); ?></span>
+                            <h4 class="text-sm font-bold text-p-title">
+                                <?php echo Lang::get('projects.users_with_access'); ?>
+                            </h4>
                         </div>
 
                         <div id="assigned-users-list"
@@ -75,12 +81,15 @@
                     <div class="space-y-6">
                         <div class="flex items-center gap-2 mb-2">
                             <span
-                                class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-md border border-primary/20">Búsqueda</span>
-                            <h4 class="text-sm font-bold text-p-title">Añadir nuevos miembros</h4>
+                                class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-md border border-primary/20"><?php echo Lang::get('common.search'); ?></span>
+                            <h4 class="text-sm font-bold text-p-title">
+                                <?php echo Lang::get('projects.search_members'); ?>
+                            </h4>
                         </div>
 
                         <div class="relative">
-                            <input type="text" id="user-search-input" placeholder="Buscar por nombre de usuario..."
+                            <input type="text" id="user-search-input"
+                                placeholder="<?php echo addslashes(Lang::get('common.search')); ?>..."
                                 class="form-input !pl-12 !py-4 text-sm font-bold bg-white/5 border-glass-border focus:border-primary/50 transition-all">
                             <div class="absolute left-4 top-1/2 -translate-y-1/2 text-p-muted opacity-50">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,21 +118,20 @@
                     </svg>
                 </div>
                 <div class="text-xs leading-relaxed text-p-muted font-medium">
-                    <strong class="text-p-text block mb-1 uppercase tracking-widest">About Subscriptions</strong>
-                    Al cambiar el plan se recalculará inmediatamente la próxima fecha de facturación.
-                    La gestión de usuarios asignados define quién puede ver y editar las bases de datos de este
-                    proyecto.
+                    <strong
+                        class="text-p-text block mb-1 uppercase tracking-widest"><?php echo Lang::get('projects.about_subscriptions'); ?></strong>
+                    <?php echo Lang::get('projects.subscription_info'); ?>
                 </div>
             </div>
 
             <div class="flex items-center gap-4 pt-4">
                 <button type="submit"
                     class="px-8 py-4 bg-primary text-dark rounded-xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all">
-                    <?php echo $project ? 'Actualizar Proyecto' : 'Crear Proyecto'; ?>
+                    <?php echo $project ? Lang::get('common.save') : Lang::get('common.commit'); ?>
                 </button>
                 <a href="<?php echo $baseUrl; ?>admin/projects"
                     class="px-8 py-4 bg-white/5 text-p-muted border border-glass-border rounded-xl font-black uppercase tracking-widest hover:bg-red-500/10 hover:text-red-500 transition-all">
-                    Cancelar
+                    <?php echo Lang::get('common.cancel'); ?>
                 </a>
             </div>
         </div>
@@ -149,7 +157,7 @@
         if (assignedUserIds.length === 0) {
             assignedContainer.innerHTML = `
                 <div class="text-center py-10 opacity-30 italic text-xs">
-                    No hay usuarios asignados a este proyecto
+                    <?php echo addslashes(Lang::get('projects.no_users_assigned')); ?>
                 </div>
             `;
         }
@@ -197,7 +205,7 @@
                             </div>
                             <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
                         </div>
-                        <span class="text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">Añadir +</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all"><?php echo addslashes(Lang::get('common.add')); ?> +</span>
                     `;
                     searchResultsContainer.appendChild(card);
                 }
@@ -214,10 +222,10 @@
 
     function removeUserAccess(id, username) {
         showModal({
-            title: 'Confirmar Eliminación',
-            message: `¿Estás seguro de que quieres quitarle el acceso a "${username.toUpperCase()}" de este proyecto?`,
+            title: '<?php echo addslashes(Lang::get('projects.remove_access_confirm_title')); ?>',
+            message: `<?php echo addslashes(Lang::get('projects.remove_access_confirm_msg')); ?>`.replace(':name', username.toUpperCase()),
             type: 'confirm',
-            confirmText: 'Quitar Acceso',
+            confirmText: '<?php echo addslashes(Lang::get('projects.remove_access_btn')); ?>',
             onConfirm: () => {
                 assignedUserIds = assignedUserIds.filter(userId => userId.toString() !== id.toString() && parseInt(userId) !== parseInt(id));
                 renderLists();

@@ -60,7 +60,7 @@ use App\Core\Lang; ?>
                     <td class="px-8 py-6">
                         <div class="flex flex-col">
                             <span
-                                class="text-xs font-bold text-p-muted dark:text-slate-300"><?php echo htmlspecialchars($u['role_name'] ?? 'Unassigned'); ?></span>
+                                class="text-xs font-bold text-p-muted dark:text-slate-300"><?php echo htmlspecialchars($u['role_name'] ?? Lang::get('common.none')); ?></span>
                             <span
                                 class="text-[9px] text-p-muted uppercase font-black tracking-widest"><?php echo Lang::get('users_list.policy_level'); ?></span>
                         </div>
@@ -128,8 +128,8 @@ use App\Core\Lang; ?>
 
     function showAccessDenied(action) {
         showModal({
-            title: 'Access Restricted',
-            message: `You do not have the required permissions to access "${action}". Please contact your system administrator.`,
+            title: '<?php echo addslashes(Lang::get('system_modal.access_restricted')); ?>',
+            message: '<?php echo addslashes(Lang::get('system_modal.access_restricted_msg')); ?>'.replace(':action', action),
             type: 'alert',
             typeLabel: 'OK'
         });

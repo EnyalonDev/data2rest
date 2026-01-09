@@ -5,7 +5,7 @@ use App\Core\Lang; ?>
         <?php echo $id ? Lang::get('crud.edit') : Lang::get('crud.new'); ?>
         <span class="text-primary italic"><?php echo ucfirst($ctx['table']); ?></span>
     </h1>
-    <p class="text-p-muted font-medium">Configurando registro estructural en la base de datos
+    <p class="text-p-muted font-medium"><?php echo Lang::get('crud_form.configuring_record'); ?>
         <b><?php echo htmlspecialchars($ctx['database']['name']); ?></b>.
     </p>
 </header>
@@ -154,7 +154,7 @@ use App\Core\Lang; ?>
                                     <?php if(empty($images)): ?>
                                         <div class="col-span-full flex flex-col items-center justify-center py-6 opacity-20">
                                             <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="1.5"></path></svg>
-                                            <span class="text-[9px] font-black uppercase tracking-widest">No Selection</span>
+                                            <span class="text-[9px] font-black uppercase tracking-widest"><?php echo Lang::get('common.none'); ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -345,17 +345,15 @@ use App\Core\Lang; ?>
                     </div>
                 </div>
 
-                <div class="pt-6 border-t border-white/5">
                     <h4 class="text-[10px] font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-primary/40"></span>
-                        Resource Type
+                        <?php echo Lang::get('media.resource_type'); ?>
                     </h4>
                     <div id="filter-types" class="space-y-1">
-                        <button onclick="setTypeFilter('all')" id="type-filter-all" class="type-filter-btn active w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all bg-primary/20 text-primary">All Resources</button>
-                        <button onclick="setTypeFilter('images')" id="type-filter-images" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5">Only Images</button>
-                        <button onclick="setTypeFilter('files')" id="type-filter-files" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5">Only Files</button>
+                        <button onclick="setTypeFilter('all')" id="type-filter-all" class="type-filter-btn active w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all bg-primary/20 text-primary"><?php echo Lang::get('media.all_resources'); ?></button>
+                        <button onclick="setTypeFilter('images')" id="type-filter-images" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5"><?php echo Lang::get('media.only_images'); ?></button>
+                        <button onclick="setTypeFilter('files')" id="type-filter-files" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5"><?php echo Lang::get('media.only_files'); ?></button>
                     </div>
-                </div>
             </aside>
 
             <!-- Grid Area -->
@@ -597,7 +595,7 @@ use App\Core\Lang; ?>
             html = `
                 <div class="col-span-full flex flex-col items-center justify-center py-6 opacity-20">
                     <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="1.5"></path></svg>
-                    <span class="text-[9px] font-black uppercase tracking-widest">No Selection</span>
+                    <span class="text-[9px] font-black uppercase tracking-widest"><?php echo Lang::get('common.none'); ?></span>
                 </div>
             `;
         }
@@ -673,15 +671,15 @@ use App\Core\Lang; ?>
                         });
                 } else {
                     showModal({
-                        title: 'Error de Carga',
-                        message: data.error || 'Error desconocido al subir el archivo.',
+                        title: '<?php echo addslashes(Lang::get('media.upload_error')); ?>',
+                        message: data.error || '<?php echo addslashes(Lang::get('media.upload_error_unknown')); ?>',
                         type: 'error'
                     });
                 }
             })
             .catch(err => {
                 showModal({
-                    title: 'Fallo de Red',
+                    title: '<?php echo addslashes(Lang::get('common.network_failure')); ?>',
                     message: err.message,
                     type: 'error'
                 });

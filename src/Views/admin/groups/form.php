@@ -1,9 +1,10 @@
 <?php use App\Core\Lang; ?>
 <header class="mb-12 text-center">
     <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">
-        <?php echo $id ? 'Edit' : 'New'; ?> <span class="text-primary italic">Group</span>
+        <?php echo $id ? Lang::get('groups.title_edit') : Lang::get('groups.title_new'); ?> <span
+            class="text-primary italic"><?php echo Lang::get('groups.title_suffix'); ?></span>
     </h1>
-    <p class="text-p-muted font-medium">Define a new user organization unit.</p>
+    <p class="text-p-muted font-medium"><?php echo Lang::get('groups.desc'); ?></p>
 </header>
 
 <section class="max-w-2xl mx-auto">
@@ -11,19 +12,20 @@
         <input type="hidden" name="id" value="<?php echo $group['id'] ?? ''; ?>">
 
         <div>
-            <label class="form-label">Group Name</label>
+            <label class="form-label"><?php echo Lang::get('groups.name'); ?></label>
             <input type="text" name="name" value="<?php echo htmlspecialchars($group['name'] ?? ''); ?>" required
-                placeholder="e.g. Sales Team" class="form-input">
+                placeholder="<?php echo Lang::get('groups.name_placeholder'); ?>" class="form-input">
         </div>
 
         <div>
-            <label class="form-label">Description</label>
-            <textarea name="description" rows="4" placeholder="Optional description of this group..."
+            <label class="form-label"><?php echo Lang::get('groups.description'); ?></label>
+            <textarea name="description" rows="4" placeholder="<?php echo Lang::get('groups.desc_placeholder'); ?>"
                 class="form-input"><?php echo htmlspecialchars($group['description'] ?? ''); ?></textarea>
         </div>
 
         <div class="pt-6">
-            <h3 class="text-sm font-black text-p-title uppercase mb-4">Group Permissions</h3>
+            <h3 class="text-sm font-black text-p-title uppercase mb-4"><?php echo Lang::get('groups.permissions'); ?>
+            </h3>
             <?php
             $permissions = $group['permissions'] ?? [];
             include __DIR__ . '/../../partials/policy_architect.php';

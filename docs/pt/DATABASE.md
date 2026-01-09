@@ -118,11 +118,18 @@ Isto permitirá que, ao inserir um produto, o sistema mostre um seletor com os n
 
 ## 🔒 Segurança
 
-### Validação de Permissões
-Cada operação valida que o usuário tenha permissões:
+### Validação de Permissões (Granular)
+Cada operação valida permissões específicas definidas no Arquiteto de Políticas:
+
+- **`databases.crud_read`**: Ver registros.
+- **`databases.crud_create`**: Inserir novos registros.
+- **`databases.crud_update`**: Modificar registros existentes.
+- **`databases.crud_delete`**: Eliminar registros.
+- **`databases.create_db`**, **`databases.delete_db`**: Gestão estrutural.
+
 ```php
-Auth::requireDatabaseAccess($db_id);
-Auth::requirePermission("db:$db_id", "write");
+// Exemplo interno
+Auth::requirePermission("module:databases.crud_read");
 ```
 
 ### Prepared Statements

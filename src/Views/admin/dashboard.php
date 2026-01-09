@@ -6,7 +6,7 @@ use App\Core\Lang; ?>
     </div>
     <div
         class="inline-block bg-primary text-dark px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 animate-pulse">
-        <?php echo (isset($project) && $project) ? 'Proyecto Activo' : Lang::get('dashboard.title'); ?>
+        <?php echo (isset($project) && $project) ? Lang::get('dashboard.active_project') : Lang::get('dashboard.title'); ?>
     </div>
     <h1 class="text-5xl md:text-8xl font-black text-p-title mb-6 tracking-tighter uppercase italic">
         <?php if (isset($project) && $project): ?>
@@ -17,7 +17,7 @@ use App\Core\Lang; ?>
     </h1>
     <p class="text-p-muted font-medium max-w-2xl mx-auto">
         <?php if (isset($project) && $project): ?>
-            <?php echo Lang::get('common.welcome'); ?>. Estás trabajando en el entorno aislado de este proyecto.
+            <?php echo Lang::get('common.welcome'); ?>. <?php echo Lang::get('dashboard.isolated_env'); ?>
         <?php else: ?>
             <?php echo Lang::get('dashboard.subtitle'); ?>
         <?php endif; ?>
@@ -34,17 +34,17 @@ use App\Core\Lang; ?>
                 </div>
                 <div>
                     <h2 class="text-2xl font-black text-p-title tracking-tight">
-                        <?php echo htmlspecialchars($project['name'] ?? 'Untitled Project'); ?>
+                        <?php echo htmlspecialchars($project['name'] ?? Lang::get('dashboard.untitled_project')); ?>
                     </h2>
                     <p class="text-xs text-p-muted font-medium max-w-md">
-                        <?php echo htmlspecialchars($project['description'] ?? 'Active project isolation focused on specific business goals.'); ?>
+                        <?php echo htmlspecialchars($project['description'] ?? Lang::get('dashboard.active_isolation_desc')); ?>
                     </p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center justify-center md:justify-end gap-6">
                 <div class="text-center md:text-right">
                     <span
-                        class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2">Subscription</span>
+                        class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2"><?php echo Lang::get('dashboard.subscription'); ?></span>
                     <span
                         class="px-4 py-1.5 bg-primary/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/30">
                         <?php echo $project['plan_type'] ?? 'Free'; ?>
@@ -52,8 +52,8 @@ use App\Core\Lang; ?>
                 </div>
                 <div class="hidden md:block w-[1px] h-12 bg-glass-border"></div>
                 <div class="text-center md:text-right">
-                    <span class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2">Billing
-                        Cycle</span>
+                    <span
+                        class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2"><?php echo Lang::get('dashboard.billing_cycle'); ?></span>
                     <span class="text-sm font-black text-p-title italic uppercase tracking-tighter">
                         <?php echo date('M d, Y', strtotime($project['next_billing_date'] ?? 'now')); ?>
                     </span>
@@ -61,7 +61,7 @@ use App\Core\Lang; ?>
                 <div class="hidden md:block w-[1px] h-12 bg-glass-border"></div>
                 <a href="<?php echo $baseUrl; ?>admin/projects/select"
                     class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-dark transition-all">
-                    Cambiar Proyecto
+                    <?php echo Lang::get('dashboard.change_project'); ?>
                 </a>
             </div>
         </div>
@@ -72,10 +72,10 @@ use App\Core\Lang; ?>
             class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 text-3xl mx-auto mb-6">
             ⚠️
         </div>
-        <h2 class="text-2xl font-black text-p-title mb-2">No Active Project Selected</h2>
-        <p class="text-p-muted font-medium mb-8">Please select a project from the top menu to access your databases.</p>
+        <h2 class="text-2xl font-black text-p-title mb-2"><?php echo Lang::get('dashboard.no_active_project'); ?></h2>
+        <p class="text-p-muted font-medium mb-8"><?php echo Lang::get('dashboard.select_project_msg'); ?></p>
         <a href="<?php echo $baseUrl; ?>admin/projects"
-            class="btn-primary !px-10 !py-4 font-black uppercase tracking-widest text-xs italic">Select Project</a>
+            class="btn-primary !px-10 !py-4 font-black uppercase tracking-widest text-xs italic"><?php echo Lang::get('common.select_project'); ?></a>
     </div>
 <?php endif; ?>
 
@@ -183,24 +183,24 @@ use App\Core\Lang; ?>
 
             <!-- Media Library Module -->
             <?php if (Auth::hasPermission('module:media', 'view_files')): ?>
-            <a href="<?php echo $baseUrl; ?>admin/media"
-                class="glass-card group hover:scale-[1.02] hover:border-primary/50 !p-8">
-                <div
-                    class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 text-primary">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-p-title mb-2">Media Library</h3>
-                <p class="text-xs text-p-muted mb-6 leading-relaxed">
-                    Manage files, images, and track asset usage across your databases.
-                </p>
-                <div class="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <?php echo Lang::get('dashboard.enter'); ?> <span>&rarr;</span>
-                </div>
-            </a>
+                <a href="<?php echo $baseUrl; ?>admin/media"
+                    class="glass-card group hover:scale-[1.02] hover:border-primary/50 !p-8">
+                    <div
+                        class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 text-primary">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-p-title mb-2"><?php echo Lang::get('media.explorer'); ?></h3>
+                    <p class="text-xs text-p-muted mb-6 leading-relaxed">
+                        <?php echo Lang::get('media.system'); ?>
+                    </p>
+                    <div class="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                        <?php echo Lang::get('dashboard.enter'); ?> <span>&rarr;</span>
+                    </div>
+                </a>
             <?php endif; ?>
 
             <!-- Users Module -->
@@ -272,7 +272,7 @@ use App\Core\Lang; ?>
             <?php $isDev = Auth::isDevMode(); ?>
             <button onclick="toggleDevMode()" id="btn-dev-mode"
                 class="px-8 py-4 rounded-xl border <?php echo $isDev ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-500/30 text-amber-500'; ?> text-[10px] font-black uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-white transition-all duration-300">
-                🛠️ DEV MODE: <?php echo $isDev ? 'ON' : 'OFF'; ?>
+                <?php echo Lang::get('dashboard.dev_mode'); ?>: <?php echo $isDev ? 'ON' : 'OFF'; ?>
             </button>
             <button onclick="triggerResetSystem()"
                 class="px-8 py-4 rounded-xl border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all duration-300">
@@ -295,8 +295,8 @@ use App\Core\Lang; ?>
 
                     // Show a quick notification or just reload to see the change in layout
                     showModal({
-                        title: 'Modo Desarrollo',
-                        message: `El Modo Desarrollo ahora está ${isActive ? 'ACTIVO' : 'DESACTIVADO'}. Se han habilitado herramientas de mantenimiento en el pie de página.`,
+                        title: '<?php echo addslashes(Lang::get('dashboard.dev_mode_modal_title')); ?>',
+                        message: '<?php echo addslashes(Lang::get('dashboard.dev_mode_msg')); ?>'.replace(':status', isActive ? '<?php echo addslashes(Lang::get('dashboard.dev_mode_on')); ?>' : '<?php echo addslashes(Lang::get('dashboard.dev_mode_off')); ?>'),
                         type: 'success',
                         onConfirm: () => window.location.reload()
                     });

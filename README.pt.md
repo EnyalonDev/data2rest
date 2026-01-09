@@ -54,9 +54,9 @@ Fornecer uma ferramenta de código aberto que elimine a fricção inicial ao cri
 
 ### 🔐 Sistema de Autenticação e Autorização
 - **Login seguro** com sessões PHP
-- **Controle de acesso baseado em papéis** (RBAC)
-- **Gestão de usuários e grupos**
-- **Permissões granulares** por base de dados
+- **Controle de acesso baseado em papéis** (RBAC) com herança
+- **Isolamento de Equipes**: Visibilidade estrita de usuários por Grupo
+- **Arquiteto de Políticas**: Definição visual de permissões (`delete_users`, `crud_create`, etc.)
 - **Sistema de mensagens flash** com modais elegantes
 
 ### 🎨 Interface Moderna

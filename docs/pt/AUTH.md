@@ -35,9 +35,14 @@ src/Modules/Auth/
 ### 🛡️ Controle de Acesso (RBAC) - Policy Architect
 - Papéis personalizáveis (admin, user, etc.)
 - **Arquiteto de Políticas**: Interface visual para definir permissões granulares.
-- Permissões específicas por recurso (CRUD por tabela).
+- **Permissões de Gestão de Usuários**:
+    - `invite_users`: Permitir convidar/criar novos usuários.
+    - `edit_users`: Permitir editar perfis existentes.
+    - `delete_users`: Permitir eliminar usuários (botão de exclusão oculto se não possuído).
+- **Isolamento de Equipes**:
+    - **Admins**: Veem todos os usuários e podem filtrar por grupo.
+    - **Usuários**: Apenas podem ver membros do seu próprio grupo de trabalho.
 - Validação em cada ação.
-- Grupos de usuários.
 
 ---
 

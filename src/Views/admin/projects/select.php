@@ -8,13 +8,12 @@ use App\Core\Lang; ?>
         </div>
         <div
             class="inline-block bg-primary text-dark px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 animate-pulse">
-            Portal de Acceso
+            <?php echo Lang::get('projects.portal_access'); ?>
         </div>
         <h1 class="text-5xl md:text-7xl font-black text-p-title mb-6 tracking-tighter uppercase italic">
-            Mis Proyectos
+            <?php echo Lang::get('projects.my_projects'); ?>
         </h1>
-        <p class="text-p-muted font-medium max-w-2xl mx-auto">Selecciona el entorno de trabajo al que deseas acceder
-            para gestionar tus datos e infraestructura.</p>
+        <p class="text-p-muted font-medium max-w-2xl mx-auto"><?php echo Lang::get('projects.select_env_desc'); ?></p>
 
         <?php if (Auth::isAdmin()): ?>
             <div class="mt-8 flex flex-wrap justify-center gap-4">
@@ -23,7 +22,7 @@ use App\Core\Lang; ?>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                     </svg>
-                    Nuevo Proyecto
+                    <?php echo Lang::get('projects.new_btn'); ?>
                 </a>
                 <a href="<?php echo $baseUrl; ?>admin/projects"
                     class="px-8 py-3.5 bg-p-card border border-glass-border rounded-xl text-[11px] font-black uppercase tracking-widest text-p-title hover:text-white hover:bg-primary/10 hover:border-primary/50 transition-all flex items-center gap-3 shadow-xl">
@@ -32,15 +31,14 @@ use App\Core\Lang; ?>
                             d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <circle cx="12" cy="12" r="3" stroke-width="2.5" />
                     </svg>
-                    Gestionar Proyectos
+                    <?php echo Lang::get('projects.title'); ?>
                 </a>
             </div>
         <?php endif; ?>
     </header>
 
-    <!-- Search Section -->
     <div class="mb-16 relative max-w-xl mx-auto">
-        <input type="text" id="project-search" placeholder="Buscar proyecto por nombre..."
+        <input type="text" id="project-search" placeholder="<?php echo Lang::get('projects.search_placeholder'); ?>"
             class="form-input !pl-16 !py-6 shadow-2xl shadow-primary/5 focus:shadow-primary/20 transition-all text-base font-bold bg-p-card/50 backdrop-blur-md rounded-2xl border-glass-border focus:border-primary/50">
         <div class="absolute left-6 top-1/2 -translate-y-1/2 text-primary opacity-60">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +70,7 @@ use App\Core\Lang; ?>
                                 <div
                                     class="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                                     <span
-                                        class="text-[9px] font-black uppercase tracking-widest text-emerald-500 italic">Activo</span>
+                                        class="text-[9px] font-black uppercase tracking-widest text-emerald-500 italic"><?php echo Lang::get('common.active'); ?></span>
                                     <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                                 </div>
                             <?php endif; ?>
@@ -86,7 +84,7 @@ use App\Core\Lang; ?>
                             <?php echo htmlspecialchars($p['name']); ?>
                         </h3>
                         <p class="text-sm text-p-muted font-medium leading-relaxed">
-                            <?php echo htmlspecialchars($p['description'] ?: 'Infraestructura de datos aislada para este proyecto.'); ?>
+                            <?php echo htmlspecialchars($p['description'] ?: Lang::get('projects.isolation_desc')); ?>
                         </p>
                     </div>
 
@@ -94,12 +92,12 @@ use App\Core\Lang; ?>
                     <div class="p-8 pt-0 flex gap-3 mt-auto">
                         <a href="<?php echo $baseUrl; ?>admin/projects/switch?id=<?php echo $p['id']; ?>"
                             class="flex-grow py-4 bg-primary text-dark rounded-xl text-center text-xs font-black uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-primary/10">
-                            Entrar al Proyecto &rarr;
+                            <?php echo Lang::get('projects.enter_project'); ?> &rarr;
                         </a>
                         <?php if (Auth::isAdmin()): ?>
                             <a href="<?php echo $baseUrl; ?>admin/projects/edit?id=<?php echo $p['id']; ?>"
                                 class="p-4 bg-white/5 border border-white/10 rounded-xl text-p-muted hover:text-primary hover:border-primary/50 transition-all shadow-lg"
-                                title="Configurar Proyecto">
+                                title="<?php echo Lang::get('projects.configure_project'); ?>">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                         d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -124,12 +122,12 @@ use App\Core\Lang; ?>
     <div id="no-results"
         class="hidden text-center py-24 bg-p-card border border-dashed border-glass-border rounded-[3rem]">
         <div class="text-8-xl mb-6 opacity-20">📂</div>
-        <h3 class="text-3xl font-black text-p-title mb-2">Proyecto no encontrado</h3>
-        <p class="text-p-muted font-medium">No hay proyectos que coincidan con tu búsqueda.</p>
+        <h3 class="text-3xl font-black text-p-title mb-2"><?php echo Lang::get('projects.not_found'); ?></h3>
+        <p class="text-p-muted font-medium"><?php echo Lang::get('projects.no_results_desc'); ?></p>
         <button
             onclick="document.getElementById('project-search').value=''; document.getElementById('project-search').dispatchEvent(new Event('input'))"
             class="mt-8 text-primary font-black uppercase tracking-widest text-[10px] hover:underline">
-            Limpiar Búsqueda
+            <?php echo Lang::get('projects.clear_search'); ?>
         </button>
     </div>
 </div>

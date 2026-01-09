@@ -118,11 +118,18 @@ This will allow the system to show a selector with the names of the categories w
 
 ## 🔒 Security
 
-### Permission Validation
-Every operation validates that the user has permissions:
+### Permission Validation (Granular)
+Every operation validates specific permissions defined in the Policy Architect:
+
+- **`databases.crud_read`**: View records.
+- **`databases.crud_create`**: Insert new records.
+- **`databases.crud_update`**: Modify existing records.
+- **`databases.crud_delete`**: Delete records.
+- **`databases.create_db`**, **`databases.delete_db`**: Structural management.
+
 ```php
-Auth::requireDatabaseAccess($db_id);
-Auth::requirePermission("db:$db_id", "write");
+// Internal example
+Auth::requirePermission("module:databases.crud_read");
 ```
 
 ### Prepared Statements

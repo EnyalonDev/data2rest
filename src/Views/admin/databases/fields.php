@@ -141,7 +141,7 @@ use App\Core\Lang; ?>
                                         class="block text-[9px] font-bold text-p-muted uppercase mb-2"><?php echo Lang::get('fields.display_field'); ?></label>
                                     <input type="text" name="related_field"
                                         value="<?php echo htmlspecialchars($field['related_field'] ?? ''); ?>"
-                                        placeholder="e.g. name"
+                                        placeholder="<?php echo Lang::get('fields.fk_placeholder'); ?>"
                                         class="w-full bg-p-bg dark:bg-black/40 border border-glass-border rounded-lg px-2 py-1 text-xs text-p-title focus:outline-none focus:border-primary/50">
                                 </div>
                             </div>
@@ -165,7 +165,8 @@ use App\Core\Lang; ?>
                 <div>
                     <label
                         class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.sql_id'); ?></label>
-                    <input type="text" name="field_name" placeholder="e.g. status" required
+                    <input type="text" name="field_name"
+                        placeholder="<?php echo Lang::get('fields.sql_id_placeholder'); ?>" required
                         class="w-full bg-p-bg dark:bg-black/40 border border-glass-border rounded-xl px-4 py-3 text-p-title focus:border-primary/50 transition-all font-mono text-sm">
                 </div>
 
@@ -173,9 +174,15 @@ use App\Core\Lang; ?>
                     <label
                         class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] mb-3"><?php echo Lang::get('fields.data_type'); ?></label>
                     <select name="data_type" class="custom-select w-full !py-3">
-                        <option value="INTEGER">INTEGER (Numerics / IDs)</option>
-                        <option value="TEXT" selected>TEXT (Strings / Text)</option>
-                        <option value="REAL">REAL (Decimals)</option>
+                        <option value="INTEGER">
+                            <?php echo Lang::get('fields.sql_types.int'); ?>
+                        </option>
+                        <option value="TEXT" selected>
+                            <?php echo Lang::get('fields.sql_types.text'); ?>
+                        </option>
+                        <option value="REAL">
+                            <?php echo Lang::get('fields.sql_types.real'); ?>
+                        </option>
                     </select>
                 </div>
 

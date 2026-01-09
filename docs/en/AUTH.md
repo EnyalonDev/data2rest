@@ -35,9 +35,14 @@ src/Modules/Auth/
 ### 🛡️ Access Control (RBAC) - Policy Architect
 - Customizable roles (admin, user, etc.)
 - **Policy Architect**: Visual interface to define granular permissions.
-- Specific permissions per resource (CRUD per table).
+- **User Management Permissions**:
+    - `invite_users`: Allow inviting/creating new users.
+    - `edit_users`: Allow editing existing profiles.
+    - `delete_users`: Allow deleting users (delete button hidden if not possessed).
+- **Team Isolation**:
+    - **Admins**: See all users and can filter by group.
+    - **Users**: Can only see members of their own workgroup.
 - Validation on every action.
-- User groups.
 
 ---
 

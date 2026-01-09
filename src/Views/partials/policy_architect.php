@@ -3,56 +3,57 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         <?php
+        use App\Core\Lang;
         $modules = [
             'databases' => [
-                'label' => 'Centro de Datos',
+                'label' => Lang::get('roles_form.databases_label'),
                 'color' => 'emerald',
                 'icon' => 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4',
                 'actions' => [
-                    'create_db' => 'Crear Base de Datos',
-                    'delete_db' => 'Eliminar Base de Datos',
-                    'view_tables' => 'Ver Tablas',
-                    'create_table' => 'Crear Tablas',
-                    'edit_table' => 'Editar Estructura',
-                    'drop_table' => 'Borrar Tablas',
-                    'crud_read' => 'Leer Registros',
-                    'crud_create' => 'Insertar Registros',
-                    'crud_update' => 'Actualizar Registros',
-                    'crud_delete' => 'Eliminar Registros'
+                    'create_db' => Lang::get('roles_form.perm_create_db'),
+                    'delete_db' => Lang::get('roles_form.perm_delete_db'),
+                    'view_tables' => Lang::get('roles_form.perm_view_tables'),
+                    'create_table' => Lang::get('roles_form.perm_create_table'),
+                    'edit_table' => Lang::get('roles_form.perm_fields_config'),
+                    'drop_table' => Lang::get('roles_form.perm_drop_table'),
+                    'crud_read' => Lang::get('roles_form.perm_crud_read'),
+                    'crud_create' => Lang::get('roles_form.perm_crud_create'),
+                    'crud_update' => Lang::get('roles_form.perm_crud_update'),
+                    'crud_delete' => Lang::get('roles_form.perm_crud_delete')
                 ]
             ],
             'api' => [
-                'label' => 'API Gateway',
+                'label' => Lang::get('roles_form.api_label'),
                 'color' => 'amber',
                 'icon' => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
                 'actions' => [
-                    'view_keys' => 'Ver Llaves API',
-                    'create_keys' => 'Crear Llaves',
-                    'revoke_keys' => 'Revocar Llaves',
-                    'view_docs' => 'Ver Documentación'
+                    'view_keys' => Lang::get('roles_form.perm_view_keys'),
+                    'create_keys' => Lang::get('roles_form.perm_manage_keys'),
+                    'revoke_keys' => Lang::get('roles_form.perm_manage_keys'),
+                    'view_docs' => Lang::get('roles_form.perm_view_docs')
                 ]
             ],
             'media' => [
-                'label' => 'Biblioteca de Medios',
+                'label' => Lang::get('roles_form.media_label'),
                 'color' => 'purple',
                 'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
                 'actions' => [
-                    'view_files' => 'Ver Archivos',
-                    'upload' => 'Subir Archivos',
-                    'edit_files' => 'Editar Imágenes',
-                    'delete_files' => 'Borrar Archivos'
+                    'view_files' => Lang::get('roles_form.perm_view_files'),
+                    'upload' => Lang::get('roles_form.perm_view_files'), // Using existing keys
+                    'edit_files' => Lang::get('roles_form.perm_view_files'),
+                    'delete_files' => Lang::get('roles_form.perm_view_files')
                 ]
             ],
             'users' => [
-                'label' => 'Gestión de Equipos',
+                'label' => Lang::get('roles_form.users_label'),
                 'color' => 'blue',
                 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
                 'actions' => [
-                    'view_users' => 'Ver Miembros',
-                    'invite_users' => 'Invitar Usuarios',
-                    'edit_users' => 'Editar Perfiles',
-                    'delete_users' => 'Eliminar Usuarios',
-                    'manage_roles' => 'Gestionar Roles'
+                    'view_users' => Lang::get('roles_form.perm_view_users'),
+                    'invite_users' => Lang::get('roles_form.perm_invite_users'),
+                    'edit_users' => Lang::get('roles_form.perm_edit_users'),
+                    'delete_users' => Lang::get('roles_form.perm_delete_users'),
+                    'manage_roles' => Lang::get('roles_form.perm_manage_roles')
                 ]
             ]
         ];
@@ -73,7 +74,7 @@
                         <?php echo $mod['label']; ?>
                     </h3>
                     <p class="text-[10px] text-p-muted font-bold uppercase tracking-widest mt-1">
-                        Módulo del Sistema
+                        <?php echo Lang::get('roles_form.system_module'); ?>
                     </p>
                 </div>
                 <label class="ml-auto relative inline-flex items-center cursor-pointer">

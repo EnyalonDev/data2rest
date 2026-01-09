@@ -13,13 +13,13 @@
         <div>
             <label class="form-label"><?php echo Lang::get('users.username'); ?></label>
             <input type="text" name="username" value="<?php echo htmlspecialchars($user['username'] ?? ''); ?>" required
-                class="form-input" placeholder="e.g. admin_user">
+                class="form-input" placeholder="<?php echo Lang::get('users.username_placeholder'); ?>">
         </div>
         <div>
             <label class="form-label"><?php echo Lang::get('users.password'); ?>
                 <?php echo $user ? '<span class="text-amber-500/50 italic">(' . Lang::get('users.password_hint') . ')</span>' : ''; ?></label>
             <input type="password" name="password" id="password-input" <?php echo $user ? '' : 'required'; ?>
-                class="form-input" placeholder="••••••••">
+                class="form-input" placeholder="<?php echo Lang::get('users.password_placeholder'); ?>">
             <!-- Password Strength -->
             <div class="mt-3 flex gap-1 h-1">
                 <div id="strength-1" class="flex-1 bg-white/5 rounded-full transition-all duration-500"></div>

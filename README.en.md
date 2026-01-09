@@ -54,9 +54,9 @@ To provide an open-source tool that eliminates initial friction when creating ba
 
 ### 🔐 Authentication and Authorization System
 - **Secure login** with PHP sessions
-- **Role-Based Access Control** (RBAC)
-- **User and group management**
-- **Granular permissions** per database
+- **Role-Based Access Control** (RBAC) with inheritance
+- **Team Isolation**: Strict visibility of users by Group
+- **Policy Architect**: Visual definition of permissions (`delete_users`, `crud_create`, etc.)
 - **Flash message system** with elegant modals
 
 ### 🎨 Modern Interface

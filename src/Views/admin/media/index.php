@@ -1,14 +1,15 @@
+<?php use App\Core\Lang; ?>
 <div class="flex flex-col gap-8">
     <!-- Header Area -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-p-title tracking-tight">Media Library</h1>
-            <p class="text-p-muted mt-1">Manage all your assets, track usage and find orphan files.</p>
+            <h1 class="text-3xl font-bold text-p-title tracking-tight"><?php echo Lang::get('media.explorer'); ?></h1>
+            <p class="text-p-muted mt-1"><?php echo Lang::get('media.library_subtitle'); ?></p>
         </div>
         <div class="flex items-center gap-3">
             <button onclick="showSettings()"
                 class="p-3 bg-p-input hover:bg-primary/10 hover:text-primary rounded-xl transition-all border border-glass-border"
-                title="Configuraciones">
+                title="<?php echo Lang::get('media.settings'); ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3" />
@@ -23,11 +24,11 @@
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                Upload File
+                <?php echo Lang::get('media.upload_file'); ?>
             </button>
             <button id="btn-view-trash" onclick="loadFiles('.trash')"
                 class="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-red-500/20"
-                title="Ver Papelera">
+                title="<?php echo Lang::get('media.view_trash'); ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6" />
@@ -45,7 +46,7 @@
         <div class="flex items-center gap-4 flex-grow">
             <!-- Search -->
             <div class="relative w-full md:w-80">
-                <input type="text" id="media-search" placeholder="Search files..."
+                <input type="text" id="media-search" placeholder="<?php echo Lang::get('media.search_placeholder'); ?>"
                     class="form-input !py-2 !pl-10 text-sm" oninput="debounceFilterFiles()">
                 <svg class="absolute left-3 top-2.5 text-p-muted" xmlns="http://www.w3.org/2000/svg" width="18"
                     height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -61,11 +62,12 @@
             <div id="selection-actions" class="hidden flex items-center gap-2">
                 <span id="selection-count"
                     class="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">0
-                    Selected</span>
+                    <?php echo Lang::get('media.selected'); ?></span>
 
                 <div class="flex items-center gap-1 ml-2">
                     <button onclick="bulkDelete()"
-                        class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="Delete Selected">
+                        class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                        title="<?php echo Lang::get('media.delete_selected'); ?>">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18" />
@@ -77,7 +79,7 @@
                     </button>
                     <button onclick="bulkMove()"
                         class="p-2 text-p-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                        title="Move Selected">
+                        title="<?php echo Lang::get('media.move_selected'); ?>">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M10 14l11-11" />
@@ -88,8 +90,8 @@
                     </button>
                     <button onclick="deselectAll()"
                         class="ml-2 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                        title="Deselect All">
-                        Clear
+                        title="<?php echo Lang::get('media.deselect_all'); ?>">
+                        <?php echo Lang::get('media.clear_selection'); ?>
                     </button>
                 </div>
             </div>
@@ -148,8 +150,8 @@
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-primary">Drop to Upload</h3>
-                <p class="text-primary/70">Files will be uploaded to the current folder</p>
+                <h3 class="text-2xl font-bold text-primary"><?php echo Lang::get('media.drop_to_upload'); ?></h3>
+                <p class="text-primary/70"><?php echo Lang::get('media.upload_current_folder'); ?></p>
             </div>
         </div>
 
@@ -166,7 +168,7 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <p>Loading assets...</p>
+                    <p><?php echo Lang::get('media.scanning'); ?></p>
                 </div>
             </div>
         </div>
@@ -201,7 +203,7 @@
                         </div>
                         <button id="btn-edit-image" onclick="openEditor()"
                             class="hidden p-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-all"
-                            title="Editar Imagen">
+                            title="<?php echo Lang::get('media.edit_image'); ?>">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                                 stroke-linejoin="round">
@@ -213,8 +215,8 @@
 
                     <div class="space-y-6">
                         <div>
-                            <span class="text-xs font-black uppercase text-p-muted tracking-widest block mb-3">Usage
-                                Tracker</span>
+                            <span
+                                class="text-xs font-black uppercase text-p-muted tracking-widest block mb-3"><?php echo Lang::get('media.usage_tracker'); ?></span>
                             <div id="usage-container" class="space-y-2">
                                 <!-- Usage info injected here -->
                                 <div class="animate-pulse bg-p-input h-10 rounded-xl"></div>
@@ -222,8 +224,8 @@
                         </div>
 
                         <div>
-                            <span class="text-xs font-black uppercase text-p-muted tracking-widest block mb-2">Renombrar
-                                Archivo</span>
+                            <span
+                                class="text-xs font-black uppercase text-p-muted tracking-widest block mb-2"><?php echo Lang::get('media.rename_file'); ?></span>
                             <div class="flex gap-2">
                                 <input type="text" id="rename-input" class="form-input !py-3 text-base flex-grow">
                                 <button onclick="renameSelected()" class="btn-primary !p-2 !rounded-lg block">
@@ -247,9 +249,10 @@
         <div class="glass-card w-full max-w-6xl h-[90vh] !p-0 flex flex-col overflow-hidden border-2 border-primary/30">
             <div class="p-6 border-b border-glass-border flex justify-between items-center bg-p-card/50">
                 <div>
-                    <h3 class="text-2xl font-black text-p-title">Image Editor</h3>
-                    <p class="text-xs text-p-muted uppercase font-black tracking-widest mt-1">Crop, Resize and Apply
-                        Filters</p>
+                    <h3 class="text-2xl font-black text-p-title"><?php echo Lang::get('media.image_editor'); ?></h3>
+                    <p class="text-xs text-p-muted uppercase font-black tracking-widest mt-1">
+                        <?php echo Lang::get('media.editor_subtitle'); ?>
+                    </p>
                 </div>
                 <button onclick="closeEditor()"
                     class="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-all">
@@ -277,7 +280,7 @@
                         <!-- Actions -->
                         <div>
                             <span
-                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4">Herramientas</span>
+                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4"><?php echo Lang::get('media.tools'); ?></span>
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="setEditorTool('crop')" class="editor-tool-btn active" id="tool-crop">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -286,7 +289,7 @@
                                         <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15" />
                                         <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15" />
                                     </svg>
-                                    Recortar
+                                    <?php echo Lang::get('media.crop'); ?>
                                 </button>
                                 <button onclick="setEditorTool('filters')" class="editor-tool-btn" id="tool-filters">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -294,7 +297,7 @@
                                         stroke-linejoin="round">
                                         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                                     </svg>
-                                    Filtros
+                                    <?php echo Lang::get('media.filters'); ?>
                                 </button>
                             </div>
                         </div>
@@ -302,17 +305,19 @@
                         <!-- Resize -->
                         <div>
                             <span
-                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4">Dimensiones</span>
+                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4"><?php echo Lang::get('media.dimensions'); ?></span>
                             <div class="flex items-center gap-3">
                                 <div>
-                                    <label class="text-[9px] font-bold text-p-muted block mb-1">Ancho</label>
+                                    <label
+                                        class="text-[9px] font-bold text-p-muted block mb-1"><?php echo Lang::get('media.width'); ?></label>
                                     <input type="number" id="edit-width"
                                         class="form-input !py-1 !px-2 !rounded-lg text-xs w-20"
                                         oninput="maintainAspect('w')">
                                 </div>
                                 <span class="pt-4 text-p-muted">×</span>
                                 <div>
-                                    <label class="text-[9px] font-bold text-p-muted block mb-1">Alto</label>
+                                    <label
+                                        class="text-[9px] font-bold text-p-muted block mb-1"><?php echo Lang::get('media.height'); ?></label>
                                     <input type="number" id="edit-height"
                                         class="form-input !py-1 !px-2 !rounded-lg text-xs w-20"
                                         oninput="maintainAspect('h')">
@@ -323,33 +328,31 @@
                         <!-- Filters -->
                         <div id="filter-controls" class="hidden">
                             <span
-                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4">Filtros
-                                Artísticos</span>
+                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4"><?php echo Lang::get('media.artistic_filters'); ?></span>
                             <div class="grid grid-cols-2 gap-4">
                                 <button onclick="applyFilter('none')" class="filter-btn active"
-                                    data-filter="none">Original</button>
+                                    data-filter="none"><?php echo Lang::get('media.filter_original'); ?></button>
                                 <button onclick="applyFilter('grayscale')" class="filter-btn"
-                                    data-filter="grayscale">Blanco y Negro</button>
+                                    data-filter="grayscale"><?php echo Lang::get('media.filter_bw'); ?></button>
                                 <button onclick="applyFilter('sepia')" class="filter-btn"
-                                    data-filter="sepia">Sepia</button>
+                                    data-filter="sepia"><?php echo Lang::get('media.filter_sepia'); ?></button>
                                 <button onclick="applyFilter('negative')" class="filter-btn"
-                                    data-filter="negative">Invertir</button>
+                                    data-filter="negative"><?php echo Lang::get('media.filter_invert'); ?></button>
                                 <button onclick="applyFilter('vintage')" class="filter-btn"
-                                    data-filter="vintage">Vintage</button>
+                                    data-filter="vintage"><?php echo Lang::get('media.filter_vintage'); ?></button>
                                 <button onclick="applyFilter('dramatic')" class="filter-btn"
-                                    data-filter="dramatic">Dramático</button>
+                                    data-filter="dramatic"><?php echo Lang::get('media.filter_dramatic'); ?></button>
                                 <button onclick="applyFilter('blur')" class="filter-btn"
-                                    data-filter="blur">Desenfoque</button>
+                                    data-filter="blur"><?php echo Lang::get('media.filter_blur'); ?></button>
                                 <button onclick="applyFilter('sharpen')" class="filter-btn"
-                                    data-filter="sharpen">Enfoque (Nitidez)</button>
+                                    data-filter="sharpen"><?php echo Lang::get('media.filter_sharpen'); ?></button>
                             </div>
                         </div>
 
                         <!-- Optimization -->
                         <div>
                             <span
-                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4">Calidad
-                                & Optimización</span>
+                                class="text-[10px] font-black uppercase text-p-muted tracking-widest block mb-4"><?php echo Lang::get('media.quality_optimization'); ?></span>
                             <input type="range" id="edit-quality" min="10" max="100" value="85"
                                 class="w-full accent-primary h-1 bg-primary/20 rounded-lg appearance-none cursor-pointer">
                             <div class="flex justify-between mt-2">
@@ -368,13 +371,13 @@
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="save-copy" checked
                             class="w-4 h-4 rounded border-glass-border bg-p-input text-primary focus:ring-primary/20">
-                        <label for="save-copy" class="text-xs font-black text-p-muted uppercase cursor-pointer">Guardar
-                            como copia (Recomendado)</label>
+                        <label for="save-copy"
+                            class="text-xs font-black text-p-muted uppercase cursor-pointer"><?php echo Lang::get('media.save_as_copy'); ?></label>
                     </div>
                 </div>
                 <div class="flex gap-4">
                     <button onclick="closeEditor()"
-                        class="px-6 py-3 font-black uppercase tracking-widest text-xs text-p-muted hover:text-p-title transition-all">Cancelar</button>
+                        class="px-6 py-3 font-black uppercase tracking-widest text-xs text-p-muted hover:text-p-title transition-all"><?php echo Lang::get('common.cancel'); ?></button>
                     <button onclick="saveEdit()" id="btn-save-edit" class="btn-primary !px-8 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -382,7 +385,7 @@
                             <polyline points="17 21 17 13 7 13 7 21" />
                             <polyline points="7 3 7 8 15 8" />
                         </svg>
-                        Guardar Cambios
+                        <?php echo Lang::get('common.save_changes'); ?>
                     </button>
                 </div>
             </div>
@@ -391,23 +394,24 @@
     <div id="media-settings-modal"
         class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="glass-card w-full max-w-md !p-8 shadow-2xl scale-in border-2 border-primary/20">
-            <h3 class="text-2xl font-black text-p-title mb-2">Media Settings</h3>
-            <p class="text-p-muted text-sm mb-6 uppercase font-black tracking-widest">Configure retention and behaviors
+            <h3 class="text-2xl font-black text-p-title mb-2"><?php echo Lang::get('media.media_settings'); ?></h3>
+            <p class="text-p-muted text-sm mb-6 uppercase font-black tracking-widest">
+                <?php echo Lang::get('media.retention_behaviors'); ?>
             </p>
 
             <div class="space-y-6">
                 <div>
-                    <label class="text-xs font-black text-p-muted uppercase tracking-widest mb-2 block">Papelera (Días
-                        de retención)</label>
+                    <label
+                        class="text-xs font-black text-p-muted uppercase tracking-widest mb-2 block"><?php echo Lang::get('media.retention_days'); ?></label>
                     <input type="number" id="setting-retention" class="form-input" min="1" max="365" placeholder="30">
-                    <p class="text-[10px] text-p-muted mt-2">Los archivos en la carpeta .trash que tengan más de estos
-                        días serán eliminados permanentemente de forma automática.</p>
+                    <p class="text-[10px] text-p-muted mt-2"><?php echo Lang::get('media.retention_help'); ?></p>
                 </div>
 
                 <div class="flex gap-3 pt-4">
                     <button onclick="closeSettings()"
-                        class="btn-primary !bg-p-input !text-p-text flex-grow">Cancel</button>
-                    <button onclick="saveSettings()" class="btn-primary flex-grow">Save Settings</button>
+                        class="btn-primary !bg-p-input !text-p-text flex-grow"><?php echo Lang::get('common.cancel'); ?></button>
+                    <button onclick="saveSettings()"
+                        class="btn-primary flex-grow"><?php echo Lang::get('media.save_settings'); ?></button>
                 </div>
             </div>
         </div>
@@ -596,7 +600,7 @@
         const btn = document.getElementById('btn-save-edit');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Procesando...';
+        btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <?php echo addslashes(Lang::get('media.processing')); ?>';
 
         const formData = new FormData();
         formData.append('path', selectedItem.path);
@@ -809,10 +813,10 @@
             container.innerHTML = `
                 <div class="flex items-center gap-4 px-6 py-4 text-xs font-black text-p-muted uppercase tracking-widest border-b border-glass-border">
                     <div class="w-10"></div>
-                    <div class="flex-grow">Name</div>
-                    <div class="w-32">Type</div>
-                    <div class="w-32">Size</div>
-                    <div class="w-40">Modified</div>
+                    <div class="flex-grow"><?php echo Lang::get('media.name_header'); ?></div>
+                    <div class="w-32"><?php echo Lang::get('media.type_header'); ?></div>
+                    <div class="w-32"><?php echo Lang::get('media.size_header'); ?></div>
+                    <div class="w-40"><?php echo Lang::get('media.modified_header'); ?></div>
                 </div>
                 ${items
                     .filter(i => i.name.toLowerCase().includes(filter))
@@ -834,7 +838,7 @@
                                 ${isBulk ? '<div class="w-2 h-2 rounded-full bg-primary"></div>' : ''}
                                 ${item.name}
                             </div>
-                            <div class="w-32 text-xs font-black uppercase text-p-muted">${item.is_dir ? 'Folder' : item.extension}</div>
+                            <div class="w-32 text-xs font-black uppercase text-p-muted">${item.is_dir ? '<?php echo Lang::get('media.folder'); ?>' : item.extension}</div>
                             <div class="w-32 text-xs font-black uppercase text-p-muted">${formatSize(item.size)}</div>
                             <div class="w-40 text-xs font-black uppercase text-p-muted">${formatDate(item.mtime)}</div>
                         </div>
@@ -845,7 +849,7 @@
         if (items.length === 0) {
             container.innerHTML = `
                 <div class="col-span-full py-20 text-center opacity-40">
-                    <p>No files found in this directory</p>
+                    <p><?php echo Lang::get('media.no_files'); ?></p>
                 </div>
             `;
         }
@@ -897,7 +901,7 @@
 
         if (bulkSelected.length > 0) {
             actions.classList.remove('hidden');
-            count.innerText = `${bulkSelected.length} Selected`;
+            count.innerText = '<?php echo addslashes(Lang::get('media.selected_count')); ?>'.replace(':count', bulkSelected.length);
             isBulkMode = true;
         } else {
             actions.classList.add('hidden');
@@ -924,32 +928,32 @@
 
         if (isInTrash) {
             actions.innerHTML = `
-                <button onclick="restoreSelected()" class="p-2 bg-green-500/10 text-green-600 hover:bg-green-600 hover:text-white rounded-lg transition-all" title="Restaurar Archivo">
+                <button onclick="restoreSelected()" class="p-2 bg-green-500/10 text-green-600 hover:bg-green-600 hover:text-white rounded-lg transition-all" title="<?php echo addslashes(Lang::get('media.restore_file')); ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                 </button>
-                <button onclick="purgeSelected()" class="p-2 bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all" title="Eliminar Permanentemente">
+                <button onclick="purgeSelected()" class="p-2 bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all" title="<?php echo addslashes(Lang::get('media.permanent_delete')); ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 </button>
             `;
         } else {
             actions.innerHTML = `
-                <button onclick="copyCurrentUrl('url')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="Copy URL">
+                <button onclick="copyCurrentUrl('url')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="<?php echo addslashes(Lang::get('media.copy_url')); ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 </button>
-                <button onclick="copyCurrentUrl('markdown')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="Copy Markdown">
+                <button onclick="copyCurrentUrl('markdown')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="<?php echo addslashes(Lang::get('media.copy_markdown')); ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
                 </button>
-                <button onclick="copyCurrentUrl('html')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="Copy HTML">
+                <button onclick="copyCurrentUrl('html')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="<?php echo addslashes(Lang::get('media.copy_html')); ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 </button>
-                <button onclick="deleteSelected()" class="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all" title="Delete">
+                <button onclick="deleteSelected()" class="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all" title="<?php echo addslashes(Lang::get('media.delete_action')); ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 </button>
             `;
         }
 
         document.getElementById('sidebar-name').innerText = item.name;
-        document.getElementById('sidebar-meta').innerText = `${item.is_dir ? 'Folder' : item.extension.toUpperCase()} • ${formatSize(item.size)}`;
+        document.getElementById('sidebar-meta').innerText = `${item.is_dir ? '<?php echo Lang::get('media.folder'); ?>' : item.extension.toUpperCase()} • ${formatSize(item.size)}`;
         document.getElementById('rename-input').value = item.name;
 
         document.getElementById('btn-edit-image').classList.toggle('hidden', !item.is_image);
@@ -964,7 +968,7 @@
         // Check usage
         const usageContainer = document.getElementById('usage-container');
         if (item.is_dir) {
-            usageContainer.innerHTML = '<p class="text-xs text-p-muted italic">Folders cannot be tracked for usage.</p>';
+            usageContainer.innerHTML = '<p class="text-xs text-p-muted italic"><?php echo Lang::get('media.no_usage_folder'); ?></p>';
             return;
         }
 
@@ -977,8 +981,8 @@
             if (data.usage.length === 0) {
                 usageContainer.innerHTML = `
                     <div class="p-3 bg-red-400/10 text-red-500 rounded-xl border border-red-500/20">
-                        <p class="text-xs font-black tracking-tight leading-none mb-1">UNREFERENCED</p>
-                        <p class="text-sm font-medium">This file is being an orphan.</p>
+                        <p class="text-xs font-black tracking-tight leading-none mb-1"><?php echo Lang::get('media.unreferenced'); ?></p>
+                        <p class="text-sm font-medium"><?php echo Lang::get('media.orphan_desc'); ?></p>
                     </div>
                 `;
             } else {
@@ -990,7 +994,7 @@
                 `).join('');
             }
         } catch (e) {
-            usageContainer.innerHTML = '<p class="text-xs text-red-400">Error tracking usage</p>';
+            usageContainer.innerHTML = '<p class="text-xs text-red-400"><?php echo Lang::get('media.error_usage'); ?></p>';
         }
     }
 
@@ -1022,8 +1026,8 @@
                     loadFiles(currentPath);
                 } else {
                     showModal({
-                        title: 'Upload Error',
-                        message: data.error || 'Unknown error',
+                        title: '<?php echo addslashes(Lang::get('media.upload_error')); ?>',
+                        message: data.error || '<?php echo addslashes(Lang::get('media.upload_error_unknown')); ?>',
                         type: 'error'
                     });
                 }
@@ -1037,11 +1041,11 @@
         if (!selectedItem) return;
 
         showModal({
-            title: 'Confirmación de Eliminación',
-            message: `¿Estás seguro de que deseas eliminar permanentemente "${selectedItem.name}"? Esta acción no se puede deshacer y podría romper referencias en la base de datos si el archivo está en uso.`,
+            title: '<?php echo addslashes(Lang::get('media.confirm_delete_title')); ?>',
+            message: `<?php echo addslashes(Lang::get('media.confirm_delete_msg')); ?>`.replace(':name', selectedItem.name),
             type: 'confirm',
-            confirmText: 'SÍ, ELIMINAR AHORA',
-            safetyCheck: 'Entiendo los riesgos y confirmo que deseo borrar este archivo permanentemente.',
+            confirmText: '<?php echo addslashes(Lang::get('media.confirm_delete_btn')); ?>',
+            safetyCheck: '<?php echo addslashes(Lang::get('media.confirm_delete_safety')); ?>',
             onConfirm: async function () {
                 try {
                     const formData = new FormData();
@@ -1057,8 +1061,8 @@
                         loadFiles(currentPath);
                     } else {
                         showModal({
-                            title: 'Error al eliminar',
-                            message: data.error || 'Error desconocido',
+                            title: '<?php echo addslashes(Lang::get('common.error')); ?>',
+                            message: data.error || '<?php echo addslashes(Lang::get('common.unknown_error')); ?>',
                             type: 'error'
                         });
                     }
@@ -1086,8 +1090,8 @@
                 loadFiles(currentPath);
             } else {
                 showModal({
-                    title: 'Error al Renombrar',
-                    message: data.error || 'Error desconocido',
+                    title: '<?php echo addslashes(Lang::get('media.rename_error_title')); ?>',
+                    message: data.error || '<?php echo addslashes(Lang::get('common.unknown_error')); ?>',
                     type: 'error'
                 });
             }
@@ -1126,8 +1130,8 @@
         if (bulkSelected.length === 0) return;
 
         showModal({
-            title: 'Delete Multiple Items',
-            message: `Are you sure you want to move ${bulkSelected.length} items to the trash?`,
+            title: '<?php echo addslashes(Lang::get('media.bulk_delete_title')); ?>',
+            message: '<?php echo addslashes(Lang::get('media.bulk_delete_msg')); ?>'.replace(':count', bulkSelected.length),
             type: 'confirm',
             onConfirm: async function () {
                 const formData = new FormData();
@@ -1148,7 +1152,7 @@
     async function bulkMove() {
         if (bulkSelected.length === 0) return;
 
-        const target = prompt("Enter target directory path (relative to uploads/):", "");
+        const target = prompt("<?php echo addslashes(Lang::get('media.bulk_move_prompt')); ?>", "");
         if (target === null) return;
 
         const formData = new FormData();
@@ -1163,8 +1167,8 @@
 
         if (data.error && data.error.length > 0) {
             showModal({
-                title: 'Error en Traslado',
-                message: 'Algunos elementos no pudieron moverse: ' + data.error.join(', '),
+                title: '<?php echo addslashes(Lang::get('media.move_error_title')); ?>',
+                message: '<?php echo addslashes(Lang::get('media.move_error_msg')); ?>'.replace(':error', data.error.join(', ')),
                 type: 'error'
             });
         }

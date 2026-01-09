@@ -21,20 +21,19 @@
 </style>
 
 <header class="mb-12">
-    <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">Endpoint <span
-            class="text-primary">Constructor</span></h1>
-    <p class="text-p-muted font-medium italic">Configure your search parameters, pagination and projection in
-        real-time.</p>
+    <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">
+        <?php echo \App\Core\Lang::get('api_control.doc_constructor'); ?></h1>
+    <p class="text-p-muted font-medium italic"><?php echo \App\Core\Lang::get('api_control.doc_subtitle'); ?></p>
 </header>
 
 <!-- Global Configuration -->
 <section class="mb-12 glass-card border-primary/20 shadow-lg shadow-primary/5">
     <div class="grid md:grid-cols-3 gap-8 items-end">
         <div class="md:col-span-2">
-            <label class="label-mini">Auth Integration (Security Context)</label>
+            <label class="label-mini"><?php echo \App\Core\Lang::get('api_control.auth_integration'); ?></label>
             <div class="flex flex-wrap gap-4 items-center">
                 <select id="api-key-selector" onchange="updateAllUrls()" class="input-dark min-w-[200px] flex-1">
-                    <option value="">-- No API Key --</option>
+                    <option value=""><?php echo \App\Core\Lang::get('api_control.no_api_key'); ?></option>
                     <?php foreach ($apiKeys as $key): ?>
                         <option value="<?php echo htmlspecialchars($key['key_value']); ?>">
                             <?php echo htmlspecialchars($key['name']); ?>
@@ -45,7 +44,8 @@
                     class="flex items-center gap-2 cursor-pointer bg-black/20 px-4 py-2 rounded-lg border border-white/5">
                     <input type="checkbox" id="include-key-param" onchange="updateAllUrls()" checked
                         class="checkbox-custom">
-                    <span class="text-[10px] font-bold text-p-muted uppercase">Use URL Parameter</span>
+                    <span
+                        class="text-[10px] font-bold text-p-muted uppercase"><?php echo \App\Core\Lang::get('api_control.use_url_param'); ?></span>
                 </label>
                 <div class="flex-1 md:hidden">
                     <code id="base-api-url-mobile"
@@ -54,7 +54,8 @@
             </div>
         </div>
         <div class="bg-black/30 p-4 rounded-xl border border-glass-border hidden md:block overflow-hidden">
-            <p class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">Base Endpoint Path</p>
+            <p class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">
+                <?php echo \App\Core\Lang::get('api_control.base_endpoint'); ?></p>
             <code id="base-api-url"
                 class="text-[10px] text-primary/70 font-mono italic truncate block"><?php echo \App\Core\Auth::getFullBaseUrl(); ?>api/v1/<?php echo $database['id']; ?>/</code>
         </div>
@@ -76,7 +77,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="badge-get">GET LIST</span>
+                    <span class="badge-get"><?php echo \App\Core\Lang::get('api_control.get_list'); ?></span>
                 </div>
             </div>
 
@@ -109,7 +110,8 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <!-- Pagination & Sorting -->
                     <div class="bg-black/20 rounded-2xl p-6 border border-glass-border">
-                        <h4 class="label-mini !mb-4 text-emerald-400">Paging & Optimization</h4>
+                        <h4 class="label-mini !mb-4 text-emerald-400">
+                            <?php echo \App\Core\Lang::get('api_control.paging_optimization'); ?></h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="text-[9px] font-bold text-p-muted block mb-1">LIMIT</label>
@@ -126,18 +128,20 @@
 
                     <!-- Filter Construction -->
                     <div class="bg-black/20 rounded-2xl p-6 border border-glass-border">
-                        <h4 class="label-mini !mb-4 text-amber-400">Active Search Filters</h4>
+                        <h4 class="label-mini !mb-4 text-amber-400">
+                            <?php echo \App\Core\Lang::get('api_control.active_filters'); ?></h4>
                         <div class="space-y-3">
                             <div class="flex gap-2">
                                 <select class="filter-col-selector input-dark flex-1">
-                                    <option value="">-- Choose Field --</option>
+                                    <option value=""><?php echo \App\Core\Lang::get('api_control.choose_field'); ?></option>
                                     <?php foreach ($columns as $col): ?>
                                         <option value="<?php echo $col['name']; ?>"><?php echo $col['name']; ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <input type="text" placeholder="Value..." class="filter-val-input input-dark flex-1">
+                                <input type="text" placeholder="<?php echo \App\Core\Lang::get('api_control.value'); ?>"
+                                    class="filter-val-input input-dark flex-1">
                                 <button onclick="addFilter('<?php echo $table; ?>')"
-                                    class="bg-white/5 hover:bg-white/10 p-2 rounded-lg text-p-title font-bold text-[10px]">Add</button>
+                                    class="bg-white/5 hover:bg-white/10 p-2 rounded-lg text-p-title font-bold text-[10px]"><?php echo \App\Core\Lang::get('api_control.add'); ?></button>
                             </div>
                             <div id="filter-container-<?php echo $table; ?>" class="flex flex-wrap gap-2">
                                 <!-- Dynamic filters here -->
@@ -149,12 +153,13 @@
                 <!-- Projection Selector -->
                 <div class="bg-black/20 rounded-2xl p-6 border border-glass-border">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="label-mini !mb-0 text-primary">Data Projection (Selective Fields)</h4>
+                        <h4 class="label-mini !mb-0 text-primary">
+                            <?php echo \App\Core\Lang::get('api_control.data_projection'); ?></h4>
                         <div class="flex gap-4">
                             <button onclick="toggleAllFields('<?php echo $table; ?>', true)"
-                                class="text-[9px] font-bold text-primary hover:underline uppercase">Select All</button>
+                                class="text-[9px] font-bold text-primary hover:underline uppercase"><?php echo \App\Core\Lang::get('api_control.select_all'); ?></button>
                             <button onclick="toggleAllFields('<?php echo $table; ?>', false)"
-                                class="text-[9px] font-bold text-p-muted hover:underline uppercase">Clear</button>
+                                class="text-[9px] font-bold text-p-muted hover:underline uppercase"><?php echo \App\Core\Lang::get('media.clear_selection'); ?></button>
                         </div>
                     </div>
 

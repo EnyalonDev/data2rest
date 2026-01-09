@@ -1,10 +1,11 @@
+<?php use App\Core\Lang; ?>
 <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
             <a href="<?php echo $baseUrl; ?>admin/projects/select"
                 class="text-[10px] font-black uppercase text-primary hover:underline mb-4 inline-flex items-center gap-2">
-                &larr; Volver al Selector
+                &larr; <?php echo Lang::get('common.back_selector'); ?>
             </a>
             <h1 class="text-4xl font-black text-p-title tracking-tight mb-2">
                 <?php echo \App\Core\Lang::get('projects.title', 'Project Management'); ?>
@@ -75,27 +76,30 @@
                         <?php echo htmlspecialchars($project['name']); ?>
                     </h3>
                     <p class="text-sm text-p-muted line-clamp-2 leading-relaxed">
-                        <?php echo htmlspecialchars($project['description'] ?: 'No description provided.'); ?>
+                        <?php echo htmlspecialchars($project['description'] ?: Lang::get('common.no_description')); ?>
                     </p>
                 </div>
 
                 <div class="space-y-3 mb-8">
                     <div class="flex justify-between text-xs font-bold">
-                        <span class="text-p-muted uppercase tracking-tighter">Next Billing</span>
+                        <span
+                            class="text-p-muted uppercase tracking-tighter"><?php echo Lang::get('common.next_billing'); ?></span>
                         <span class="<?php echo $isExpired ? 'text-red-500' : 'text-p-text'; ?>">
                             <?php echo date('M d, Y', strtotime($project['next_billing_date'] ?? 'now')); ?>
                         </span>
                     </div>
                     <div class="flex justify-between text-xs font-bold">
-                        <span class="text-p-muted uppercase tracking-tighter">Status</span>
-                        <span class="text-emerald-500 uppercase tracking-tighter">Active</span>
+                        <span
+                            class="text-p-muted uppercase tracking-tighter"><?php echo Lang::get('common.status'); ?></span>
+                        <span
+                            class="text-emerald-500 uppercase tracking-tighter"><?php echo Lang::get('common.active'); ?></span>
                     </div>
                 </div>
 
                 <div class="flex gap-2">
                     <a href="<?php echo $baseUrl; ?>admin/projects/switch?id=<?php echo $project['id']; ?>"
                         class="flex-1 py-3 <?php echo $isActive ? 'bg-primary/10 text-primary pointer-events-none' : 'bg-primary text-white hover:bg-primary/90'; ?> rounded-xl text-center text-sm font-black uppercase tracking-widest transition-all">
-                        <?php echo $isActive ? 'Selected' : 'Select'; ?>
+                        <?php echo $isActive ? Lang::get('common.selected') : Lang::get('common.select'); ?>
                     </a>
                     <?php if (\App\Core\Auth::isAdmin()): ?>
                         <a href="<?php echo $baseUrl; ?>admin/projects/edit?id=<?php echo $project['id']; ?>"
