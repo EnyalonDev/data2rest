@@ -126,22 +126,18 @@ src/Modules/Database/
 
 ## 🔒 Seguridad
 
-### Validación de Permisos
+### Validación de Permisos (Granular)
+Cada operación valida permisos específicos definidos en el Policy Architect:
 
-Cada operación valida que el usuario tenga permisos:
-
-```php
-Auth::requireDatabaseAccess($db_id);
-Auth::requirePermission("db:$db_id", "write");
-```
-
-### Prepared Statements
-
-Todas las consultas usan prepared statements:
+- **`databases.crud_read`**: Ver registros.
+- **`databases.crud_create`**: Insertar nuevos registros.
+- **`databases.crud_update`**: Modificar registros existentes.
+- **`databases.crud_delete`**: Eliminar registros.
+- **`databases.create_db`**, **`databases.delete_db`**: Gestión estructural.
 
 ```php
-$stmt = $pdo->prepare("INSERT INTO table (field) VALUES (?)");
-$stmt->execute([$value]);
+// Ejemplo interno
+Auth::requirePermission("module:databases.crud_read");
 ```
 
 ### Sanitización

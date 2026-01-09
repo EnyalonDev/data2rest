@@ -73,11 +73,10 @@ public/uploads/
 
 ---
 
-## 🔒 Seguridad e Integridad
-
-- **Prevención de Directory Traversal**: Validación estricta de rutas para evitar acceso fuera de `uploads/`.
-- **Validación de Mime-Types**: Solo se permiten tipos de archivos seguros y editables.
-- **Permisos Granulares**: El acceso a la Media Library requiere permisos específicos de módulo.
+### 🔗 Integración Robusta
+- **Soporte de URLs Externas**: Detección inteligente de imágenes en enlaces firmados o con parámetros de consulta (e.g., `image.jpg?token=123`).
+- **Validación de Rutas**: Sistema de seguridad que impide el acceso a archivos fuera del alcance del proyecto actual (`../ traversal attack prevention`).
+- **Permisos Granulares**: Requiere permisos específicos (`module:media.view_files`) para acceso.
 
 ---
 
