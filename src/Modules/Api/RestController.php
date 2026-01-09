@@ -69,12 +69,12 @@ class RestController extends BaseController
                     break;
 
                 case 'POST':
-                    $this->handlePostRequest($targetDb, $table);
+                    $this->handlePostRequest($targetDb, $table, $db_id);
                     break;
 
                 case 'PUT':
                 case 'PATCH':
-                    $this->handleUpdateRequest($targetDb, $table, $id);
+                    $this->handleUpdateRequest($targetDb, $table, $id, $db_id);
                     break;
 
                 case 'DELETE':
@@ -227,13 +227,13 @@ class RestController extends BaseController
         return 'id';
     }
 
-    private function handlePostRequest($targetDb, $table)
+    private function handlePostRequest($targetDb, $table, $db_id)
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
         // Process file uploads if present (images only for pages, general for others)
         $allowedExt = ($table === 'web_pages') ? ['jpg', 'jpeg', 'png', 'webp'] : ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
-        $filesData = $this->processUploads($table, $allowedExt);
+        $filesData = $this->processUploads($db_id, $table, $allowedExt);
         $input = array_merge($input, $filesData);
 
         // Filter input to only include actual table columns
@@ -261,7 +261,7 @@ class RestController extends BaseController
         $this->json(['success' => true, 'id' => $targetDb->lastInsertId()], 201);
     }
 
-    private function handleUpdateRequest($targetDb, $table, $id)
+    private function handleUpdateRequest($targetDb, $table, $id, $db_id)
     {
         if (!$id)
             $this->json(['error' => 'ID required'], 400);
@@ -270,7 +270,7 @@ class RestController extends BaseController
 
         // Process file uploads
         $allowedExt = ($table === 'web_pages') ? ['jpg', 'jpeg', 'png', 'webp'] : ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
-        $filesData = $this->processUploads($table, $allowedExt);
+        $filesData = $this->processUploads($db_id, $table, $allowedExt);
         $input = array_merge($input, $filesData);
 
         // Filter input to only include actual table columns
@@ -313,7 +313,7 @@ class RestController extends BaseController
      * Processes files uploaded via multipart/form-data.
      * Logic similar to CrudController but adapted for the API.
      */
-    private function processUploads($table, $allowed = [])
+    private function processUploads($db_id, $table, $allowed = [])
     {
         if (empty($_FILES))
             return [];
@@ -321,8 +321,12 @@ class RestController extends BaseController
         $data = [];
         $uploadBase = Config::get('upload_dir');
         $dateFolder = date('Y-m-d');
+        // Standardize storage prefix (p1, p2, etc.)
+        $scopePath = $this->getStoragePrefix($db_id);
         $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
-        $relativeDir = "$dateFolder/$safeTable/";
+
+        // Root / pID / table / date / file
+        $relativeDir = "$scopePath/$safeTable/$dateFolder/";
         $absoluteDir = $uploadBase . $relativeDir;
 
         if (empty($allowed)) {
@@ -343,9 +347,16 @@ class RestController extends BaseController
                     ], 400);
                 }
 
-                $newName = uniqid() . '.' . $ext;
-                if (move_uploaded_file($file['tmp_name'], $absoluteDir . $newName)) {
-                    $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $newName;
+                $safeName = $this->sanitizeFilename($file['name']);
+
+                // Handle collisions like CrudController does
+                if (file_exists($absoluteDir . $safeName)) {
+                    $fi = pathinfo($safeName);
+                    $safeName = $fi['filename'] . '-' . substr(uniqid(), -5) . '.' . $fi['extension'];
+                }
+
+                if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
+                    $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
                 }
             }
         }

@@ -649,6 +649,7 @@
                 "email TEXT",
                 "telefono TEXT",
                 "asunto TEXT",
+                "adjuntos TEXT",
                 "mensaje TEXT",
                 "leido INTEGER",
                 "prioridad TEXT"
@@ -659,6 +660,7 @@
                     "email": "juan.perez@example.com",
                     "telefono": "+57 300 123 4567",
                     "asunto": "Solicitud de Presupuesto",
+                    "adjuntos": "",
                     "mensaje": "Hola, me gustaría recibir más información sobre sus servicios de consultoría empresarial. Quedo atento.",
                     "leido": 0,
                     "prioridad": "Alta"
@@ -667,6 +669,7 @@
                     "nombre": "María García",
                     "email": "m.garcia@tech.co",
                     "asunto": "Duda Técnica",
+                    "adjuntos": "",
                     "mensaje": "¿Tienen soporte para integración con APIs externas en el plan básico?",
                     "leido": 1,
                     "prioridad": "Media"
@@ -686,13 +689,15 @@
                     "slug": "about-us",
                     "title": "About Our Vision",
                     "content": "Data2Rest Solutions was founded with a clear mission: to simplify the connection between complex data and elegant interfaces. We believe in the power of automation to free human creativity.",
-                    "meta_description": "Learn more about Data2Rest Solutions and our core values."
+                    "meta_description": "Learn more about Data2Rest Solutions and our core values.",
+                    "featured_image": "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800"
                 },
                 {
                     "slug": "home-hero",
                     "title": "Build Fast, Scale Beyond",
                     "content": "The ultimate platform to manage your business data and generate APIs in seconds. Designed for the modern developer.",
-                    "meta_description": "Data2Rest - The bridge between your data and your users."
+                    "meta_description": "Data2Rest - The bridge between your data and your users.",
+                    "featured_image": "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800"
                 }
             ]
         },

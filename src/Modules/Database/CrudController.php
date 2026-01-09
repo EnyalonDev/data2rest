@@ -265,8 +265,12 @@ LIMIT 1");
                 if ($file['error'] === UPLOAD_ERR_OK) {
                     $dateFolder = date('Y-m-d');
                     $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
-                    $relativeDir = "$dateFolder/$tableName/";
+                    $scopePath = $this->getStoragePrefix($ctx['db_id']);
+
+                    // Root / pID / table / date / file
+                    $relativeDir = "$scopePath/$tableName/$dateFolder/";
                     $absoluteDir = $uploadBase . $relativeDir;
+
                     if (!is_dir($absoluteDir))
                         mkdir($absoluteDir, 0777, true);
 
@@ -280,7 +284,7 @@ LIMIT 1");
                     }
 
                     if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
-                        $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $safeName;
+                        $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
                     }
                 }
             }
@@ -356,31 +360,7 @@ LIMIT 1");
         header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
     }
 
-    /**
-     * Sanitizes a filename for SEO and filesystem compatibility.
-     */
-    protected function sanitizeFilename($filename)
-    {
-        $info = pathinfo($filename);
-        $name = $info['filename'];
-        $ext = isset($info['extension']) ? '.' . strtolower($info['extension']) : '';
-
-        // Lowercase and remove accents/special chars
-        $name = mb_strtolower($name, 'UTF-8');
-        $name = preg_replace('/[^\w\s-]/u', '', $name);
-        // Replace spaces and underscores with hyphens
-        $name = preg_replace('/[\s_]+/', '-', $name);
-        // Remove multiple hyphens
-        $name = preg_replace('/-+/', '-', $name);
-        // Trim hyphens
-        $name = trim($name, '-');
-
-        // If for some reason name is empty, use 'file'
-        if (empty($name))
-            $name = 'file';
-
-        return $name . $ext;
-    }
+    // Local sanitizeFilename removed: using standardized version from BaseController
 
     /**
      * Updates the last_edit_at timestamp for both the database and the specific table.

@@ -430,7 +430,7 @@ use App\Core\Lang; ?>
         modal.style.display = 'flex';
         doneBtn.style.display = isMulti ? 'block' : 'none';
 
-        fetch('<?php echo $baseUrl; ?>admin/media/list')
+        fetch('<?php echo $baseUrl; ?>admin/media/list?db_id=<?php echo $ctx['db_id']; ?>')
             .then(res => res.json())
             .then(data => {
                 allMediaData = data;
@@ -649,6 +649,7 @@ use App\Core\Lang; ?>
 
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('db_id', '<?php echo $ctx['db_id']; ?>');
 
         const status = document.getElementById('gallery-status');
         status.innerText = 'Uploading: ' + file.name + '...';

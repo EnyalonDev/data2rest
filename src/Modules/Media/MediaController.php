@@ -25,27 +25,7 @@ class MediaController extends BaseController
     /**
      * Renders the main media manager UI.
      */
-    /**
-     * Helper to get the scoped path for the current project.
-     */
-    private function getScopePath()
-    {
-        $projectId = Auth::getActiveProject();
-        if (!$projectId) {
-            // If no project selected (e.g. new admin), maybe fallback to a 'shared' or 'system' folder?
-            // Or just return empty string if we want them to see root?
-            // Requirement says "project-specific root folder".
-            // Let's use 'project_{id}'.
-            return 'global';
-        }
-
-        // Fetch project name for prettier folders? Or stick to ID?
-        // Let's use 'project_{id}' to be safe against name changes, or we have to handle renaming.
-        // Actually, let's look up the name for UX, but ID is safer.
-        // Let's use ID for storage, maybe alias it in UI? 
-        // Simple approach: Use 'p{id}'
-        return 'p' . $projectId;
-    }
+    // Local getStoragePrefix removed: using getStoragePrefix from BaseController
 
     /**
      * Renders the main media manager UI.
@@ -70,7 +50,8 @@ class MediaController extends BaseController
         $uploadBase = Config::get('upload_dir');
 
         // Scope to Project
-        $scopePath = $this->getScopePath();
+        $db_id = $_GET['db_id'] ?? null;
+        $scopePath = $this->getStoragePrefix($db_id);
         $projectBase = $uploadBase . $scopePath;
 
         if (!is_dir($projectBase)) {
@@ -241,10 +222,11 @@ class MediaController extends BaseController
 
         Auth::requirePermission('module:media.upload'); // Check perms
         $path = $_POST['path'] ?? '';
+        $db_id = $_POST['db_id'] ?? null;
         $path = str_replace(['..', '\\'], '', $path);
 
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getScopePath();
+        $scopePath = $this->getStoragePrefix($db_id);
         $projectBase = $uploadBase . $scopePath . '/';
 
         // Final target is projectBase + requested relative path
@@ -284,8 +266,10 @@ class MediaController extends BaseController
             $this->json(['error' => 'No path provided'], 400);
 
         $path = str_replace(['..', '\\'], '', $path);
+        $db_id = $_POST['db_id'] ?? null;
+        $db_id = $_POST['db_id'] ?? null;
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getScopePath();
+        $scopePath = $this->getStoragePrefix($db_id);
         $projectBase = realpath($uploadBase . $scopePath);
 
         $fullPath = realpath($projectBase . '/' . $path);
@@ -315,7 +299,7 @@ class MediaController extends BaseController
 
         $results = ['success' => [], 'error' => []];
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getScopePath();
+        $scopePath = $this->getStoragePrefix();
         $projectBase = realpath($uploadBase . $scopePath);
 
         foreach ($paths as $path) {
@@ -365,7 +349,7 @@ class MediaController extends BaseController
         }
 
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getScopePath();
+        $scopePath = $this->getStoragePrefix();
         $projectBase = realpath($uploadBase . $scopePath);
 
         $targetDir = str_replace(['..', '\\'], '', $targetDir);
@@ -418,7 +402,7 @@ class MediaController extends BaseController
         }
 
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getScopePath();
+        $scopePath = $this->getStoragePrefix();
         $projectBase = realpath($uploadBase . $scopePath);
 
         $fullOldPath = realpath($projectBase . '/' . $oldPath);
@@ -534,7 +518,7 @@ class MediaController extends BaseController
             $this->json(['error' => 'No path provided'], 400);
 
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getScopePath();
+        $scopePath = $this->getStoragePrefix();
         $projectBase = realpath($uploadBase . $scopePath);
 
         $fullPath = realpath($projectBase . '/' . str_replace(['..', '\\'], '', $path));
@@ -815,9 +799,11 @@ class MediaController extends BaseController
         }
 
         $uploadBase = Config::get('upload_dir');
+        $db_id = $_POST['db_id'] ?? null;
+        $scopePath = $this->getStoragePrefix($db_id);
         $dateFolder = date('Y-m-d');
         $tableFolder = 'explorer';
-        $relativeDir = "$dateFolder/$tableFolder/";
+        $relativeDir = "$scopePath/$dateFolder/$tableFolder/";
         $absoluteDir = $uploadBase . $relativeDir;
 
         if (!is_dir($absoluteDir)) {
@@ -833,7 +819,7 @@ class MediaController extends BaseController
         }
 
         if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
-            $url = Auth::getFullBaseUrl() . 'uploads/' . $relativeDir . $safeName;
+            $url = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
             $this->json([
                 'url' => $url,
                 'name' => $safeName,
@@ -882,65 +868,5 @@ class MediaController extends BaseController
         rmdir($dir);
     }
 
-    protected function sanitizeFilename($filename)
-    {
-        $info = pathinfo($filename);
-        $name = $info['filename'];
-        $ext = isset($info['extension']) ? '.' . strtolower($info['extension']) : '';
-
-        // Handle MacOS/NFD decomposed characters if Normalizer exists
-        if (class_exists('Normalizer')) {
-            $name = \Normalizer::normalize($name, \Normalizer::FORM_C);
-        }
-
-        // Broad map for common accents
-        $map = [
-            'á' => 'a',
-            'é' => 'e',
-            'í' => 'i',
-            'ó' => 'o',
-            'ú' => 'u',
-            'ñ' => 'n',
-            'Á' => 'A',
-            'É' => 'E',
-            'Í' => 'I',
-            'Ó' => 'O',
-            'Ú' => 'U',
-            'Ñ' => 'N',
-            'à' => 'a',
-            'è' => 'e',
-            'ì' => 'i',
-            'ò' => 'o',
-            'ù' => 'u',
-            'À' => 'A',
-            'È' => 'E',
-            'Ì' => 'I',
-            'Ò' => 'O',
-            'Ù' => 'U',
-            'ä' => 'a',
-            'ë' => 'e',
-            'ï' => 'i',
-            'ö' => 'o',
-            'ü' => 'u',
-            'Ä' => 'A',
-            'Ë' => 'E',
-            'Ï' => 'I',
-            'Ö' => 'O',
-            'Ü' => 'U'
-        ];
-        $name = strtr($name, $map);
-
-        // Ultimate cleanup with Transliterator or Regex
-        if (class_exists('Transliterator')) {
-            $trans = \Transliterator::create('Any-Latin; Latin-ASCII; [\u0080-\u7fff] remove');
-            $name = $trans->transliterate($name);
-        }
-
-        $name = strtolower($name);
-        // Strip anything not a-z or 0-9
-        $name = preg_replace('/[^a-z0-9]+/', '-', $name);
-        $name = trim($name, '-');
-
-        return (empty($name) ? 'file' : $name) . $ext;
-    }
+    // Local sanitizeFilename removed: using standardized version from BaseController
 }

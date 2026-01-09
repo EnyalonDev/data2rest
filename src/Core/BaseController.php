@@ -63,5 +63,81 @@ class BaseController
         header("Location: {$baseUrl}{$path}");
         exit;
     }
+
+    /**
+     * Sanitizes a filename for SEO and filesystem compatibility.
+     * Preserves original name but cleans accents and special characters.
+     */
+    protected function sanitizeFilename($filename)
+    {
+        $info = pathinfo($filename);
+        $name = $info['filename'];
+        $ext = isset($info['extension']) ? '.' . strtolower($info['extension']) : '';
+
+        // Broad map for common accents
+        $map = [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+            'ñ' => 'n',
+            'Á' => 'A',
+            'É' => 'E',
+            'Í' => 'I',
+            'Ó' => 'O',
+            'Ú' => 'U',
+            'Ñ' => 'N',
+            'à' => 'a',
+            'è' => 'e',
+            'ì' => 'i',
+            'ò' => 'o',
+            'ù' => 'u',
+            'À' => 'A',
+            'È' => 'E',
+            'Ì' => 'I',
+            'Ò' => 'O',
+            'Ù' => 'U',
+            'ä' => 'a',
+            'ë' => 'e',
+            'ï' => 'i',
+            'ö' => 'o',
+            'ü' => 'u',
+            'Ä' => 'A',
+            'Ë' => 'E',
+            'Ï' => 'I',
+            'Ö' => 'O',
+            'Ü' => 'U'
+        ];
+        $name = strtr($name, $map);
+
+        // Lowercase and cleanup
+        $name = mb_strtolower($name, 'UTF-8');
+        $name = preg_replace('/[^\w\s-]/u', '', $name);
+        $name = preg_replace('/[\s_]+/', '-', $name);
+        $name = preg_replace('/-+/', '-', $name);
+        $name = trim($name, '-');
+
+        return (empty($name) ? 'file' : $name) . $ext;
+    }
+
+    /**
+     * Standardizes the storage prefix for a given database context.
+     * Uses 'p' + project_id for consistency.
+     */
+    protected function getStoragePrefix($dbId = null)
+    {
+        if ($dbId) {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $stmt->execute([$dbId]);
+            $projectId = $stmt->fetchColumn();
+            if ($projectId)
+                return 'p' . $projectId;
+        }
+
+        $projectId = Auth::getActiveProject();
+        return $projectId ? 'p' . $projectId : 'global';
+    }
 }
 

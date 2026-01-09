@@ -1,83 +1,73 @@
-# 🌐 Data2Rest Studio - Demo Frontend
+# React + TypeScript + Vite
 
-Este es el cliente oficial de demostración para **Data2Rest**, una Single Page Application (SPA) ultra-moderna construida con **TypeScript** y **Vite**, diseñada para interactuar con la API REST de Data2Rest.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## ✨ Características
-- 🟦 **TypeScript Nativo**: Código robusto y autocompletado inteligente.
-- 🧩 **Arquitectura de Componentes**: Estructura modular y escalable.
-- ⚡ **Vite**: Desarrollo instantáneo y hot-reloading.
-- 💎 **Premium UI**: Diseño moderno con efectos Glassmorphism y Dark Mode.
-- 🛰️ **Integración Total**: Consumo completo de endpoints de Data2Rest (CRUD, subida de archivos, edición dinámica).
+Currently, two official plugins are available:
 
-## 🚀 Instalación Local
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-1. Asegúrate de tener instalado **Node.js** (v18.0 o superior).
-2. Entra en la carpeta del demo:
-   ```bash
-   cd demo-frontend
-   ```
-3. Instala las dependencias:
-   ```bash
-   npm install
-   ```
-4. Inicia el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
-5. Abre en tu navegador: `http://localhost:3000`
+## React Compiler
 
-## ⚙️ Configuración de la API
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### Opción 1: Variables de Entorno (Recomendado)
+## Expanding the ESLint configuration
 
-1. Crea un archivo `.env` en la raíz del proyecto:
-   ```bash
-   cp .env.example .env
-   ```
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-2. Edita `.env` y configura tus valores:
-   ```env
-   VITE_API_BASE_URL=http://localhost/data2rest/api/v1/modern-enterprise-erp
-   VITE_API_KEY=tu-api-key-aqui
-   ```
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-3. Reinicia el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-### Opción 2: Configuración Manual
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-Edita `src/services/api.ts` y actualiza:
-- **Base URL**: La URL de tu backend (por defecto: `http://localhost/data2rest/api/v1/modern-enterprise-erp`)
-- **API Key**: Crea una API Key desde el panel de administración del backend
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-**📖 Para instrucciones detalladas, consulta [SETUP.md](./SETUP.md)**
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-## 📦 Despliegue en Vercel
-
-Puedes desplegar este frontend de forma sencilla en [Vercel](https://vercel.com):
-
-1. **Instala el CLI de Vercel** (opcional) o conecta tu repositorio de Git.
-2. **Importa el proyecto**: Selecciona la carpeta `demo-frontend`.
-3. **Comandos de Vercel**:
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-4. **Variables de Entorno**: Si has externalizado la API Key, agrégala en los ajustes de Vercel.
-
----
-
-## 🏗️ Estructura del Proyecto
-- `/src/components`: Módulos de la UI (Hero, About, Services, Contact).
-- `/src/services`: Lógica de comunicación con la API.
-- `/src/utils`: Ayudantes (toasts, validaciones).
-- `/src/types.ts`: Definiciones de interfaces TypeScript.
-
----
-
-## 🔗 Repositorio
-
-- **GitHub**: [github.com/enyalondev/data2rest](https://github.com/enyalondev/data2rest)
-- **Issues**: [Reportar un problema](https://github.com/enyalondev/data2rest/issues)
-- **Documentación completa**: Ver el [README principal](../README.md)
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
