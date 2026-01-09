@@ -40,5 +40,13 @@ yarn-error.log*
 # Mac hidden files
 ._*
 
-# Documentation and Demo Apps
-/Docs/
+# Demo Frontend
+/demo-frontend/node_modules/
+/demo-frontend/dist/
+/demo-frontend/.env
+/demo-frontend/.env.local
+/demo-frontend/*.log
+/demo-frontend/.vite/
+
+# Documentation and Private Assets
+/docs/
