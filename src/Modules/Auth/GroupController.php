@@ -11,7 +11,7 @@ class GroupController extends BaseController
 {
     public function __construct()
     {
-        Auth::requireAdmin();
+        Auth::requirePermission('module:users.view_users');
     }
 
     public function index()
@@ -37,6 +37,7 @@ class GroupController extends BaseController
 
     public function form()
     {
+        Auth::requirePermission('module:users.manage_groups');
         $id = $_GET['id'] ?? null;
         $group = null;
         $db = Database::getInstance()->getConnection();
@@ -48,11 +49,8 @@ class GroupController extends BaseController
             $group['permissions'] = json_decode($group['permissions'] ?? '[]', true);
         }
 
-        $databases = $db->query("SELECT * FROM databases ORDER BY name ASC")->fetchAll();
-
         $this->view('admin/groups/form', [
             'group' => $group,
-            'databases' => $databases,
             'id' => $id,
             'title' => ($id ? 'Edit' : 'New') . ' Group',
             'breadcrumbs' => [
@@ -65,6 +63,7 @@ class GroupController extends BaseController
 
     public function save()
     {
+        Auth::requirePermission('module:users.manage_groups');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST')
             return;
 
@@ -75,7 +74,6 @@ class GroupController extends BaseController
 
         $permissions = [];
         $permissions['modules'] = $_POST['modules'] ?? [];
-        $permissions['databases'] = $_POST['db_perms'] ?? [];
         $permsJson = json_encode($permissions);
 
         if ($id) {
@@ -91,6 +89,7 @@ class GroupController extends BaseController
 
     public function delete()
     {
+        Auth::requirePermission('module:users.manage_groups');
         $id = $_GET['id'] ?? null;
         if ($id) {
             $db = Database::getInstance()->getConnection();

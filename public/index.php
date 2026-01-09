@@ -108,6 +108,16 @@ $router->add('GET', '/admin/roles/edit', 'Auth\\RoleController@form');
 $router->add('POST', '/admin/roles/save', 'Auth\\RoleController@save');
 $router->add('GET', '/admin/roles/delete', 'Auth\\RoleController@delete');
 
+// --- Module: Projects & Plans ---
+$router->add('GET', '/admin/projects', 'Projects\\ProjectController@index');
+$router->add('GET', '/admin/projects/new', 'Projects\\ProjectController@form');
+$router->add('GET', '/admin/projects/edit', 'Projects\\ProjectController@form');
+$router->add('POST', '/admin/projects/save', 'Projects\\ProjectController@save');
+$router->add('GET', '/admin/projects/delete', 'Projects\\ProjectController@delete');
+$router->add('GET', '/admin/projects/select', 'Projects\\ProjectController@select');
+$router->add('GET', '/admin/projects/switch', 'Projects\\ProjectController@switch');
+$router->add('POST', '/admin/projects/plan/update', 'Projects\\ProjectController@updatePlan');
+
 // --- REST API Engine ---
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('GET', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');

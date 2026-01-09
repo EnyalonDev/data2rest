@@ -560,7 +560,14 @@ use App\Core\Lang; ?>
         let html = '';
         images.forEach(img => {
             const fullUrl = (img.startsWith('http') ? img : '<?php echo $baseUrl; ?>' + img);
-            const ext = img.split('.').pop().toLowerCase();
+            
+            let ext = '';
+            try {
+                const urlObj = new URL(fullUrl, window.location.origin);
+                ext = urlObj.pathname.split('.').pop().toLowerCase();
+            } catch (e) {
+                ext = img.split('.').pop().split('?')[0].split('#')[0].toLowerCase();
+            }
             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
             
             let preview = '';
@@ -665,11 +672,19 @@ use App\Core\Lang; ?>
                             selectMedia(data.url);
                         });
                 } else {
-                    alert('Upload failed: ' + (data.error || 'Unknown Error'));
+                    showModal({
+                        title: 'Error de Carga',
+                        message: data.error || 'Error desconocido al subir el archivo.',
+                        type: 'error'
+                    });
                 }
             })
             .catch(err => {
-                alert('Upload failed: ' + err.message);
+                showModal({
+                    title: 'Fallo de Red',
+                    message: err.message,
+                    type: 'error'
+                });
             })
             .finally(() => {
                 status.className = 'text-[10px] font-bold text-p-muted uppercase tracking-widest';
@@ -689,7 +704,16 @@ use App\Core\Lang; ?>
         }
 
         container.classList.remove('hidden');
-        const ext = url.split('.').pop().toLowerCase();
+        
+        let ext = '';
+        try {
+            const urlObj = new URL(url, window.location.origin);
+            const pathname = urlObj.pathname;
+            ext = pathname.split('.').pop().toLowerCase();
+        } catch (e) {
+            ext = url.split('.').pop().split('?')[0].split('#')[0].toLowerCase();
+        }
+        
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
 
         if (isImage) {

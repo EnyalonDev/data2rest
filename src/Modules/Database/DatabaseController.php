@@ -24,22 +24,39 @@ class DatabaseController extends BaseController
      */
     public function index()
     {
-        Auth::requirePermission('module:databases', 'view');
+        Auth::requirePermission('module:databases', 'view_tables');
         $db = Database::getInstance()->getConnection();
-        if (Auth::isAdmin()) {
-            $databases = $db->query("SELECT * FROM databases ORDER BY id DESC")->fetchAll();
+        $projectId = Auth::getActiveProject();
+
+        if (!$projectId && !Auth::isAdmin()) {
+            $databases = []; // Should ideally redirect to project select
         } else {
-            $stmt = $db->prepare("SELECT d.* FROM databases d
-JOIN roles r ON ? = r.id
-WHERE r.permissions LIKE '%db:\"' || d.id || '\"%' OR r.permissions LIKE '%all\":true%'
-ORDER BY d.id DESC");
-            // This is a bit hacky due to JSON in sqlite, we might need to improve the perm check in SQL
-// For now, let's fetch all and filter in PHP for safety
-            $all = $db->query("SELECT * FROM databases ORDER BY id DESC")->fetchAll();
-            $databases = array_filter($all, function ($d) {
-                return Auth::hasPermission("db:{$d['id']}", 'view');
-            });
+            // Scope ALL queries to the active project
+            $sql = "SELECT * FROM databases WHERE project_id = ? ORDER BY id DESC";
+            $params = [$projectId];
+
+            // If admin has no project selected, he sees nothing (or should see all? User said "everything related to project")
+            // Strict project scoping means: No project = No data.
+            // But Admins might want to see all... user said "module database only access databases of his project"
+            // So we enforce project_id for everyone who is in a project context.
+
+            if (Auth::isAdmin() && !$projectId) {
+                // Fallback for global admin view if needed, but per request: "project determined access"
+                $sql = "SELECT * FROM databases ORDER BY id DESC";
+                $params = [];
+            }
+
+            if ($projectId) {
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+                $databases = $stmt->fetchAll();
+            } else if (Auth::isAdmin()) {
+                $databases = $db->query($sql)->fetchAll();
+            } else {
+                $databases = [];
+            }
         }
+
         $this->view('admin/databases/index', [
             'title' => 'Databases - Architect',
             'databases' => $databases,
@@ -55,7 +72,7 @@ ORDER BY d.id DESC");
      */
     public function create()
     {
-        Auth::requirePermission('module:databases', 'create');
+        Auth::requirePermission('module:databases.create_db');
         $name = $_POST['name'] ?? 'New Database';
         // Sanitize name: replace spaces/special chars with underscores
         $sanitized = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($name));
@@ -83,8 +100,10 @@ ORDER BY d.id DESC");
             @chmod($path, 0666);
 
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("INSERT INTO databases (name, path) VALUES (?, ?)");
-            $stmt->execute([$name, $path]);
+            $projectId = Auth::getActiveProject();
+
+            $stmt = $db->prepare("INSERT INTO databases (name, path, project_id) VALUES (?, ?, ?)");
+            $stmt->execute([$name, $path, $projectId]);
 
             // Auto-trigger sync if the file already had data
             $dbId = $db->lastInsertId();
@@ -100,7 +119,7 @@ ORDER BY d.id DESC");
      */
     public function delete()
     {
-        Auth::requirePermission('module:databases', 'delete');
+        Auth::requirePermission('module:databases.delete_db');
         $id = $_GET['id'] ?? null;
         if ($id) {
             $db = Database::getInstance()->getConnection();
@@ -127,7 +146,7 @@ ORDER BY d.id DESC");
     public function viewTables()
     {
         $id = $_GET['id'] ?? null;
-        Auth::requirePermission("db:$id", 'view_tables');
+        Auth::requirePermission('module:databases.view_tables');
 
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
@@ -177,7 +196,7 @@ ORDER BY d.id DESC");
     public function createTable()
     {
         $db_id = $_POST['db_id'] ?? null;
-        Auth::requirePermission("db:$db_id", 'create_table');
+        Auth::requirePermission('module:databases.create_table');
 
         $table_name = $_POST['table_name'] ?? '';
         $table_name = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($table_name));
@@ -211,6 +230,13 @@ is_visible, is_required) VALUES (?, ?, 'fecha_de_creacion', 'TEXT', 'text', 0, 1
 is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
 
+            // Initialize table metadata
+            $stmt = $db->prepare("INSERT INTO table_metadata (db_id, table_name) VALUES (?, ?)");
+            $stmt->execute([$db_id, $table_name]);
+
+            // Update DB last edit
+            $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
+
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
         } catch (\PDOException $e) {
             die("Error creating table: " . $e->getMessage());
@@ -223,7 +249,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     public function deleteTable()
     {
         $db_id = $_GET['db_id'] ?? null;
-        Auth::requirePermission("db:$db_id", 'delete_table');
+        Auth::requirePermission('module:databases.drop_table');
         $table_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['table'] ?? '');
 
         if ($db_id && !empty($table_name)) {
@@ -252,7 +278,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     public function manageFields()
     {
         $db_id = $_GET['db_id'] ?? null;
-        Auth::requirePermission("db:$db_id", 'manage_fields');
+        Auth::requirePermission('module:databases.edit_table');
         $table_name = $_GET['table'] ?? null;
 
         $db = Database::getInstance()->getConnection();
@@ -292,7 +318,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     public function addField()
     {
         $db_id = $_POST['db_id'] ?? null;
-        Auth::requirePermission("db:$db_id", 'manage_fields');
+        Auth::requirePermission('module:databases.edit_table');
         $table_name = $_POST['table_name'] ?? '';
         $field_name = $_POST['field_name'] ?? '';
 
@@ -350,7 +376,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         $table_name = $field['table_name'];
         $field_name = $field['field_name'];
 
-        Auth::requirePermission("db:$db_id", 'manage_fields');
+        Auth::requirePermission('module:databases.edit_table');
 
         // Prevent deleting system fields
         if (in_array($field_name, ['id', 'fecha_de_creacion', 'fecha_edicion'])) {
@@ -394,7 +420,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         $stmt->execute([$config_id]);
         $db_id = $stmt->fetchColumn();
 
-        Auth::requirePermission("db:$db_id", 'manage_fields');
+        Auth::requirePermission('module:databases.edit_table');
 
         $view_type = $_POST['view_type'] ?? 'text';
         $is_required = isset($_POST['is_required']) ? 1 : 0;
@@ -431,7 +457,7 @@ WHERE id = ?");
     public function syncDatabase()
     {
         $id = $_GET['id'] ?? null;
-        Auth::requirePermission("db:$id", 'manage_fields');
+        Auth::requirePermission('module:databases.edit_table');
 
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");

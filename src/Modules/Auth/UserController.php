@@ -19,7 +19,8 @@ class UserController extends BaseController
      */
     public function __construct()
     {
-        Auth::requirePermission('module:users', 'manage');
+        // Allow anyone with view access to enter
+        Auth::requirePermission('module:users.view_users');
     }
 
     /**
@@ -28,11 +29,50 @@ class UserController extends BaseController
     public function index()
     {
         $db = Database::getInstance()->getConnection();
-        // Fetch users with their associated role and group names
-        $users = $db->query("SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
-                             LEFT JOIN roles r ON u.role_id = r.id 
-                             LEFT JOIN groups g ON u.group_id = g.id
-                             ORDER BY u.id DESC")->fetchAll();
+
+        if (Auth::isAdmin()) {
+            $groupId = $_GET['group_id'] ?? null;
+            $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
+                    LEFT JOIN roles r ON u.role_id = r.id 
+                    LEFT JOIN groups g ON u.group_id = g.id";
+            $params = [];
+
+            if ($groupId) {
+                $sql .= " WHERE u.group_id = ?";
+                $params[] = $groupId;
+            }
+            $sql .= " ORDER BY u.id DESC";
+
+
+            // Execute safe query
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $users = $stmt->fetchAll();
+
+        } else {
+            // Non-admin: Enforce own group isolation
+            $userGroup = $_SESSION['group_id'] ?? null;
+            if (!$userGroup) {
+                // No group assigned? See only self? Or nothing? 
+                // Let's show only self to be safe.
+                $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
+                        LEFT JOIN roles r ON u.role_id = r.id 
+                        LEFT JOIN groups g ON u.group_id = g.id
+                        WHERE u.id = ?";
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$_SESSION['user_id']]);
+                $users = $stmt->fetchAll();
+            } else {
+                $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
+                        LEFT JOIN roles r ON u.role_id = r.id 
+                        LEFT JOIN groups g ON u.group_id = g.id
+                        WHERE u.group_id = ?
+                        ORDER BY u.username ASC";
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$userGroup]);
+                $users = $stmt->fetchAll();
+            }
+        }
 
         $this->view('admin/users/index', [
             'users' => $users,
@@ -50,6 +90,11 @@ class UserController extends BaseController
     public function form()
     {
         $id = $_GET['id'] ?? null;
+        if ($id) {
+            Auth::requirePermission('module:users.edit_users');
+        } else {
+            Auth::requirePermission('module:users.invite_users');
+        }
         $user = null;
         $db = Database::getInstance()->getConnection();
 
@@ -83,11 +128,17 @@ class UserController extends BaseController
      */
     public function save()
     {
+        $id = $_POST['id'] ?? null;
+        if ($id) {
+            Auth::requirePermission('module:users.edit_users');
+        } else {
+            Auth::requirePermission('module:users.invite_users');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST')
             return;
 
         $db = Database::getInstance()->getConnection();
-        $id = $_POST['id'] ?? null;
         $username = $_POST['username'];
 
         // Sanitize username: replace spaces and special characters with underscores
@@ -126,6 +177,7 @@ class UserController extends BaseController
      */
     public function delete()
     {
+        Auth::requirePermission('module:users.delete_users');
         $id = $_GET['id'] ?? null;
         if ($id && $id != $_SESSION['user_id']) {
             $db = Database::getInstance()->getConnection();

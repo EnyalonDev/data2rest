@@ -8,12 +8,23 @@ use App\Core\Lang; ?>
         <p class="text-p-muted font-medium"><?php echo Lang::get('users_list.subtitle'); ?></p>
     </div>
     <div class="flex gap-4">
-        <a href="<?php echo $baseUrl; ?>admin/roles"
-            class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('users_list.access_policies'); ?></a>
-        <a href="<?php echo $baseUrl; ?>admin/groups"
-            class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('common.groups'); ?></a>
-        <a href="<?php echo $baseUrl; ?>admin/users/new"
-            class="btn-primary !py-2"><?php echo Lang::get('users_list.create'); ?></a>
+        <?php if (App\Core\Auth::hasPermission('module:users.manage_roles')): ?>
+            <a href="<?php echo $baseUrl; ?>admin/roles"
+                class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('users_list.access_policies'); ?></a>
+        <?php else: ?>
+            <button onclick="showAccessDenied('<?php echo Lang::get('users_list.access_policies'); ?>')"
+                class="btn-primary !bg-slate-800 !text-slate-300 !py-2 opacity-50 cursor-pointer"><?php echo Lang::get('users_list.access_policies'); ?></button>
+        <?php endif; ?>
+
+        <?php if (App\Core\Auth::hasPermission('module:users.manage_groups')): ?>
+            <a href="<?php echo $baseUrl; ?>admin/groups"
+                class="btn-primary !bg-slate-800 !text-slate-300 !py-2"><?php echo Lang::get('common.groups'); ?></a>
+        <?php endif; ?>
+
+        <?php if (App\Core\Auth::hasPermission('module:users.invite_users')): ?>
+            <a href="<?php echo $baseUrl; ?>admin/users/new"
+                class="btn-primary !py-2"><?php echo Lang::get('users_list.create'); ?></a>
+        <?php endif; ?>
     </div>
 </header>
 
@@ -83,7 +94,7 @@ use App\Core\Lang; ?>
                                     </path>
                                 </svg>
                             </a>
-                            <?php if ($u['id'] != $_SESSION['user_id']): ?>
+                            <?php if ($u['id'] != $_SESSION['user_id'] && App\Core\Auth::hasPermission('module:users.delete_users')): ?>
                                 <button
                                     onclick="confirmDeleteUser(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['username']); ?>')"
                                     class="text-p-muted hover:text-red-500 p-2">
@@ -112,6 +123,15 @@ use App\Core\Lang; ?>
             onConfirm: () => {
                 window.location.href = `<?php echo $baseUrl; ?>admin/users/delete?id=${id}`;
             }
+        });
+    }
+
+    function showAccessDenied(action) {
+        showModal({
+            title: 'Access Restricted',
+            message: `You do not have the required permissions to access "${action}". Please contact your system administrator.`,
+            type: 'alert',
+            typeLabel: 'OK'
         });
     }
 </script>

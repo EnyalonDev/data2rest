@@ -48,10 +48,11 @@
                         </td>
                         <td class="px-8 py-6">
                             <div class="flex items-center gap-2">
-                                <span
-                                    class="w-8 h-8 rounded-full bg-white/5 border border-glass-border flex items-center justify-center text-[10px] font-black text-primary">
+                                <a href="<?php echo $baseUrl; ?>admin/users?group_id=<?php echo $group['id']; ?>"
+                                    class="w-8 h-8 rounded-full bg-white/5 border border-glass-border flex items-center justify-center text-[10px] font-black text-primary hover:bg-primary hover:text-dark transition-colors"
+                                    title="View Members">
                                     <?php echo $group['user_count']; ?>
-                                </span>
+                                </a>
                             </div>
                         </td>
                         <td class="px-8 py-6 text-right">

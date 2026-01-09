@@ -17,15 +17,47 @@ class DashboardController extends BaseController
         Auth::requireLogin();
 
         $db = Database::getInstance()->getConnection();
-        $databases = $db->query("SELECT * FROM databases")->fetchAll();
+        $projectId = Auth::getActiveProject();
+
+        // 0. Force project selection for non-admins if none active
+        if (!$projectId && !Auth::isAdmin()) {
+            $this->redirect('admin/projects/select');
+        }
+
+        // 1. Fetch Databases filtered by Project
+        if (Auth::isAdmin() && !$projectId) {
+            $stmt = $db->query("SELECT * FROM databases");
+            $databases = $stmt->fetchAll();
+        } else {
+            if (!$projectId) {
+                $databases = [];
+            } else {
+                $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ?");
+                $stmt->execute([$projectId]);
+                $databases = $stmt->fetchAll();
+            }
+        }
+
+        // 2. Fetch Project Metadata
+        $projectInfo = null;
+        if ($projectId) {
+            $stmt = $db->prepare("SELECT p.*, pp.plan_type, pp.next_billing_date 
+                                 FROM projects p 
+                                 LEFT JOIN project_plans pp ON p.id = pp.project_id 
+                                 WHERE p.id = ?");
+            $stmt->execute([$projectId]);
+            $projectInfo = $stmt->fetch();
+        }
 
         $totalRecords = 0;
         $recentActivity = [];
         $totalStorage = 0;
 
-        // 1. Calculate record counts and activity
+        // 3. Calculate record counts and activity (isolated to project dbs)
         foreach ($databases as $database) {
             try {
+                if (!file_exists($database['path']))
+                    continue;
                 $targetDb = new PDO('sqlite:' . $database['path']);
                 $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
@@ -37,7 +69,7 @@ class DashboardController extends BaseController
 
                     // Try to get last edits
                     try {
-                        $lastEdits = $targetDb->query("SELECT *, '$table' as table_source, '{$database['name']}' as db_source FROM $table ORDER BY fecha_edicion DESC LIMIT 3")->fetchAll();
+                        $lastEdits = $targetDb->query("SELECT *, '$table' as table_source, '{$database['name']}' as db_source FROM $table ORDER BY fecha_edicion DESC LIMIT 2")->fetchAll();
                         foreach ($lastEdits as $edit) {
                             $recentActivity[] = [
                                 'table' => $table,
@@ -56,11 +88,12 @@ class DashboardController extends BaseController
 
         // Sort activity
         usort($recentActivity, function ($a, $b) {
-            return strcmp($b['date'], $a['date']);
+            return strcmp($b['date'] ?? '', $a['date'] ?? '');
         });
-        $recentActivity = array_slice($recentActivity, 0, 5);
+        $recentActivity = array_slice($recentActivity, 0, 8);
 
-        // 2. Calculate storage size
+        // 4. Calculate storage size (global or project scoped? for now global uploads)
+        // Note: In a true multi-tenant we'd scope this too, but uploads are currently unified.
         $uploadDir = Config::get('upload_dir');
         if (is_dir($uploadDir)) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploadDir));
@@ -72,7 +105,8 @@ class DashboardController extends BaseController
         }
 
         $this->view('admin/dashboard', [
-            'title' => 'Dashboard - Control Center',
+            'title' => 'Dashboard - ' . ($projectInfo['name'] ?? 'Data2Rest'),
+            'project' => $projectInfo,
             'stats' => [
                 'total_databases' => count($databases),
                 'total_records' => $totalRecords,

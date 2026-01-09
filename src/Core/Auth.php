@@ -2,6 +2,9 @@
 
 namespace App\Core;
 
+use PDO;
+use Exception;
+
 /**
  * Authentication and Authorization Manager
  * Handles user sessions, login/logout logic, and permission verification.
@@ -48,9 +51,61 @@ class Auth
             $groupPerms = json_decode($user['group_perms'] ?? '[]', true);
             $_SESSION['permissions'] = self::mergePermissions($rolePerms, $groupPerms);
 
+            // Fetch Projects assigned to the user
+            self::loadUserProjects();
+
             return true;
         }
         return false;
+    }
+
+    /**
+     * Loads projects assigned to the current user into the session.
+     */
+    public static function loadUserProjects()
+    {
+        $db = Database::getInstance()->getConnection();
+        $userId = $_SESSION['user_id'];
+
+        if (self::isAdmin()) {
+            // Admins see all projects
+            $stmt = $db->query("SELECT id, name FROM projects WHERE status = 'active'");
+            $_SESSION['user_projects'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $stmt = $db->prepare("SELECT p.id, p.name FROM projects p 
+                                 JOIN project_users pu ON p.id = pu.project_id 
+                                 WHERE pu.user_id = ? AND p.status = 'active'");
+            $stmt->execute([$userId]);
+            $_SESSION['user_projects'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Set default project if not set
+        if (!isset($_SESSION['current_project_id']) && !empty($_SESSION['user_projects'])) {
+            $_SESSION['current_project_id'] = $_SESSION['user_projects'][0]['id'];
+        }
+    }
+
+    /**
+     * Switches the active project context.
+     */
+    public static function setActiveProject($projectId)
+    {
+        $projects = $_SESSION['user_projects'] ?? [];
+        $ids = array_column($projects, 'id');
+
+        if (in_array($projectId, $ids) || self::isAdmin()) {
+            $_SESSION['current_project_id'] = $projectId;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets the current active project ID.
+     */
+    public static function getActiveProject()
+    {
+        return $_SESSION['current_project_id'] ?? null;
     }
 
     /**
@@ -92,31 +147,57 @@ class Auth
             return true;
 
         // Check module-level permissions
-        if (strpos($resource, 'module:') === 0) {
+        // Only if it doesn't contain a dot (which implies specific action notation)
+        if (strpos($resource, 'module:') === 0 && strpos($resource, '.') === false) {
             $module = substr($resource, 7);
             if (!isset($perms['modules'][$module]))
                 return false;
+
+            // If action is null, just checking access to the module generally
             if ($action === null)
                 return true;
+
             return in_array($action, $perms['modules'][$module]);
         }
 
-        // Check database-level permissions
-        if (strpos($resource, 'db:') === 0) {
-            $db_id = substr($resource, 3);
-            if (!isset($perms['databases'][$db_id]))
-                return false;
-            if ($action === null)
-                return true;
+        // Check specific resource permission (e.g. databases.create_table)
+        // Format: module.action
+        if (strpos($resource, '.') !== false) {
+            [$module, $reqAction] = explode('.', $resource, 2);
+            if (strpos($module, 'module:') === 0)
+                $module = substr($module, 7);
 
-            $dbPerms = $perms['databases'][$db_id];
-            // If checking 'view', it's always allowed if the DB is in the list
-            if ($action === 'view')
-                return true;
-            return in_array($action, $dbPerms);
+            if (!isset($perms['modules'][$module]))
+                return false;
+            return in_array($reqAction, $perms['modules'][$module]);
         }
 
         return false;
+    }
+
+    /**
+     * Get users that belong to the same group as the current user.
+     * 
+     * @return array List of user IDs
+     */
+    public static function getTeamMembers()
+    {
+        if (!self::check() || !isset($_SESSION['group_id']))
+            return [];
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT id FROM users WHERE group_id = ?");
+        $stmt->execute([$_SESSION['group_id']]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Checks if a user has access to a specific module.
+     * Helper wrapper for hasPermission.
+     */
+    public static function canAccessModule($module)
+    {
+        return self::hasPermission("module:$module");
     }
 
     /**

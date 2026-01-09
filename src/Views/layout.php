@@ -218,6 +218,35 @@
         </div>
 
         <div class="flex items-center gap-6">
+            <!-- Project Switcher -->
+            <?php if (\App\Core\Auth::check() && isset($_SESSION['user_projects'])): ?>
+                <div class="relative">
+                    <a href="<?php echo $baseUrl; ?>admin/projects/select"
+                        class="flex items-center gap-2 px-6 py-2 bg-p-input border border-glass-border rounded-xl hover:border-primary/50 transition-all group">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span
+                            class="text-[11px] font-black uppercase tracking-widest text-p-muted group-hover:text-primary transition-colors">
+                            <?php echo \App\Core\Lang::get('common.project', 'Project'); ?>:
+                        </span>
+                        <span class="text-[11px] font-black uppercase tracking-widest text-p-title whitespace-nowrap">
+                            <?php
+                            $activeId = \App\Core\Auth::getActiveProject();
+                            $activeName = 'Select Project';
+                            foreach ($_SESSION['user_projects'] as $p) {
+                                if ($p['id'] == $activeId)
+                                    $activeName = $p['name'];
+                            }
+                            echo htmlspecialchars($activeName);
+                            ?>
+                        </span>
+                        <div class="w-[1px] h-4 bg-glass-border mx-2"></div>
+                        <span
+                            class="text-[9px] font-black text-primary uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">Cambiar
+                            &rarr;</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+
             <!-- Language Switcher -->
             <div class="flex items-center bg-black/40 rounded-lg p-1">
                 <a href="<?php echo $baseUrl; ?>lang/es"

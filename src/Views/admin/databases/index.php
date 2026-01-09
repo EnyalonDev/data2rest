@@ -9,21 +9,23 @@
 
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <div class="lg:col-span-1">
-        <div class="glass-card sticky top-24">
-            <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter">
-                <?php echo Lang::get('databases.new_node'); ?>
-            </h2>
-            <form action="<?php echo $baseUrl; ?>admin/databases/create" method="POST" class="space-y-4">
-                <div class="flex flex-col gap-2">
-                    <label
-                        class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1"><?php echo Lang::get('databases.node_name'); ?></label>
-                    <input type="text" name="name" placeholder="<?php echo Lang::get('databases.node_placeholder'); ?>"
-                        required class="input-glass w-full">
-                </div>
-                <button type="submit"
-                    class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs"><?php echo Lang::get('databases.create_node'); ?></button>
-            </form>
-        </div>
+        <?php if (App\Core\Auth::hasPermission('module:databases.create_db')): ?>
+            <div class="glass-card sticky top-24">
+                <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter">
+                    <?php echo Lang::get('databases.new_node'); ?>
+                </h2>
+                <form action="<?php echo $baseUrl; ?>admin/databases/create" method="POST" class="space-y-4">
+                    <div class="flex flex-col gap-2">
+                        <label
+                            class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1"><?php echo Lang::get('databases.node_name'); ?></label>
+                        <input type="text" name="name" placeholder="<?php echo Lang::get('databases.node_placeholder'); ?>"
+                            required class="input-glass w-full">
+                    </div>
+                    <button type="submit"
+                        class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs"><?php echo Lang::get('databases.create_node'); ?></button>
+                </form>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="lg:col-span-2 space-y-4">
@@ -53,15 +55,17 @@
                         class="btn-primary !bg-p-bg dark:!bg-white/5 !text-p-title dark:!text-slate-300 hover:!bg-primary/20 flex items-center gap-2 italic uppercase text-xs tracking-wider !py-2 shadow-sm">
                         <?php echo Lang::get('databases.interface'); ?> &rarr;
                     </a>
-                    <button
-                        onclick="confirmDeleteDB(<?php echo $db['id']; ?>, '<?php echo htmlspecialchars($db['name']); ?>')"
-                        class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                            </path>
-                        </svg>
-                    </button>
+                    <?php if (App\Core\Auth::hasPermission('module:databases.delete_db')): ?>
+                        <button
+                            onclick="confirmDeleteDB(<?php echo $db['id']; ?>, '<?php echo htmlspecialchars($db['name']); ?>')"
+                            class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>

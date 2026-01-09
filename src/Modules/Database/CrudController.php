@@ -39,10 +39,19 @@ class CrudController extends BaseController
             exit;
         }
 
-        if ($action) {
-            Auth::requirePermission("db:$db_id", $action);
+        // Map internal context actions to policy permission keys
+        $permMap = [
+            'crud_view' => 'crud_read',
+            'crud_create' => 'crud_create',
+            'crud_edit' => 'crud_update',
+            'crud_delete' => 'crud_delete'
+        ];
+
+        if ($action && isset($permMap[$action])) {
+            Auth::requirePermission('module:databases.' . $permMap[$action]);
         } else {
-            Auth::requireDatabaseAccess($db_id);
+            // Default fallback if no specific action provided (shouldn't happen often)
+            Auth::requirePermission('module:databases.view_tables');
         }
 
         $db = Database::getInstance()->getConnection();
@@ -315,6 +324,9 @@ LIMIT 1");
                 $stmt->execute(array_values($data));
             }
 
+            // Update metadata timestamps
+            $this->updateMetadata($ctx['db_id'], $ctx['table']);
+
             header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
         } catch (\PDOException $e) {
             die("Error saving data: " . $e->getMessage());
@@ -334,6 +346,9 @@ LIMIT 1");
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
                 $stmt = $targetDb->prepare("DELETE FROM $tableName WHERE id = ?");
                 $stmt->execute([$id]);
+
+                // Update metadata timestamps
+                $this->updateMetadata($ctx['db_id'], $ctx['table']);
             } catch (\PDOException $e) {
                 die("Error deleting record: " . $e->getMessage());
             }
@@ -365,5 +380,23 @@ LIMIT 1");
             $name = 'file';
 
         return $name . $ext;
+    }
+
+    /**
+     * Updates the last_edit_at timestamp for both the database and the specific table.
+     */
+    protected function updateMetadata($db_id, $table)
+    {
+        $db = Database::getInstance()->getConnection();
+        $now = date('Y-m-d H:i:s');
+
+        // Update database last edit
+        $db->prepare("UPDATE databases SET last_edit_at = ? WHERE id = ?")->execute([$now, $db_id]);
+
+        // Update or Initialize table metadata
+        $stmt = $db->prepare("INSERT INTO table_metadata (db_id, table_name, last_edit_at) 
+                             VALUES (?, ?, ?) 
+                             ON CONFLICT(db_id, table_name) DO UPDATE SET last_edit_at = excluded.last_edit_at");
+        $stmt->execute([$db_id, $table, $now]);
     }
 }

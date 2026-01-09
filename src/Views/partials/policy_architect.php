@@ -1,110 +1,119 @@
 <div id="granular-perms" class="<?php echo ($permissions['all'] ?? false) ? 'hidden' : ''; ?> space-y-10">
-    <!-- Module Permissions -->
-    <section class="glass-card">
-        <h3 class="section-title"><span class="w-1.5 h-1.5 rounded-full bg-primary translate-y-[-1px]"></span>
-            <?php echo \App\Core\Lang::get('roles_form.global_module_access'); ?></h3>
-        <div class="space-y-6">
-            <div class="perm-grid">
-                <?php
-                $globalPerms = [
-                    'databases' => ['view' => 'perm_view_db_hub', 'create' => 'perm_create_db', 'delete' => 'perm_delete_db'],
-                    'api' => ['view_keys' => 'perm_view_keys', 'manage_keys' => 'perm_manage_keys', 'view_docs' => 'perm_view_docs'],
-                    'users' => ['view' => 'perm_view_users', 'manage' => 'perm_manage_users', 'manage_roles' => 'perm_manage_roles']
-                ];
-                foreach ($globalPerms as $module => $actions) {
-                    foreach ($actions as $action => $labelKey) {
-                        $isChecked = in_array($action, $permissions['modules'][$module] ?? []);
-                        ?>
-                        <label class="perm-item">
-                            <input type="checkbox" name="modules[<?php echo $module; ?>][]" value="<?php echo $action; ?>"
-                                <?php echo $isChecked ? 'checked' : ''; ?> class="checkbox-custom">
-                            <span
-                                class="text-[11px] font-bold"><?php echo \App\Core\Lang::get('roles_form.' . $labelKey); ?></span>
-                        </label>
-                        <?php
-                    }
-                }
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <?php
+        $modules = [
+            'databases' => [
+                'label' => 'Centro de Datos',
+                'color' => 'emerald',
+                'icon' => 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4',
+                'actions' => [
+                    'create_db' => 'Crear Base de Datos',
+                    'delete_db' => 'Eliminar Base de Datos',
+                    'view_tables' => 'Ver Tablas',
+                    'create_table' => 'Crear Tablas',
+                    'edit_table' => 'Editar Estructura',
+                    'drop_table' => 'Borrar Tablas',
+                    'crud_read' => 'Leer Registros',
+                    'crud_create' => 'Insertar Registros',
+                    'crud_update' => 'Actualizar Registros',
+                    'crud_delete' => 'Eliminar Registros'
+                ]
+            ],
+            'api' => [
+                'label' => 'API Gateway',
+                'color' => 'amber',
+                'icon' => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+                'actions' => [
+                    'view_keys' => 'Ver Llaves API',
+                    'create_keys' => 'Crear Llaves',
+                    'revoke_keys' => 'Revocar Llaves',
+                    'view_docs' => 'Ver Documentación'
+                ]
+            ],
+            'media' => [
+                'label' => 'Biblioteca de Medios',
+                'color' => 'purple',
+                'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
+                'actions' => [
+                    'view_files' => 'Ver Archivos',
+                    'upload' => 'Subir Archivos',
+                    'edit_files' => 'Editar Imágenes',
+                    'delete_files' => 'Borrar Archivos'
+                ]
+            ],
+            'users' => [
+                'label' => 'Gestión de Equipos',
+                'color' => 'blue',
+                'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+                'actions' => [
+                    'view_users' => 'Ver Miembros',
+                    'invite_users' => 'Invitar Usuarios',
+                    'edit_users' => 'Editar Perfiles',
+                    'delete_users' => 'Eliminar Usuarios',
+                    'manage_roles' => 'Gestionar Roles'
+                ]
+            ]
+        ];
+
+        foreach ($modules as $key => $mod): 
+            $modPerms = $permissions['modules'][$key] ?? [];
+            $hasAccess = !empty($modPerms);
+        ?>
+        <div class="glass-card group hover:border-<?php echo $mod['color']; ?>-500/30 transition-all duration-300">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-<?php echo $mod['color']; ?>-500/10 flex items-center justify-center text-<?php echo $mod['color']; ?>-500 group-hover:scale-110 transition-transform duration-500 border border-<?php echo $mod['color']; ?>-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="<?php echo $mod['icon']; ?>"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-p-title uppercase italic tracking-tighter">
+                        <?php echo $mod['label']; ?>
+                    </h3>
+                    <p class="text-[10px] text-p-muted font-bold uppercase tracking-widest mt-1">
+                        Módulo del Sistema
+                    </p>
+                </div>
+                <label class="ml-auto relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" onchange="toggleModule('<?php echo $key; ?>', this)" class="sr-only peer" <?php echo $hasAccess ? 'checked' : ''; ?>>
+                    <div class="w-11 h-6 bg-white/5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-p-muted after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-<?php echo $mod['color']; ?>-500"></div>
+                </label>
+            </div>
+
+            <div id="actions-<?php echo $key; ?>" class="grid grid-cols-2 gap-3 <?php echo $hasAccess ? '' : 'opacity-40 pointer-events-none grayscale'; ?> transition-all duration-300">
+                <?php foreach ($mod['actions'] as $actKey => $actLabel): 
+                    $isChecked = in_array($actKey, $modPerms);
                 ?>
+                <label class="flex items-center gap-3 p-3 bg-black/20 rounded-xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-<?php echo $mod['color']; ?>-500/20">
+                    <input type="checkbox" name="modules[<?php echo $key; ?>][]" value="<?php echo $actKey; ?>" 
+                        <?php echo $isChecked ? 'checked' : ''; ?> 
+                        class="checkbox-custom text-<?php echo $mod['color']; ?>-500 focus:ring-<?php echo $mod['color']; ?>-500">
+                    <span class="text-[10px] font-bold text-p-muted group-hover:text-<?php echo $mod['color']; ?>-400 transition-colors uppercase tracking-tight">
+                        <?php echo $actLabel; ?>
+                    </span>
+                </label>
+                <?php endforeach; ?>
             </div>
         </div>
-    </section>
+        <?php endforeach; ?>
 
-    <!-- Database Specific Permissions -->
-    <section class="glass-card">
-        <h3 class="section-title"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 translate-y-[-1px]"></span>
-            <?php echo \App\Core\Lang::get('roles_form.node_granularity'); ?></h3>
-        <div class="space-y-6">
-            <?php foreach ($databases as $db):
-                $dbPerms = $permissions['databases'][$db['id']] ?? [];
-                ?>
-                <div class="bg-black/20 p-6 rounded-2xl border border-white/5 space-y-6">
-                    <div class="flex items-center gap-4">
-                        <div
-                            class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-xs font-black">
-                            #<?php echo $db['id']; ?></div>
-                        <h4 class="text-sm font-black text-p-title uppercase">
-                            <?php echo htmlspecialchars($db['name']); ?>
-                        </h4>
-                        <label
-                            class="flex items-center gap-2 cursor-pointer ml-auto bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                            <input type="checkbox" name="db_perms[<?php echo $db['id']; ?>][]" value="view" <?php echo in_array('view', $dbPerms) ? 'checked' : ''; ?> class="checkbox-custom !w-4 !h-4">
-                            <span
-                                class="text-[9px] font-black uppercase text-emerald-400"><?php echo \App\Core\Lang::get('roles_form.enable_access'); ?></span>
-                        </label>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- Table Management -->
-                        <div class="space-y-3">
-                            <p class="text-[9px] font-black text-p-muted uppercase tracking-widest pl-1">
-                                <?php echo \App\Core\Lang::get('roles_form.structural_permissions'); ?></p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <?php
-                                $struct = [
-                                    'view_tables' => 'perm_view_tables',
-                                    'create_table' => 'perm_create_table',
-                                    'delete_table' => 'perm_drop_table',
-                                    'manage_fields' => 'perm_fields_config'
-                                ];
-                                foreach ($struct as $k => $langKey): ?>
-                                    <label
-                                        class="flex items-center gap-3 p-3 bg-p-bg dark:bg-white/5 rounded-xl hover:bg-p-border dark:hover:bg-white/10 transition-all cursor-pointer">
-                                        <input type="checkbox" name="db_perms[<?php echo $db['id']; ?>][]"
-                                            value="<?php echo $k; ?>" <?php echo in_array($k, $dbPerms) ? 'checked' : ''; ?>
-                                            class="checkbox-custom">
-                                        <span
-                                            class="text-[10px] font-bold text-p-muted dark:text-slate-300"><?php echo \App\Core\Lang::get('roles_form.' . $langKey); ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <!-- Data Management -->
-                        <div class="space-y-3">
-                            <p class="text-[9px] font-black text-p-muted uppercase tracking-widest pl-1">
-                                <?php echo \App\Core\Lang::get('roles_form.content_permissions'); ?></p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <?php
-                                $content = [
-                                    'crud_view' => 'perm_read_data',
-                                    'crud_create' => 'perm_insert_data',
-                                    'crud_edit' => 'perm_update_data',
-                                    'crud_delete' => 'perm_delete_data'
-                                ];
-                                foreach ($content as $k => $langKey): ?>
-                                    <label
-                                        class="flex items-center gap-3 p-3 bg-p-bg dark:bg-white/5 rounded-xl hover:bg-p-border dark:hover:bg-white/10 transition-all cursor-pointer">
-                                        <input type="checkbox" name="db_perms[<?php echo $db['id']; ?>][]"
-                                            value="<?php echo $k; ?>" <?php echo in_array($k, $dbPerms) ? 'checked' : ''; ?>
-                                            class="checkbox-custom">
-                                        <span
-                                            class="text-[10px] font-bold text-p-muted dark:text-slate-300"><?php echo \App\Core\Lang::get('roles_form.' . $langKey); ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </section>
+    </div>
 </div>
+
+<script>
+function toggleModule(key, checkbox) {
+    const container = document.getElementById('actions-' + key);
+    const inputs = container.querySelectorAll('input[type="checkbox"]');
+    
+    if (checkbox.checked) {
+        container.classList.remove('opacity-40', 'pointer-events-none', 'grayscale');
+        // Auto-select first permission (usually 'view') as a convenience? 
+        // No, let user decide.
+    } else {
+        container.classList.add('opacity-40', 'pointer-events-none', 'grayscale');
+        inputs.forEach(input => input.checked = false);
+    }
+}
+</script>

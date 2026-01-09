@@ -24,6 +24,108 @@ class Installer
         // If DB doesn't exist, initialize
         if (!file_exists($dbPath)) {
             self::initDatabase($dbPath);
+        } else {
+            self::runMigrations($dbPath);
+        }
+    }
+
+    private static function runMigrations($dbPath)
+    {
+        try {
+            $db = new PDO('sqlite:' . $dbPath);
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // Add missing columns to 'databases'
+            $stmt = $db->query("PRAGMA table_info(databases)");
+            $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+
+            if (!in_array('project_id', $columns)) {
+                $db->exec("ALTER TABLE databases ADD COLUMN project_id INTEGER");
+            }
+            if (!in_array('last_edit_at', $columns)) {
+                $db->exec("ALTER TABLE databases ADD COLUMN last_edit_at DATETIME");
+            }
+
+            // Create new tables if they don't exist
+            $tables = [
+                'projects' => "CREATE TABLE projects (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    status TEXT DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                'project_users' => "CREATE TABLE project_users (
+                    project_id INTEGER,
+                    user_id INTEGER,
+                    permissions TEXT,
+                    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (project_id, user_id),
+                    FOREIGN KEY (project_id) REFERENCES projects(id),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )",
+                'project_plans' => "CREATE TABLE project_plans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER UNIQUE,
+                    plan_type TEXT,
+                    start_date DATETIME,
+                    next_billing_date DATETIME,
+                    status TEXT DEFAULT 'active',
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                'subscription_history' => "CREATE TABLE subscription_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    old_plan TEXT,
+                    new_plan TEXT,
+                    change_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                'table_metadata' => "CREATE TABLE table_metadata (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    db_id INTEGER,
+                    table_name TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    last_edit_at DATETIME,
+                    FOREIGN KEY (db_id) REFERENCES databases(id),
+                    UNIQUE(db_id, table_name)
+                )"
+            ];
+
+            foreach ($tables as $name => $query) {
+                $check = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='$name'")->fetch();
+                if (!$check) {
+                    $db->exec($query);
+                }
+            }
+
+            // Check if we need to create a default project for orphaned dbs
+            $orphans = $db->query("SELECT COUNT(*) FROM databases WHERE project_id IS NULL")->fetchColumn();
+            if ($orphans > 0) {
+                // Ensure at least one project exists
+                $projectCheck = $db->query("SELECT id FROM projects LIMIT 1")->fetch();
+                if (!$projectCheck) {
+                    $db->exec("INSERT INTO projects (name, description) VALUES ('Default Project', 'System generated project for existing data')");
+                    $projectId = $db->lastInsertId();
+
+                    // Assign admin user to this project
+                    $adminId = $db->query("SELECT id FROM users WHERE username = 'admin'")->fetchColumn();
+                    if ($adminId) {
+                        $db->prepare("INSERT OR IGNORE INTO project_users (project_id, user_id, permissions) VALUES (?, ?, ?)")
+                            ->execute([$projectId, $adminId, json_encode(['all' => true])]);
+                    }
+                } else {
+                    $projectId = $projectCheck['id'];
+                }
+
+                // Update orphaned databases
+                $db->prepare("UPDATE databases SET project_id = ? WHERE project_id IS NULL")
+                    ->execute([$projectId]);
+            }
+
+        } catch (PDOException $e) {
+            // Log or handle migration error
         }
     }
 
@@ -64,9 +166,50 @@ class Installer
                 )",
                 "CREATE TABLE databases (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
                     name TEXT,
                     path TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    last_edit_at DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                // Projects Table
+                "CREATE TABLE projects (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    status TEXT DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                // User-Project Assignments
+                "CREATE TABLE project_users (
+                    project_id INTEGER,
+                    user_id INTEGER,
+                    permissions TEXT, -- JSON permissions specific to this user in this project
+                    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (project_id, user_id),
+                    FOREIGN KEY (project_id) REFERENCES projects(id),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )",
+                // Subscriptions / Plans
+                "CREATE TABLE project_plans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER UNIQUE,
+                    plan_type TEXT, -- monthly, quarterly, semiannual, annual
+                    start_date DATETIME, -- The activation date for billing
+                    next_billing_date DATETIME,
+                    status TEXT DEFAULT 'active',
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                // Plan History
+                "CREATE TABLE subscription_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    old_plan TEXT,
+                    new_plan TEXT,
+                    change_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
                 )",
                 "CREATE TABLE fields_config (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +232,15 @@ class Installer
                     mime_type TEXT,
                     extension TEXT,
                     is_allowed INTEGER DEFAULT 1
+                )",
+                "CREATE TABLE table_metadata (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    db_id INTEGER,
+                    table_name TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    last_edit_at DATETIME,
+                    FOREIGN KEY (db_id) REFERENCES databases(id),
+                    UNIQUE(db_id, table_name)
                 )",
                 "CREATE TABLE api_keys (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

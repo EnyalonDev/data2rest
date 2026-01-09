@@ -39,16 +39,13 @@ class RoleController extends BaseController
             $role['permissions'] = json_decode($role['permissions'] ?? '[]', true);
         }
 
-        $databases = $db->query("SELECT * FROM databases ORDER BY name ASC")->fetchAll();
-
         $this->view('admin/roles/form', [
             'role' => $role,
-            'databases' => $databases,
             'id' => $id,
             'title' => ($id ? 'Edit' : 'New') . ' Role',
             'breadcrumbs' => [
                 \App\Core\Lang::get('common.roles') => 'admin/roles',
-                ($id ? 'Refine' : 'Initialize') . ' Policy' => null
+                ($id ? 'Refine' : 'Initialize') . ' Policy Architect' => null
             ]
         ]);
     }
@@ -67,8 +64,8 @@ class RoleController extends BaseController
         if ($is_admin) {
             $permissions['all'] = true;
         } else {
+            // New structure: modules only
             $permissions['modules'] = $_POST['modules'] ?? [];
-            $permissions['databases'] = $_POST['db_perms'] ?? [];
         }
 
         $permsJson = json_encode($permissions);

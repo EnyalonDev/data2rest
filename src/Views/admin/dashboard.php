@@ -6,13 +6,78 @@ use App\Core\Lang; ?>
     </div>
     <div
         class="inline-block bg-primary text-dark px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 animate-pulse">
-        <?php echo Lang::get('dashboard.title'); ?>
+        <?php echo (isset($project) && $project) ? 'Proyecto Activo' : Lang::get('dashboard.title'); ?>
     </div>
-    <h1 class="text-5xl md:text-7xl font-black text-p-title mb-6 tracking-tighter uppercase italic">
-        <?php echo Lang::get('common.welcome'); ?>
+    <h1 class="text-5xl md:text-8xl font-black text-p-title mb-6 tracking-tighter uppercase italic">
+        <?php if (isset($project) && $project): ?>
+            <?php echo htmlspecialchars($project['name']); ?>
+        <?php else: ?>
+            <?php echo Lang::get('common.welcome'); ?>
+        <?php endif; ?>
     </h1>
-    <p class="text-p-muted font-medium max-w-2xl mx-auto"><?php echo Lang::get('dashboard.subtitle'); ?></p>
+    <p class="text-p-muted font-medium max-w-2xl mx-auto">
+        <?php if (isset($project) && $project): ?>
+            <?php echo Lang::get('common.welcome'); ?>. Estás trabajando en el entorno aislado de este proyecto.
+        <?php else: ?>
+            <?php echo Lang::get('dashboard.subtitle'); ?>
+        <?php endif; ?>
+    </p>
 </header>
+
+<!-- Project Context Section -->
+<?php if (isset($project) && $project): ?>
+    <div class="animate-in fade-in slide-in-from-top-4 duration-700 glass-card mb-12 bg-primary/5 border-primary/20">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-6 text-left">
+                <div class="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary text-3xl">
+                    📁
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-p-title tracking-tight">
+                        <?php echo htmlspecialchars($project['name'] ?? 'Untitled Project'); ?>
+                    </h2>
+                    <p class="text-xs text-p-muted font-medium max-w-md">
+                        <?php echo htmlspecialchars($project['description'] ?? 'Active project isolation focused on specific business goals.'); ?>
+                    </p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-center md:justify-end gap-6">
+                <div class="text-center md:text-right">
+                    <span
+                        class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2">Subscription</span>
+                    <span
+                        class="px-4 py-1.5 bg-primary/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/30">
+                        <?php echo $project['plan_type'] ?? 'Free'; ?>
+                    </span>
+                </div>
+                <div class="hidden md:block w-[1px] h-12 bg-glass-border"></div>
+                <div class="text-center md:text-right">
+                    <span class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2">Billing
+                        Cycle</span>
+                    <span class="text-sm font-black text-p-title italic uppercase tracking-tighter">
+                        <?php echo date('M d, Y', strtotime($project['next_billing_date'] ?? 'now')); ?>
+                    </span>
+                </div>
+                <div class="hidden md:block w-[1px] h-12 bg-glass-border"></div>
+                <a href="<?php echo $baseUrl; ?>admin/projects/select"
+                    class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-dark transition-all">
+                    Cambiar Proyecto
+                </a>
+            </div>
+        </div>
+    </div>
+<?php elseif (!\App\Core\Auth::isAdmin()): ?>
+    <div class="glass-card mb-12 bg-red-500/5 border-red-500/20 text-center py-12">
+        <div
+            class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 text-3xl mx-auto mb-6">
+            ⚠️
+        </div>
+        <h2 class="text-2xl font-black text-p-title mb-2">No Active Project Selected</h2>
+        <p class="text-p-muted font-medium mb-8">Please select a project from the top menu to access your databases.</p>
+        <a href="<?php echo $baseUrl; ?>admin/projects"
+            class="btn-primary !px-10 !py-4 font-black uppercase tracking-widest text-xs italic">Select Project</a>
+    </div>
+<?php endif; ?>
 
 <!-- Stats Grid -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -74,7 +139,7 @@ use App\Core\Lang; ?>
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <!-- Database Module -->
-            <?php if (Auth::hasPermission('module:databases', 'view')): ?>
+            <?php if (Auth::hasPermission('module:databases', 'view_tables') || Auth::hasPermission('module:databases', 'create_db')): ?>
                 <a href="<?php echo $baseUrl; ?>admin/databases"
                     class="glass-card group hover:scale-[1.02] hover:border-primary/50 !p-8">
                     <div
@@ -117,6 +182,7 @@ use App\Core\Lang; ?>
             <?php endif; ?>
 
             <!-- Media Library Module -->
+            <?php if (Auth::hasPermission('module:media', 'view_files')): ?>
             <a href="<?php echo $baseUrl; ?>admin/media"
                 class="glass-card group hover:scale-[1.02] hover:border-primary/50 !p-8">
                 <div
@@ -135,9 +201,10 @@ use App\Core\Lang; ?>
                     <?php echo Lang::get('dashboard.enter'); ?> <span>&rarr;</span>
                 </div>
             </a>
+            <?php endif; ?>
 
             <!-- Users Module -->
-            <?php if (Auth::hasPermission('module:users', 'view')): ?>
+            <?php if (Auth::hasPermission('module:users', 'view_users')): ?>
                 <a href="<?php echo $baseUrl; ?>admin/users"
                     class="glass-card group hover:scale-[1.02] hover:border-primary/50 !p-8">
                     <div

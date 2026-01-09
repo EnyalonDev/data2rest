@@ -628,11 +628,21 @@
                 closeEditor();
                 loadFiles(currentPath);
             } else {
-                alert("Error al procesar imagen: " + data.error);
+                showModal({
+                    title: 'Error de Edición',
+                    message: data.error,
+                    type: 'error',
+                    typeLabel: 'MEDIA ENGINE'
+                });
             }
         } catch (e) {
             console.error(e);
-            alert("Error de comunicación con el servidor");
+            showModal({
+                title: 'Error de Comunicación',
+                message: 'No se pudo contactar con el servidor para procesar la imagen.',
+                type: 'error',
+                typeLabel: 'NETWORK ERROR'
+            });
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -656,7 +666,11 @@
                 selectedItem = null;
                 document.getElementById('media-sidebar').classList.add('hidden');
             } else {
-                alert("Error al restaurar: " + data.error);
+                showModal({
+                    title: 'Error de Restauración',
+                    message: data.error,
+                    type: 'error'
+                });
             }
         } catch (e) { console.error(e); }
     }
@@ -1148,7 +1162,11 @@
         const data = await res.json();
 
         if (data.error && data.error.length > 0) {
-            alert("Some items failed to move: " + data.error.join(', '));
+            showModal({
+                title: 'Error en Traslado',
+                message: 'Algunos elementos no pudieron moverse: ' + data.error.join(', '),
+                type: 'error'
+            });
         }
 
         bulkSelected = [];
