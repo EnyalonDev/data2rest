@@ -49,4 +49,5 @@ yarn-error.log*
 /demo-frontend/.vite/
 
 # Documentation and Private Assets
-/docs/
+/docs/API_GUIDE.md
+/private_docs/
