@@ -379,4 +379,82 @@ LIMIT 1");
                              ON CONFLICT(db_id, table_name) DO UPDATE SET last_edit_at = excluded.last_edit_at");
         $stmt->execute([$db_id, $table, $now]);
     }
+    /**
+     * Exports the current table records to a CSV file (Excel compatible).
+     */
+    public function export()
+    {
+        $ctx = $this->getContext('crud_view');
+        $targetPath = $ctx['database']['path'];
+
+        try {
+            $targetDb = new PDO('sqlite:' . $targetPath);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
+
+            $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
+            $stmt = $targetDb->query("SELECT * FROM $tableName ORDER BY id DESC");
+            $records = $stmt->fetchAll();
+
+            // Resolve foreign keys for the export as well
+            foreach ($ctx['fields'] as $field) {
+                if ($field['is_foreign_key'] && !empty($field['related_table'])) {
+                    $relatedTable = $field['related_table'];
+                    $relatedDisplay = $this->getDisplayField($targetDb, $ctx['db_id'], $relatedTable, $field['related_field']);
+
+                    try {
+                        $stmtRel = $targetDb->query("SELECT id, $relatedDisplay as display FROM $relatedTable");
+                        $relMap = $stmtRel->fetchAll(PDO::FETCH_KEY_PAIR);
+
+                        foreach ($records as &$row) {
+                            if (!empty($row[$field['field_name']]) && isset($relMap[$row[$field['field_name']]])) {
+                                $row[$field['field_name']] = $relMap[$row[$field['field_name']]];
+                            }
+                        }
+                        unset($row);
+                    } catch (\PDOException $e) {
+                    }
+                }
+            }
+
+            // Headers for CSV
+            if (ob_get_level()) ob_end_clean();
+            
+            $filename = $tableName . "_" . date('Y-m-d_H-i') . ".csv";
+            
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            
+            $output = fopen('php://output', 'w');
+            
+            // Add BOM for Excel to recognize UTF-8
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Column Headers
+            $headers = [];
+            foreach ($ctx['fields'] as $field) {
+                if ($field['is_visible']) {
+                    $headers[] = $field['field_name'];
+                }
+            }
+            fputcsv($output, $headers);
+
+            // Data rows
+            foreach ($records as $row) {
+                $line = [];
+                foreach ($ctx['fields'] as $field) {
+                    if ($field['is_visible']) {
+                        $line[] = $row[$field['field_name']] ?? '';
+                    }
+                }
+                fputcsv($output, $line);
+            }
+            
+            fclose($output);
+            exit;
+
+        } catch (\PDOException $e) {
+            die("Error exporting data: " . $e->getMessage());
+        }
+    }
 }

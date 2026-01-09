@@ -67,6 +67,7 @@ $router->add('GET', '/admin/crud/new', 'Database\\CrudController@form');
 $router->add('GET', '/admin/crud/edit', 'Database\\CrudController@form');
 $router->add('POST', '/admin/crud/save', 'Database\\CrudController@save');
 $router->add('GET', '/admin/crud/delete', 'Database\\CrudController@delete');
+$router->add('GET', '/admin/crud/export', 'Database\\CrudController@export');
 // --- Module: Media Library ---
 $router->add('GET', '/admin/media', 'Media\\MediaController@index');
 $router->add('GET', '/admin/media/api/list', 'Media\\MediaController@list');
