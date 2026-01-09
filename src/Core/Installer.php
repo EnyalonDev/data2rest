@@ -159,6 +159,17 @@ class Installer
                     ->execute([$projectId]);
             }
 
+            // 6. Ensure default settings exist (For updates)
+            $ensureSettings = [
+                'show_welcome_banner' => '1',
+                'media_trash_retention' => '30',
+                'dev_mode' => 'off'
+            ];
+            $stmt = $db->prepare("INSERT OR IGNORE INTO system_settings (key, value) VALUES (?, ?)");
+            foreach ($ensureSettings as $key => $val) {
+                $stmt->execute([$key, $val]);
+            }
+
         } catch (PDOException $e) {
             // Log or handle migration error
         }
@@ -352,7 +363,8 @@ class Installer
             $defaultSettings = [
                 'dev_mode' => 'off',
                 'media_trash_retention' => '30',
-                'app_language' => 'es'
+                'app_language' => 'es',
+                'show_welcome_banner' => '1'
             ];
 
             $stmt = $db->prepare("INSERT INTO system_settings (key, value) VALUES (?, ?)");

@@ -110,4 +110,16 @@ class SystemController extends BaseController
         echo json_encode(['success' => true, 'cleared' => $cleared]);
         exit;
     }
+    public function dismissBanner()
+    {
+        Auth::requireAdmin();
+        $db = \App\Core\Database::getInstance()->getConnection();
+
+        $stmt = $db->prepare("REPLACE INTO system_settings (key, value) VALUES ('show_welcome_banner', '0')");
+        $stmt->execute();
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit;
+    }
 }

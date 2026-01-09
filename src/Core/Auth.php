@@ -339,8 +339,10 @@ class Auth
      */
     public static function getFullBaseUrl()
     {
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-        $host = $_SERVER['HTTP_HOST'];
+        $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $port = $_SERVER['SERVER_PORT'] ?? 80;
+        $protocol = ($https || $port == 443) ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $baseUrl = self::getBaseUrl();
         return $protocol . $host . $baseUrl;
     }

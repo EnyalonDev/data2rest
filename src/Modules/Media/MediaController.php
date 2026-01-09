@@ -279,7 +279,7 @@ class MediaController extends BaseController
         }
 
         try {
-            $this->moveToTrash($fullPath, $path);
+            $this->moveToTrash($fullPath, $path, $scopePath);
             $this->json(['success' => true]);
         } catch (Exception $e) {
             $this->json(['error' => $e->getMessage()], 500);
@@ -312,7 +312,7 @@ class MediaController extends BaseController
             }
 
             try {
-                $this->moveToTrash($fullPath, $safePath); // Relative path passed to trash needs to be handled carefully?
+                $this->moveToTrash($fullPath, $safePath, $scopePath); // Relative path passed to trash needs to be handled carefully?
                 // moveToTrash expects relative path for recovery?
                 // The current moveToTrash implementation:
                 // $stmt->execute([$relativePath, ...]);
@@ -457,8 +457,9 @@ class MediaController extends BaseController
         }
 
         $uploadBase = Config::get('upload_dir');
-        $srcPath = $uploadBase . '.trash' . DIRECTORY_SEPARATOR . $item['trash_path'];
-        $destPath = $uploadBase . $item['original_path'];
+        $scopePath = $this->getStoragePrefix(); // Project scope
+        $srcPath = $uploadBase . $scopePath . '/.trash/' . $item['trash_path'];
+        $destPath = $uploadBase . $scopePath . '/' . $item['original_path'];
 
         if (!file_exists($srcPath)) {
             $this->json(['error' => 'Physical file not found in trash'], 404);
@@ -661,10 +662,11 @@ class MediaController extends BaseController
         }
     }
 
-    private function moveToTrash($fullPath, $relativePath)
+    private function moveToTrash($fullPath, $relativePath, $scopePath)
     {
         $uploadBase = Config::get('upload_dir');
-        $trashDir = $uploadBase . '.trash';
+        // Use scoped trash directory
+        $trashDir = $uploadBase . $scopePath . '/.trash';
 
         if (!is_dir($trashDir)) {
             mkdir($trashDir, 0777, true);
@@ -713,22 +715,27 @@ class MediaController extends BaseController
         $expired = $stmt->fetchAll();
 
         $uploadBase = Config::get('upload_dir');
-        $trashDir = $uploadBase . '.trash';
+        $scopePath = $this->getStoragePrefix(); // Current scope
+        $trashDir = $uploadBase . $scopePath . '/.trash';
         $purgueCount = 0;
 
         foreach ($expired as $item) {
             $path = $trashDir . DIRECTORY_SEPARATOR . $item['trash_path'];
-            if (file_exists($path)) {
-                if (is_dir($path))
-                    $this->recursiveDelete($path);
-                else
-                    unlink($path);
-            }
-            $deleteStmt = $db->prepare("DELETE FROM media_trash WHERE id = ?");
-            $deleteStmt->execute([$item['id']]);
-            $purgueCount++;
-        }
 
+            // Only delete if it exists in CURRENT scope trash
+            // This prevents deleting files from other project scopes if global trash table is shared
+            if (file_exists($path)) {
+                if (is_dir($path)) {
+                    $this->recursiveDelete($path);
+                } else {
+                    unlink($path);
+                }
+
+                $delStmt = $db->prepare("DELETE FROM media_trash WHERE id = ?");
+                $delStmt->execute([$item['id']]);
+                $purgueCount++;
+            }
+        }
         return $purgueCount;
     }
 

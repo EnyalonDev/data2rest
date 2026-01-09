@@ -154,6 +154,10 @@ class RestController extends BaseController
             $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
 
             foreach ($params as $key => $val) {
+                if (is_string($val)) {
+                    $val = trim($val);
+                }
+
                 if (in_array($key, $validCols)) {
                     if (strpos($val, '%') !== false) {
                         $where[] = "t.$key LIKE ?";

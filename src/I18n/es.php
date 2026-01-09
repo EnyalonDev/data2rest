@@ -453,6 +453,10 @@ return [
     'crud_form' => [
         'configuring_record' => 'Configurando registro estructural en la base de datos',
         'no_selection' => 'Ninguna Selección',
+        'resource_type' => 'Tipo de Recurso',
+        'all_resources' => 'Todos los Recursos',
+        'only_images' => 'Solo Imágenes',
+        'only_files' => 'Solo Archivos',
         'upload_neural' => 'Subiendo a la Red Neuronal',
     ],
     'groups' => [

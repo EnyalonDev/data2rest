@@ -104,9 +104,25 @@ class DashboardController extends BaseController
             }
         }
 
+        // 5. Global Stats and Settings for Admin Banner
+        $globalDbCount = 0;
+        $showWelcomeBanner = 0;
+
+        if (Auth::isAdmin()) {
+            $stmt = $db->query("SELECT COUNT(*) FROM databases");
+            $globalDbCount = $stmt->fetchColumn();
+
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key = 'show_welcome_banner'");
+            $stmt->execute();
+            $val = $stmt->fetchColumn();
+            $showWelcomeBanner = ($val === false) ? 1 : (int) $val;
+        }
+
         $this->view('admin/dashboard', [
             'title' => 'Dashboard - ' . ($projectInfo['name'] ?? 'Data2Rest'),
             'project' => $projectInfo,
+            'globalDbCount' => $globalDbCount,
+            'showWelcomeBanner' => $showWelcomeBanner,
             'stats' => [
                 'total_databases' => count($databases),
                 'total_records' => $totalRecords,

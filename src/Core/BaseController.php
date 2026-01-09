@@ -2,40 +2,56 @@
 
 namespace App\Core;
 
+require_once __DIR__ . '/External/BladeOne.php';
+use eftec\bladeone\BladeOne;
+
 /**
  * Base Controller
  * Provides common functionality for all controllers, such as view rendering and JSON responses.
  */
 class BaseController
 {
-    /**
-     * Renders a view file within a layout or standalone.
-     * 
-     * @param string $path Path to the view file relative to src/Views
-     * @param array $data Data to be extracted and made available to the view
-     * @param string|null $layout Name of the layout file (optional)
-     */
-    protected function view($path, $data = [], $layout = 'layout')
+    protected $blade;
+
+    private function initBlade()
     {
-        // Extract data to make variables available in the scope of the required view
-        extract($data);
+        if ($this->blade)
+            return;
 
-        $baseUrl = Auth::getBaseUrl();
-        $flash = Auth::getFlashMsg();
+        $views = __DIR__ . '/../Views';
+        $cache = __DIR__ . '/../../data/cache/views';
 
-        // Path to the specific view template
-        $viewFile = __DIR__ . '/../Views/' . $path . '.php';
-
-        if (!file_exists($viewFile)) {
-            die("View not found: $path");
+        if (!file_exists($cache)) {
+            mkdir($cache, 0777, true);
         }
 
-        // If a layout is specified, it usually includes $viewFile within its own structure
-        if ($layout) {
-            require_once __DIR__ . '/../Views/' . $layout . '.php';
-        } else {
-            require_once $viewFile;
-        }
+        // MODE_DEBUG compiles every time. MODE_AUTO checks if changed.
+        $mode = Auth::isDevMode() ? BladeOne::MODE_DEBUG : BladeOne::MODE_AUTO;
+        $this->blade = new BladeOne($views, $cache, $mode);
+
+        // Base URL for assets
+        $this->blade->setBaseUrl(Auth::getBaseUrl());
+    }
+
+    /**
+     * Renders a view file using BladeOne.
+     * 
+     * @param string $path Path to the view file relative to src/Views (using dot notation)
+     * @param array $data Data to be passed to the view
+     */
+    protected function view($path, $data = [])
+    {
+        $this->initBlade();
+
+        $data['baseUrl'] = Auth::getBaseUrl();
+        $data['flash'] = Auth::getFlashMsg();
+        $data['lang'] = Lang::current();
+
+        // Normalize path (convert slashes to dots for BladeOne if needed, 
+        // but BladeOne accepts both. Dots are standard.)
+        $path = str_replace('/', '.', $path);
+
+        echo $this->blade->run($path, $data);
     }
 
     /**
@@ -74,51 +90,43 @@ class BaseController
         $name = $info['filename'];
         $ext = isset($info['extension']) ? '.' . strtolower($info['extension']) : '';
 
-        // Broad map for common accents
-        $map = [
-            'á' => 'a',
-            'é' => 'e',
-            'í' => 'i',
-            'ó' => 'o',
-            'ú' => 'u',
-            'ñ' => 'n',
-            'Á' => 'A',
-            'É' => 'E',
-            'Í' => 'I',
-            'Ó' => 'O',
-            'Ú' => 'U',
-            'Ñ' => 'N',
-            'à' => 'a',
-            'è' => 'e',
-            'ì' => 'i',
-            'ò' => 'o',
-            'ù' => 'u',
-            'À' => 'A',
-            'È' => 'E',
-            'Ì' => 'I',
-            'Ò' => 'O',
-            'Ù' => 'U',
-            'ä' => 'a',
-            'ë' => 'e',
-            'ï' => 'i',
-            'ö' => 'o',
-            'ü' => 'u',
-            'Ä' => 'A',
-            'Ë' => 'E',
-            'Ï' => 'I',
-            'Ö' => 'O',
-            'Ü' => 'U'
-        ];
-        $name = strtr($name, $map);
+        // 1. Try Transliterator (Best quality)
+        if (class_exists('Transliterator')) {
+            $transliterator = \Transliterator::create('Any-Latin; Latin-ASCII; Lower()');
+            $name = $transliterator->transliterate($name);
+        }
+        // 2. Try iconv (Standard)
+        elseif (function_exists('iconv')) {
+            $name = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        }
+        // 3. Fallback map (Basic)
+        else {
+            $map = [
+                'á' => 'a',
+                'é' => 'e',
+                'í' => 'i',
+                'ó' => 'o',
+                'ú' => 'u',
+                'ñ' => 'n',
+                'ü' => 'u',
+                'Á' => 'A',
+                'É' => 'E',
+                'Í' => 'I',
+                'Ó' => 'O',
+                'Ú' => 'U',
+                'Ñ' => 'N',
+                'Ü' => 'U'
+            ];
+            $name = strtr($name, $map);
+        }
 
-        // Lowercase and cleanup
-        $name = mb_strtolower($name, 'UTF-8');
-        $name = preg_replace('/[^\w\s-]/u', '', $name);
-        $name = preg_replace('/[\s_]+/', '-', $name);
-        $name = preg_replace('/-+/', '-', $name);
-        $name = trim($name, '-');
+        // Final cleanup
+        $name = preg_replace('/[^a-zA-Z0-9\s-]/', '', $name); // Remove non-alphanumeric
+        $name = preg_replace('/[\s-]+/', '-', $name);         // Collapse spaces/dashes
+        $name = trim($name, '-');                             // Trim edges
+        $name = strtolower($name);                            // Ensure lowercase
 
-        return (empty($name) ? 'file' : $name) . $ext;
+        return (empty($name) ? 'file-' . substr(uniqid(), -5) : $name) . $ext;
     }
 
     /**
