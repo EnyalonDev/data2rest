@@ -8,9 +8,9 @@
 
 
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-1">
+    <div class="lg:col-span-1 space-y-8">
         <?php if (App\Core\Auth::hasPermission('module:databases.create_db')): ?>
-            <div class="glass-card sticky top-24">
+            <div class="glass-card">
                 <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter">
                     <?php echo Lang::get('databases.new_node'); ?>
                 </h2>
@@ -23,6 +23,34 @@
                     </div>
                     <button type="submit"
                         class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs"><?php echo Lang::get('databases.create_node'); ?></button>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Importar SQL
+                </h2>
+                <form action="<?php echo $baseUrl; ?>admin/databases/import" method="POST" enctype="multipart/form-data"
+                    class="space-y-4">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">Nombre del
+                            Nodo</label>
+                        <input type="text" name="name" placeholder="Ej: Mi DB Importada" required
+                            class="input-glass w-full">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">Archivo
+                            .sql</label>
+                        <input type="file" name="sql_file" accept=".sql" required class="input-glass w-full text-xs">
+                    </div>
+                    <button type="submit" class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">Crear
+                        desde SQL</button>
+                    <p class="text-[9px] text-p-muted italic opacity-70">El script debe contener sentencias CREATE TABLE
+                        compatibles con SQLite.</p>
                 </form>
             </div>
         <?php endif; ?>

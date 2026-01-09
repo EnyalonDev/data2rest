@@ -50,6 +50,8 @@ $router->add('POST', '/admin/databases/create', 'Database\\DatabaseController@cr
 $router->add('GET', '/admin/databases/delete', 'Database\\DatabaseController@delete');
 $router->add('GET', '/admin/databases/view', 'Database\\DatabaseController@viewTables');
 $router->add('GET', '/admin/databases/sync', 'Database\\DatabaseController@syncDatabase');
+$router->add('POST', '/admin/databases/import', 'Database\\DatabaseController@importSql');
+$router->add('GET', '/admin/databases/export', 'Database\\DatabaseController@exportSql');
 $router->add('POST', '/admin/databases/table/create', 'Database\\DatabaseController@createTable');
 $router->add('GET', '/admin/databases/table/delete', 'Database\\DatabaseController@deleteTable');
 $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@manageFields');

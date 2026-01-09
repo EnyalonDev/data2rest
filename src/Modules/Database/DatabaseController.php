@@ -553,4 +553,120 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $id);
         exit;
     }
+    /**
+     * Creates a database from an uploaded SQL script.
+     */
+    public function importSql()
+    {
+        Auth::requirePermission('module:databases.create_db');
+        $name = $_POST['name'] ?? 'Imported Database';
+        $file = $_FILES['sql_file'] ?? null;
+
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            Auth::setFlashError("No SQL file uploaded.");
+            $this->redirect('admin/databases');
+        }
+
+        // 1. Create the database first (empty)
+        $sanitized = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($name));
+        $sanitized = trim(strtolower($sanitized), '_');
+        $storagePath = Config::get('db_storage_path');
+        $filename = $sanitized . '_' . uniqid() . '.sqlite';
+        $path = $storagePath . $filename;
+
+        if (!is_dir($storagePath)) {
+            mkdir($storagePath, 0777, true);
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $path);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // 2. Execute SQL
+            $sql = file_get_contents($file['tmp_name']);
+            // SQLite can execute multiple statements if we use exec
+            $targetDb->exec($sql);
+
+            // 3. Register in system
+            $db = Database::getInstance()->getConnection();
+            $projectId = Auth::getActiveProject();
+            $stmt = $db->prepare("INSERT INTO databases (name, path, project_id) VALUES (?, ?, ?)");
+            $stmt->execute([$name, $path, $projectId]);
+            $dbId = $db->lastInsertId();
+
+            // 4. Trigger Sync to detect tables/fields
+            Auth::setFlashError("Database imported and created successfully.", 'success');
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $dbId);
+            exit;
+        } catch (\Exception $e) {
+            // Clean up potentially corrupt file if creation failed partly
+            if (file_exists($path)) {
+                unlink($path);
+            }
+            Auth::setFlashError("Error importing SQL: " . $e->getMessage());
+            $this->redirect('admin/databases');
+        }
+    }
+
+    /**
+     * Exports a database as a SQL dump.
+     */
+    public function exportSql()
+    {
+        $id = $_GET['id'] ?? null;
+        Auth::requirePermission('module:databases.view_tables');
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$id]);
+        $database = $stmt->fetch();
+
+        if (!$database || !file_exists($database['path'])) {
+            Auth::setFlashError("Database not found.");
+            $this->redirect('admin/databases');
+        }
+
+        $dbPath = $database['path'];
+        $dbName = preg_replace('/[^a-zA-Z0-9]+/', '_', $database['name']);
+
+        $hasSqlite3 = false;
+        @exec('which sqlite3', $output, $returnCode);
+        if ($returnCode === 0) {
+            $hasSqlite3 = true;
+        }
+
+        if (ob_get_level())
+            ob_end_clean();
+
+        header('Content-Type: application/sql');
+        header('Content-Disposition: attachment; filename="' . $dbName . '_dump.sql"');
+
+        if ($hasSqlite3) {
+            $cmd = "sqlite3 " . escapeshellarg($dbPath) . " .dump";
+            passthru($cmd);
+        } else {
+            try {
+                $targetDb = new PDO('sqlite:' . $dbPath);
+                $stmt = $targetDb->query("SELECT sql, name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $tables = $stmt->fetchAll();
+
+                echo "-- Data2Rest SQL Dump (PHP Fallback)\n";
+                foreach ($tables as $table) {
+                    echo $table['sql'] . ";\n\n";
+                    $dataStmt = $targetDb->query("SELECT * FROM " . $table['name']);
+                    while ($row = $dataStmt->fetch(PDO::FETCH_ASSOC)) {
+                        $cols = implode(', ', array_keys($row));
+                        $vals = implode(', ', array_map(function ($v) use ($targetDb) {
+                            return $v === null ? 'NULL' : $targetDb->quote($v);
+                        }, array_values($row)));
+                        echo "INSERT INTO " . $table['name'] . " ($cols) VALUES ($vals);\n";
+                    }
+                    echo "\n";
+                }
+            } catch (\Exception $e) {
+                echo "-- Error during dump: " . $e->getMessage();
+            }
+        }
+        exit;
+    }
 }
