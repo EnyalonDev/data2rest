@@ -35,7 +35,7 @@ class Installer
             $db = new PDO('sqlite:' . $dbPath);
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // Add missing columns to 'databases'
+            // 1. Add missing columns to 'databases'
             $stmt = $db->query("PRAGMA table_info(databases)");
             $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
 
@@ -46,7 +46,14 @@ class Installer
                 $db->exec("ALTER TABLE databases ADD COLUMN last_edit_at DATETIME");
             }
 
-            // Create new tables if they don't exist
+            // 2. Add missing columns to 'api_keys'
+            $stmt = $db->query("PRAGMA table_info(api_keys)");
+            $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (!in_array('project_id', $columns)) {
+                $db->exec("ALTER TABLE api_keys ADD COLUMN project_id INTEGER");
+            }
+
+            // 3. Create missing tables
             $tables = [
                 'projects' => "CREATE TABLE projects (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,6 +97,23 @@ class Installer
                     last_edit_at DATETIME,
                     FOREIGN KEY (db_id) REFERENCES databases(id),
                     UNIQUE(db_id, table_name)
+                )",
+                'media_trash' => "CREATE TABLE media_trash (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    original_path TEXT NOT NULL,
+                    original_name TEXT NOT NULL,
+                    trash_path TEXT NOT NULL,
+                    file_size INTEGER,
+                    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                'activity_logs' => "CREATE TABLE activity_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    project_id INTEGER,
+                    action TEXT,
+                    details TEXT,
+                    ip_address TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )"
             ];
 
@@ -100,7 +124,18 @@ class Installer
                 }
             }
 
-            // Check if we need to create a default project for orphaned dbs
+            // 4. Check system_settings structure (Legacy migration)
+            $stmt = $db->query("PRAGMA table_info(system_settings)");
+            $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (in_array('id', $columns)) {
+                // If it has 'id', we migrate to the simpler (key, value) structure
+                $db->exec("CREATE TABLE system_settings_new (key TEXT PRIMARY KEY, value TEXT)");
+                $db->exec("INSERT OR IGNORE INTO system_settings_new (key, value) SELECT key, value FROM system_settings");
+                $db->exec("DROP TABLE system_settings");
+                $db->exec("ALTER TABLE system_settings_new RENAME TO system_settings");
+            }
+
+            // 5. Check if we need to create a default project for orphaned dbs
             $orphans = $db->query("SELECT COUNT(*) FROM databases WHERE project_id IS NULL")->fetchColumn();
             if ($orphans > 0) {
                 // Ensure at least one project exists
@@ -136,7 +171,7 @@ class Installer
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $queries = [
-                // Roles table
+                // 1. Core Structures (No dependencies)
                 "CREATE TABLE roles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
@@ -144,7 +179,6 @@ class Installer
                     permissions TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )",
-                // Groups table
                 "CREATE TABLE groups (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
@@ -152,28 +186,6 @@ class Installer
                     permissions TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )",
-                // Users table with role_id and group_id
-                "CREATE TABLE users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE,
-                    password TEXT,
-                    role_id INTEGER,
-                    group_id INTEGER,
-                    status INTEGER DEFAULT 1,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (role_id) REFERENCES roles(id),
-                    FOREIGN KEY (group_id) REFERENCES groups(id)
-                )",
-                "CREATE TABLE databases (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_id INTEGER,
-                    name TEXT,
-                    path TEXT,
-                    last_edit_at DATETIME,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects(id)
-                )",
-                // Projects Table
                 "CREATE TABLE projects (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
@@ -182,72 +194,11 @@ class Installer
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )",
-                // User-Project Assignments
-                "CREATE TABLE project_users (
-                    project_id INTEGER,
-                    user_id INTEGER,
-                    permissions TEXT, -- JSON permissions specific to this user in this project
-                    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (project_id, user_id),
-                    FOREIGN KEY (project_id) REFERENCES projects(id),
-                    FOREIGN KEY (user_id) REFERENCES users(id)
-                )",
-                // Subscriptions / Plans
-                "CREATE TABLE project_plans (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_id INTEGER UNIQUE,
-                    plan_type TEXT, -- monthly, quarterly, semiannual, annual
-                    start_date DATETIME, -- The activation date for billing
-                    next_billing_date DATETIME,
-                    status TEXT DEFAULT 'active',
-                    FOREIGN KEY (project_id) REFERENCES projects(id)
-                )",
-                // Plan History
-                "CREATE TABLE subscription_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_id INTEGER,
-                    old_plan TEXT,
-                    new_plan TEXT,
-                    change_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects(id)
-                )",
-                "CREATE TABLE fields_config (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    db_id INTEGER,
-                    table_name TEXT,
-                    field_name TEXT,
-                    data_type TEXT,
-                    view_type TEXT,
-                    is_required INTEGER DEFAULT 0,
-                    is_visible INTEGER DEFAULT 1,
-                    is_editable INTEGER DEFAULT 1,
-                    is_foreign_key INTEGER DEFAULT 0,
-                    related_table TEXT,
-                    related_field TEXT,
-                    options TEXT,
-                    FOREIGN KEY (db_id) REFERENCES databases(id)
-                )",
                 "CREATE TABLE media_config (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     mime_type TEXT,
                     extension TEXT,
                     is_allowed INTEGER DEFAULT 1
-                )",
-                "CREATE TABLE table_metadata (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    db_id INTEGER,
-                    table_name TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    last_edit_at DATETIME,
-                    FOREIGN KEY (db_id) REFERENCES databases(id),
-                    UNIQUE(db_id, table_name)
-                )",
-                "CREATE TABLE api_keys (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key_value TEXT UNIQUE,
-                    name TEXT,
-                    permissions TEXT,
-                    status INTEGER DEFAULT 1
                 )",
                 "CREATE TABLE api_endpoints (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -268,12 +219,112 @@ class Installer
                     response_time FLOAT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )",
-                // System Settings table
                 "CREATE TABLE system_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )",
+                "CREATE TABLE media_trash (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key TEXT UNIQUE NOT NULL,
-                    value TEXT,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    original_path TEXT NOT NULL,
+                    original_name TEXT NOT NULL,
+                    trash_path TEXT NOT NULL,
+                    file_size INTEGER,
+                    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+
+                // 2. Dependent Structures (Level 1)
+                "CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE,
+                    password TEXT,
+                    role_id INTEGER,
+                    group_id INTEGER,
+                    status INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (role_id) REFERENCES roles(id),
+                    FOREIGN KEY (group_id) REFERENCES groups(id)
+                )",
+                "CREATE TABLE databases (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    name TEXT,
+                    path TEXT,
+                    last_edit_at DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                "CREATE TABLE project_users (
+                    project_id INTEGER,
+                    user_id INTEGER,
+                    permissions TEXT,
+                    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (project_id, user_id),
+                    FOREIGN KEY (project_id) REFERENCES projects(id),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )",
+                "CREATE TABLE project_plans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER UNIQUE,
+                    plan_type TEXT,
+                    start_date DATETIME,
+                    next_billing_date DATETIME,
+                    status TEXT DEFAULT 'active',
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                "CREATE TABLE subscription_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    old_plan TEXT,
+                    new_plan TEXT,
+                    change_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                "CREATE TABLE api_keys (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    key_value TEXT UNIQUE,
+                    name TEXT,
+                    permissions TEXT,
+                    status INTEGER DEFAULT 1,
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+                "CREATE TABLE activity_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    project_id INTEGER,
+                    action TEXT,
+                    details TEXT,
+                    ip_address TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    FOREIGN KEY (project_id) REFERENCES projects(id)
+                )",
+
+                // 3. Dependent Structures (Level 2)
+                "CREATE TABLE fields_config (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    db_id INTEGER,
+                    table_name TEXT,
+                    field_name TEXT,
+                    data_type TEXT,
+                    view_type TEXT,
+                    is_required INTEGER DEFAULT 0,
+                    is_visible INTEGER DEFAULT 1,
+                    is_editable INTEGER DEFAULT 1,
+                    is_foreign_key INTEGER DEFAULT 0,
+                    related_table TEXT,
+                    related_field TEXT,
+                    options TEXT,
+                    FOREIGN KEY (db_id) REFERENCES databases(id)
+                )",
+                "CREATE TABLE table_metadata (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    db_id INTEGER,
+                    table_name TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    last_edit_at DATETIME,
+                    FOREIGN KEY (db_id) REFERENCES databases(id),
+                    UNIQUE(db_id, table_name)
                 )"
             ];
 
