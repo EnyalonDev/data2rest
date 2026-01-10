@@ -87,6 +87,15 @@
             };
         }
 
+        // Confirm/Success/Safety button logic
+        if (options.onConfirm || options.type === 'confirm') {
+            confirmBtn.classList.remove('hidden');
+            confirmBtn.onclick = () => {
+                if (options.onConfirm) options.onConfirm();
+                closeModal();
+            };
+        }
+
         // Icon & Color
         if (options.type === 'error' || options.type === 'modal') {
             icon.innerText = (options.type === 'error') ? '⚠️' : '📊';

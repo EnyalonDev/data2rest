@@ -2,8 +2,19 @@
 /**
  * Data2Rest I18n Synchronization Agent
  * 
- * This script scans the codebase for Lang::get('key') calls and ensures
- * all keys exist in the translation files (es.php, en.php, pt.php).
+ * DESCRIPCIÓN:
+ * Este script automatiza la gestión de traducciones. Escanea todo el código fuente (src/)
+ * buscando llamadas a Lang::get('key') y asegura que dichas claves existan en los 
+ * archivos de idiomas (es.php, en.php, pt.php).
+ * 
+ * INSTRUCCIONES DE USO:
+ * 1. Sincronización General:
+ *    php scripts/i18n-sync.php
+ *    (Detecta nuevas claves y las añade con el prefijo "NEW: ")
+ * 
+ * 2. Búsqueda de Clave por Texto:
+ *    php scripts/i18n-sync.php --search="Texto a buscar"
+ *    (Útil para saber qué clave corresponde a un texto que ya aparece en la UI)
  */
 
 $languages = ['es', 'en', 'pt'];

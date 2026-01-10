@@ -59,28 +59,41 @@ class Lang
      * Retrieves a translated string by its dot-notation key.
      * 
      * @param string $key Dot-notation key (e.g., 'common.save')
+     * @param array|string|null $replace Array of placeholders to replace, or default string
      * @param string|null $default Default value if key is not found
      * @return string
      */
-    public static function get($key, $default = null)
+    public static function get($key, $replace = null, $default = null)
     {
         if (self::$translations === null) {
             self::init();
         }
 
+        if (is_string($replace) && $default === null) {
+            $default = $replace;
+            $replace = [];
+        }
+
         $parts = explode('.', $key);
         $result = self::$translations;
 
-        // Traverse the translation array using the key parts
         foreach ($parts as $part) {
             if (isset($result[$part]) && (is_array($result[$part]) || is_string($result[$part]))) {
                 $result = $result[$part];
             } else {
-                return $default ?? $key; // Return default or key if not found
+                return $default ?? $key;
             }
         }
 
-        return is_string($result) ? $result : ($default ?? $key);
+        $translation = is_string($result) ? $result : ($default ?? $key);
+
+        if (!empty($replace) && is_array($replace)) {
+            foreach ($replace as $k => $v) {
+                $translation = str_replace(':' . $k, $v, $translation);
+            }
+        }
+
+        return $translation;
     }
 
     /**

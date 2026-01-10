@@ -241,7 +241,7 @@ class RestController extends BaseController
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
         // Process file uploads if present (images only for pages, general for others)
-        $allowedExt = ($table === 'web_pages') ? ['jpg', 'jpeg', 'png', 'webp'] : ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
+        $allowedExt = ($table === 'web_pages') ? ['jpg', 'jpeg', 'png', 'webp', 'avif'] : ['jpg', 'jpeg', 'png', 'webp', 'avif', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
         $filesData = $this->processUploads($db_id, $table, $allowedExt);
         $input = array_merge($input, $filesData);
 
@@ -339,7 +339,7 @@ class RestController extends BaseController
         $absoluteDir = $uploadBase . $relativeDir;
 
         if (empty($allowed)) {
-            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'pdf', 'txt', 'doc', 'docx', 'odt', 'md', 'rar', 'zip'];
         }
 
         foreach ($_FILES as $field => $file) {

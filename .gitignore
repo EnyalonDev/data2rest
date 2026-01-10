@@ -53,5 +53,5 @@ yarn-error.log*
 /private_docs/
 
 # Agent Workflows
-.agent/
+#.agent/
 /data/cache/

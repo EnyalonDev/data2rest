@@ -58,6 +58,19 @@
                         <input type="datetime-local" name="start_date"
                             value="{{ date('Y-m-d\TH:i', strtotime($project['start_date'] ?? 'now')) }}" class="form-input">
                     </div>
+
+                    <!-- Storage Quota (Admin Only) -->
+                    @if (\App\Core\Auth::isAdmin())
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="form-label mb-2">{{ \App\Core\Lang::get('projects.storage_quota') }}</label>
+                            <div class="relative">
+                                <input type="number" name="storage_quota" value="{{ $project['storage_quota'] ?? 300 }}"
+                                    class="form-input !pr-16" min="1" step="1">
+                                <span
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-p-muted uppercase">MB</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Team Management Refactor -->
@@ -169,10 +182,10 @@
             // 1. Render Assigned
             if (assignedUserIds.length === 0) {
                 assignedContainer.innerHTML = `
-                        <div class="text-center py-10 opacity-30 italic text-xs">
-                            {!! addslashes(\App\Core\Lang::get('projects.no_users_assigned')) !!}
-                        </div>
-                    `;
+                            <div class="text-center py-10 opacity-30 italic text-xs">
+                                {!! addslashes(\App\Core\Lang::get('projects.no_users_assigned')) !!}
+                            </div>
+                        `;
             }
 
             allUsers.forEach(user => {
@@ -183,19 +196,19 @@
                     const card = document.createElement('div');
                     card.className = 'flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-xl hover:border-red-500/30 transition-all group';
                     card.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs capitalize">
-                                    ${user.username.charAt(0)}
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs capitalize">
+                                        ${user.username.charAt(0)}
+                                    </div>
+                                    <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
                                 </div>
-                                <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
-                            </div>
-                            <button type="button" onclick="removeUserAccess('${user.id}', \`${user.username}\`)" 
-                                    class="p-2 text-p-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        `;
+                                <button type="button" onclick="removeUserAccess('${user.id}', \`${user.username}\`)" 
+                                        class="p-2 text-p-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            `;
                     assignedContainer.appendChild(card);
 
                     // Add hidden input for form submission
@@ -212,14 +225,14 @@
                         card.className = 'flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-xl hover:border-primary/50 transition-all group cursor-pointer';
                         card.onclick = () => assignUser(user.id);
                         card.innerHTML = `
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs capitalize">
-                                        ${user.username.charAt(0)}
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs capitalize">
+                                            ${user.username.charAt(0)}
+                                        </div>
+                                        <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
                                     </div>
-                                    <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
-                                </div>
-                                <span class="text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">{!! addslashes(\App\Core\Lang::get('common.add')) !!} +</span>
-                            `;
+                                    <span class="text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">{!! addslashes(\App\Core\Lang::get('common.add')) !!} +</span>
+                                `;
                         searchResultsContainer.appendChild(card);
                     }
                 }

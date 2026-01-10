@@ -102,7 +102,7 @@ class MediaController extends BaseController
                 $itemData['extension'] = $ext;
                 // URL must include the scope path
                 $itemData['url'] = $fullBaseUrl . 'uploads/' . $scopePath . '/' . $relativeItemPath;
-                $itemData['is_image'] = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+                $itemData['is_image'] = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif']);
             }
 
             $items[] = $itemData;
@@ -238,6 +238,19 @@ class MediaController extends BaseController
         }
 
         $file = $_FILES['file'];
+        $fileSize = $file['size'];
+
+        // Storage Quota Enforcement
+        $storageInfo = $this->getProjectStorageInfo();
+        if ($storageInfo) {
+            $quotaBytes = $storageInfo['quota_mb'] * 1024 * 1024;
+            if ($storageInfo['used_bytes'] + $fileSize > $quotaBytes) {
+                $this->json([
+                    'error' => \App\Core\Lang::get('projects.quota_exceeded', ['limit' => $storageInfo['quota_mb']])
+                ], 403);
+            }
+        }
+
         $safeName = $this->sanitizeFilename($file['name']);
 
         if (file_exists($targetDir . $safeName)) {
@@ -560,6 +573,9 @@ class MediaController extends BaseController
             case IMAGETYPE_WEBP:
                 $image = imagecreatefromwebp($fullPath);
                 break;
+            case defined('IMAGETYPE_AVIF') ? IMAGETYPE_AVIF : -1:
+                $image = imagecreatefromavif($fullPath);
+                break;
             default:
                 $this->json(['error' => 'Unsupported image type'], 400);
         }
@@ -585,7 +601,7 @@ class MediaController extends BaseController
                 $resized = imagecreatetruecolor($nw, $nh);
 
                 // Keep transparency for PNG/WEBP
-                if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_WEBP) {
+                if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_WEBP || (defined('IMAGETYPE_AVIF') && $type == IMAGETYPE_AVIF)) {
                     imagealphablending($resized, false);
                     imagesavealpha($resized, true);
                 }
@@ -625,6 +641,9 @@ class MediaController extends BaseController
                 break;
             case IMAGETYPE_WEBP:
                 $success = imagewebp($image, $savePath, $quality);
+                break;
+            case defined('IMAGETYPE_AVIF') ? IMAGETYPE_AVIF : -1:
+                $success = imageavif($image, $savePath, $quality);
                 break;
         }
 
@@ -784,7 +803,7 @@ class MediaController extends BaseController
                         $dates[] = $dateFolder;
                         $tables[] = $tableFolder;
                         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', 'mp4', 'mov'];
+                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif', 'pdf', 'doc', 'docx', 'txt', 'zip', 'rar', 'mp4', 'mov'];
                         if (in_array($ext, $allowedExtensions)) {
                             $files[] = [
                                 'url' => $fullBaseUrl . 'uploads/' . str_replace(DIRECTORY_SEPARATOR, '/', $relativePath),
@@ -805,7 +824,8 @@ class MediaController extends BaseController
         $this->json([
             'files' => $files,
             'available_dates' => array_values(array_unique($dates)),
-            'available_tables' => array_values(array_unique($tables))
+            'available_tables' => array_values(array_unique($tables)),
+            'storage_info' => $this->getProjectStorageInfo()
         ]);
     }
 
@@ -831,6 +851,19 @@ class MediaController extends BaseController
         }
 
         $file = $_FILES['file'];
+        $fileSize = $file['size'];
+
+        // Storage Quota Enforcement
+        $storageInfo = $this->getProjectStorageInfo();
+        if ($storageInfo) {
+            $quotaBytes = $storageInfo['quota_mb'] * 1024 * 1024;
+            if ($storageInfo['used_bytes'] + $fileSize > $quotaBytes) {
+                $this->json([
+                    'error' => \App\Core\Lang::get('projects.quota_exceeded', ['limit' => $storageInfo['quota_mb']])
+                ], 403);
+            }
+        }
+
         $safeName = $this->sanitizeFilename($file['name']);
 
         if (file_exists($absoluteDir . $safeName)) {

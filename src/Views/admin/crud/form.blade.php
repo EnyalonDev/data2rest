@@ -480,7 +480,7 @@
         if (activeTableFilter !== 'all') filtered = filtered.filter(f => f.table_folder === activeTableFilter);
         
         // Filter by Type
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'];
         if (activeTypeFilter === 'images') {
             filtered = filtered.filter(f => imageExtensions.includes(f.extension));
         } else if (activeTypeFilter === 'files') {
@@ -501,7 +501,7 @@
 
         filtered.forEach(item => {
             const isSelected = selectedImages.includes(item.url);
-            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(item.extension);
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(item.extension);
             const div = document.createElement('div');
             div.className = `group relative aspect-square bg-black/40 rounded-2xl overflow-hidden cursor-pointer border ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-glass-border'} hover:border-primary/50 transition-all shadow-xl`;
             div.onclick = () => selectMedia(item.url);
@@ -578,7 +578,7 @@
             } catch (e) {
                 ext = img.split('.').pop().split('?')[0].split('#')[0].toLowerCase();
             }
-            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(ext);
             
             let preview = '';
             if (isImage) {
@@ -726,7 +726,7 @@
             ext = url.split('.').pop().split('?')[0].split('#')[0].toLowerCase();
         }
         
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(ext);
 
         if (isImage) {
             if (img) {

@@ -99,6 +99,7 @@ class ProjectController extends BaseController
         $id = $_POST['id'] ?? null;
         $name = $_POST['name'] ?? '';
         $description = $_POST['description'] ?? '';
+        $storageQuota = $_POST['storage_quota'] ?? 300;
         $planType = $_POST['plan_type'] ?? 'monthly';
         $startDate = $_POST['start_date'] ?? date('Y-m-d H:i:s');
 
@@ -110,11 +111,11 @@ class ProjectController extends BaseController
         $db = Database::getInstance()->getConnection();
         try {
             if ($id) {
-                $stmt = $db->prepare("UPDATE projects SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-                $stmt->execute([$name, $description, $id]);
+                $stmt = $db->prepare("UPDATE projects SET name = ?, description = ?, storage_quota = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$name, $description, $storageQuota, $id]);
             } else {
-                $stmt = $db->prepare("INSERT INTO projects (name, description) VALUES (?, ?)");
-                $stmt->execute([$name, $description]);
+                $stmt = $db->prepare("INSERT INTO projects (name, description, storage_quota) VALUES (?, ?, ?)");
+                $stmt->execute([$name, $description, $storageQuota]);
                 $id = $db->lastInsertId();
             }
 

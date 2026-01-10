@@ -160,6 +160,42 @@ class BaseController
     }
 
     /**
+     * Calculates current storage usage and quota for the active project.
+     */
+    protected function getProjectStorageInfo()
+    {
+        $projectId = Auth::getActiveProject();
+        if (!$projectId)
+            return null;
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT storage_quota FROM projects WHERE id = ?");
+        $stmt->execute([$projectId]);
+        $quota = $stmt->fetchColumn() ?: 300;
+
+        $uploadBase = Config::get('upload_dir');
+        $scopePath = $this->getStoragePrefix();
+        $projectPath = $uploadBase . $scopePath;
+
+        $usedBytes = 0;
+        if (is_dir($projectPath)) {
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($projectPath));
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    $usedBytes += $file->getSize();
+                }
+            }
+        }
+
+        return [
+            'quota_mb' => (int) $quota,
+            'used_bytes' => $usedBytes,
+            'used_mb' => round($usedBytes / 1024 / 1024, 2),
+            'percent' => round(($usedBytes / ($quota * 1024 * 1024)) * 100, 2)
+        ];
+    }
+
+    /**
      * Manually verify CSRF token (Middleware Logic).
      * Note: This is primarily handled in Router.php, but exposed here for manual checks.
      */
