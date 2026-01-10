@@ -8,15 +8,27 @@ namespace App\Core;
  */
 class Config
 {
-    /** @var array Default system configuration settings */
-    private static $config = [
-        'db_path' => __DIR__ . '/../../data/system.sqlite',
-        'app_name' => 'Data2Rest',
-        'base_url' => '', // Detected automatically if empty
-        'upload_dir' => realpath(__DIR__ . '/../../public/uploads/') . '/',
-        'db_storage_path' => realpath(__DIR__ . '/../../data/') . '/',
-        'allowed_roles' => ['admin', 'user'],
-    ];
+    /** @var array|null Configuration cache */
+    private static $config = null;
+
+    /**
+     * Initialize configuration if not already set.
+     */
+    private static function init()
+    {
+        if (self::$config !== null) {
+            return;
+        }
+
+        self::$config = [
+            'db_path' => __DIR__ . '/../../data/system.sqlite',
+            'app_name' => 'Data2Rest',
+            'base_url' => '',
+            'upload_dir' => realpath(__DIR__ . '/../../public/uploads/') . '/',
+            'db_storage_path' => realpath(__DIR__ . '/../../data/') . '/',
+            'allowed_roles' => ['admin', 'user'],
+        ];
+    }
 
     /**
      * Retrieve a configuration value by key.
@@ -26,6 +38,7 @@ class Config
      */
     public static function get($key)
     {
+        self::init();
         return self::$config[$key] ?? null;
     }
 }
