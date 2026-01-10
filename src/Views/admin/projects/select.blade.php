@@ -5,17 +5,20 @@
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
-        <header class="text-center mb-16 relative">
-            <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 blur-[120px] rounded-full -z-10">
+        <header class="text-center mb-10 md:mb-16 relative">
+            <div
+                class="absolute -top-10 md:-top-20 left-1/2 -translate-x-1/2 w-64 md:w-96 h-64 md:h-96 bg-primary/10 blur-[80px] md:blur-[120px] rounded-full -z-10">
             </div>
             <div
-                class="inline-block bg-primary text-dark px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 animate-pulse">
+                class="inline-block bg-primary text-dark px-4 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-4 md:mb-6 animate-pulse">
                 {{ \App\Core\Lang::get('projects.portal_access') }}
             </div>
-            <h1 class="text-5xl md:text-7xl font-black text-p-title mb-6 tracking-tighter uppercase italic">
+            <h1
+                class="text-4xl md:text-7xl font-black text-p-title mb-4 md:mb-6 tracking-tighter uppercase italic leading-none">
                 {{ \App\Core\Lang::get('projects.my_projects') }}
             </h1>
-            <p class="text-p-muted font-medium max-w-2xl mx-auto">{{ \App\Core\Lang::get('projects.select_env_desc') }}</p>
+            <p class="text-p-muted font-medium max-w-2xl mx-auto px-4 text-sm md:text-base">
+                {{ \App\Core\Lang::get('projects.select_env_desc') }}</p>
 
             @if (\App\Core\Auth::isAdmin())
                 <div class="mt-8 flex flex-wrap justify-center gap-4">

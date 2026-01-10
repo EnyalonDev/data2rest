@@ -173,6 +173,23 @@
                 transform: translateX(5px);
             }
         }
+
+        /* Mobile Menu */
+        #mobile-menu {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+        }
+
+        #mobile-menu.hidden {
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        #mobile-menu.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
     @include('partials.theme_engine')
     @yield('styles')
@@ -181,90 +198,190 @@
 <body class="selection:bg-primary/30">
     <!-- Navbar -->
     <nav style="background-color: var(--p-nav);"
-        class="fixed top-0 w-full h-20 backdrop-blur-lg border-b border-glass-border z-50 flex items-center justify-between px-8">
-        <div class="flex items-center gap-4">
-            <a href="{{ $baseUrl }}" class="flex items-center gap-4">
+        class="fixed top-0 w-full h-16 md:h-20 backdrop-blur-lg border-b border-glass-border z-50 flex items-center justify-between px-4 md:px-8">
+        <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
+            <a href="{{ $baseUrl }}" class="flex items-center gap-2 md:gap-4 flex-shrink-0">
                 <div
-                    class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-dark text-2xl font-black">
+                    class="w-8 h-8 md:w-10 md:h-10 bg-primary rounded-lg flex items-center justify-center text-dark text-xl md:text-2xl font-black">
                     D</div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xl font-bold text-p-title tracking-tight">Data2Rest</span>
+                <div class="flex items-center gap-2 hidden xs:block">
+                    <span class="text-lg md:text-xl font-bold text-p-title tracking-tight">Data2Rest</span>
                 </div>
             </a>
 
-            <span class="text-p-muted opacity-40 font-medium">/</span>
-            <a href="{{ $baseUrl }}"
-                class="text-p-muted hover:text-primary transition-colors font-medium">{{ \App\Core\Lang::get('common.dashboard') }}</a>
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar mask-fade-right">
+                <span class="text-p-muted opacity-40 font-medium shrink-0">/</span>
+                <a href="{{ $baseUrl }}"
+                    class="text-p-muted hover:text-primary transition-colors font-medium text-sm md:text-base shrink-0">{{ \App\Core\Lang::get('common.dashboard') }}</a>
 
-            @if(isset($breadcrumbs) && is_array($breadcrumbs))
-                @foreach($breadcrumbs as $label => $link)
-                    <span class="text-p-muted opacity-40 font-medium">/</span>
-                    @if($link)
-                        <a href="{{ $baseUrl . $link }}"
-                            class="text-p-muted hover:text-primary transition-colors font-medium">{{ $label }}</a>
-                    @else
-                        <span
-                            class="text-p-title font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4">{{ $label }}</span>
-                    @endif
-                @endforeach
-            @elseif(isset($breadcrumb))
-                <span class="text-p-muted opacity-40 font-medium">/</span>
-                <span
-                    class="text-p-title font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4">{{ $breadcrumb }}</span>
-            @endif
+                @if(isset($breadcrumbs) && is_array($breadcrumbs))
+                    @foreach($breadcrumbs as $label => $link)
+                        <span class="text-p-muted opacity-40 font-medium shrink-0">/</span>
+                        @if($link)
+                            <a href="{{ $baseUrl . $link }}"
+                                class="text-p-muted hover:text-primary transition-colors font-medium text-sm md:text-base whitespace-nowrap shrink-0">{{ $label }}</a>
+                        @else
+                            <span
+                                class="text-p-title font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4 text-sm md:text-base whitespace-nowrap shrink-0">{{ $label }}</span>
+                        @endif
+                    @endforeach
+                @elseif(isset($breadcrumb))
+                    <span class="text-p-muted opacity-40 font-medium shrink-0">/</span>
+                    <span
+                        class="text-p-title font-bold italic tracking-tight underline decoration-primary/30 decoration-2 underline-offset-4 text-sm md:text-base whitespace-nowrap shrink-0">{{ $breadcrumb }}</span>
+                @endif
+            </div>
         </div>
 
-        <div class="flex items-center gap-6">
-            <!-- Project Switcher -->
+        <div class="flex items-center gap-2 md:gap-6">
+            <!-- Desktop Controls -->
+            <div class="hidden lg:flex items-center gap-4 md:gap-6">
+                <!-- Project Switcher -->
+                @if(\App\Core\Auth::check() && isset($_SESSION['user_projects']))
+                    <div class="relative">
+                        <a href="{{ $baseUrl }}admin/projects/select"
+                            class="flex items-center gap-2 px-6 py-2 bg-p-input border border-glass-border rounded-xl hover:border-primary/50 transition-all group">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span
+                                class="text-[11px] font-black uppercase tracking-widest text-p-muted group-hover:text-primary transition-colors">
+                                {{ \App\Core\Lang::get('common.project', 'Project') }}:
+                            </span>
+                            <span class="text-[11px] font-black uppercase tracking-widest text-p-title whitespace-nowrap">
+                                @php
+                                    $activeId = \App\Core\Auth::getActiveProject();
+                                    $activeName = 'Select Project';
+                                    if (isset($_SESSION['user_projects'])) {
+                                        foreach ($_SESSION['user_projects'] as $p) {
+                                            if ($p['id'] == $activeId)
+                                                $activeName = $p['name'];
+                                        }
+                                    }
+                                    echo htmlspecialchars($activeName);
+                                @endphp
+                            </span>
+                            <div class="w-[1px] h-4 bg-glass-border mx-2"></div>
+                            <span
+                                class="text-[9px] font-black text-primary uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">Cambiar
+                                &rarr;</span>
+                        </a>
+                    </div>
+                @endif
+
+                <!-- Language Switcher -->
+                <div class="flex items-center bg-black/40 rounded-lg p-1">
+                    <a href="{{ $baseUrl }}lang/es"
+                        class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all {{ \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white' }}">ES</a>
+                    <a href="{{ $baseUrl }}lang/en"
+                        class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all {{ \App\Core\Lang::current() === 'en' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white' }}">EN</a>
+                    <a href="{{ $baseUrl }}lang/pt"
+                        class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all {{ \App\Core\Lang::current() === 'pt' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white' }}">PT</a>
+                </div>
+
+                @include('partials.theme_toggle')
+
+                @if(\App\Core\Auth::check())
+                    <span class="text-sm text-p-muted">{{ \App\Core\Lang::get('common.welcome') }},
+                        <b class="text-p-title">
+                            {{ $_SESSION['username'] }}
+                        </b></span>
+                    <a href="{{ $baseUrl }}logout"
+                        class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20">{{ \App\Core\Lang::get('common.logout') }}</a>
+                @endif
+            </div>
+
+            <!-- Mobile Toggle -->
+            <button onclick="toggleMobileMenu()"
+                class="lg:hidden p-2 text-p-title hover:text-primary transition-colors">
+                <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+                <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu"
+            class="hidden fixed top-16 left-0 w-full bg-p-nav/95 backdrop-blur-xl border-b border-glass-border z-40 flex-col p-6 gap-6 shadow-2xl lg:hidden">
             @if(\App\Core\Auth::check() && isset($_SESSION['user_projects']))
-                <div class="relative">
+                <div class="space-y-2">
+                    <span
+                        class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('common.project', 'Project') }}</span>
                     <a href="{{ $baseUrl }}admin/projects/select"
-                        class="flex items-center gap-2 px-6 py-2 bg-p-input border border-glass-border rounded-xl hover:border-primary/50 transition-all group">
-                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span
-                            class="text-[11px] font-black uppercase tracking-widest text-p-muted group-hover:text-primary transition-colors">
-                            {{ \App\Core\Lang::get('common.project', 'Project') }}:
-                        </span>
-                        <span class="text-[11px] font-black uppercase tracking-widest text-p-title whitespace-nowrap">
-                            @php
-                                $activeId = \App\Core\Auth::getActiveProject();
-                                $activeName = 'Select Project';
-                                foreach ($_SESSION['user_projects'] as $p) {
-                                    if ($p['id'] == $activeId)
-                                        $activeName = $p['name'];
-                                }
-                                echo htmlspecialchars($activeName);
-                            @endphp
-                        </span>
-                        <div class="w-[1px] h-4 bg-glass-border mx-2"></div>
-                        <span
-                            class="text-[9px] font-black text-primary uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">Cambiar
-                            &rarr;</span>
+                        class="flex items-center justify-between p-4 bg-p-input border border-glass-border rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span class="text-sm font-bold text-p-title uppercase italic">{{ $activeName }}</span>
+                        </div>
+                        <span class="text-primary text-[10px] font-black">CAMBIAR &rarr;</span>
                     </a>
                 </div>
             @endif
 
-            <!-- Language Switcher -->
-            <div class="flex items-center bg-black/40 rounded-lg p-1">
-                <a href="{{ $baseUrl }}lang/es"
-                    class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all {{ \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white' }}">ES</a>
-                <a href="{{ $baseUrl }}lang/en"
-                    class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all {{ \App\Core\Lang::current() === 'en' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white' }}">EN</a>
-                <a href="{{ $baseUrl }}lang/pt"
-                    class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all {{ \App\Core\Lang::current() === 'pt' ? 'bg-primary text-dark' : 'text-slate-500 hover:text-white' }}">PT</a>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">Idioma</span>
+                    <div class="flex items-center bg-black/40 rounded-xl p-1 justify-around">
+                        <a href="{{ $baseUrl }}lang/es"
+                            class="flex-1 py-2 text-center rounded-lg text-xs font-black {{ \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500' }}">ES</a>
+                        <a href="{{ $baseUrl }}lang/en"
+                            class="flex-1 py-2 text-center rounded-lg text-xs font-black {{ \App\Core\Lang::current() === 'en' ? 'bg-primary text-dark' : 'text-slate-500' }}">EN</a>
+                        <a href="{{ $baseUrl }}lang/pt"
+                            class="flex-1 py-2 text-center rounded-lg text-xs font-black {{ \App\Core\Lang::current() === 'pt' ? 'bg-primary text-dark' : 'text-slate-500' }}">PT</a>
+                    </div>
+                </div>
+                <div class="space-y-2 text-right">
+                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">Tema</span>
+                    <div class="flex justify-end p-2 px-1">
+                        @include('partials.theme_toggle')
+                    </div>
+                </div>
             </div>
 
-            @include('partials.theme_toggle')
             @if(\App\Core\Auth::check())
-                <span class="hidden md:block text-sm text-p-muted">{{ \App\Core\Lang::get('common.welcome') }},
-                    <b class="text-p-title">
-                        {{ $_SESSION['username'] }}
-                    </b></span>
-                <a href="{{ $baseUrl }}logout"
-                    class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20">{{ \App\Core\Lang::get('common.logout') }}</a>
+                <div class="pt-4 border-t border-glass-border flex flex-col gap-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-black uppercase">
+                            {{ substr($_SESSION['username'], 0, 1) }}</div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-p-muted">{{ \App\Core\Lang::get('common.welcome') }}</span>
+                            <span class="text-sm font-bold text-p-title">{{ $_SESSION['username'] }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ $baseUrl }}logout"
+                        class="w-full py-4 bg-red-500/10 text-red-500 rounded-xl text-center font-black uppercase tracking-widest text-xs border border-red-500/20 active:scale-95 transition-transform">{{ \App\Core\Lang::get('common.logout') }}</a>
+                </div>
             @endif
         </div>
     </nav>
+
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('menu-icon-open');
+            const iconClose = document.getElementById('menu-icon-close');
+
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                setTimeout(() => menu.classList.add('active'), 10);
+                iconOpen.classList.add('hidden');
+                iconClose.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                menu.classList.remove('active');
+                setTimeout(() => {
+                    menu.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+                iconOpen.classList.remove('hidden');
+                iconClose.classList.add('hidden');
+            }
+        }
+    </script>
 
     <main class="container mx-auto pt-32 pb-20 px-6">
         @yield('content')
