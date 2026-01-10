@@ -167,6 +167,7 @@ LIMIT 1");
     {
         $ctx = $this->getContext('crud_view');
         $targetPath = $ctx['database']['path'];
+        $search = $_GET['s'] ?? '';
 
         try {
             $targetDb = new PDO('sqlite:' . $targetPath);
@@ -174,7 +175,24 @@ LIMIT 1");
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
             $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
-            $stmt = $targetDb->query("SELECT * FROM $tableName ORDER BY id DESC");
+
+            $whereClauses = [];
+            $params = [];
+
+            if (!empty($search)) {
+                foreach ($ctx['fields'] as $field) {
+                    if ($field['is_visible']) {
+                        $whereClauses[] = "{$field['field_name']} LIKE ?";
+                        $params[] = "%$search%";
+                    }
+                }
+            }
+
+            $whereSql = !empty($whereClauses) ? "WHERE " . implode(" OR ", $whereClauses) : "";
+
+            $sql = "SELECT * FROM $tableName $whereSql ORDER BY id DESC";
+            $stmt = $targetDb->prepare($sql);
+            $stmt->execute($params);
             $records = $stmt->fetchAll();
 
             foreach ($ctx['fields'] as $field) {
@@ -204,6 +222,7 @@ LIMIT 1");
             'title' => 'List - ' . $ctx['table'],
             'records' => $records,
             'ctx' => $ctx,
+            'search' => $search,
             'breadcrumbs' => [
                 \App\Core\Lang::get('databases.title') => 'admin/databases',
                 $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],

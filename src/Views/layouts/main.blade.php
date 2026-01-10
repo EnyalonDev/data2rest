@@ -267,6 +267,20 @@
                     </div>
                 @endif
 
+                <!-- Global Search Trigger -->
+                <button onclick="openPalette()"
+                    class="hidden md:flex items-center gap-3 bg-black/20 hover:bg-black/40 border border-white/5 hover:border-white/10 px-4 py-2 rounded-xl transition-all group">
+                    <svg class="w-4 h-4 text-p-muted group-hover:text-primary transition-colors" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span
+                        class="text-xs font-medium text-p-muted group-hover:text-p-title transition-colors">Buscar...</span>
+                    <span
+                        class="text-[9px] font-black bg-white/5 px-2 py-0.5 rounded border border-white/10 text-p-muted tracking-tighter">⌘K</span>
+                </button>
+
                 <!-- Language Switcher -->
                 <div class="flex items-center bg-black/40 rounded-lg p-1">
                     <a href="{{ $baseUrl }}lang/es"
@@ -289,18 +303,26 @@
                 @endif
             </div>
 
-            <!-- Mobile Toggle -->
-            <button onclick="toggleMobileMenu()"
-                class="lg:hidden p-2 text-p-title hover:text-primary transition-colors">
-                <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
-                    </path>
-                </svg>
-                <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
+            <!-- Mobile Search & Toggle -->
+            <div class="flex items-center gap-2 lg:hidden">
+                <button onclick="openPalette()" class="p-2 text-p-title hover:text-primary transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+                <button onclick="toggleMobileMenu()" class="p-2 text-p-title hover:text-primary transition-colors">
+                    <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                    <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Mobile Menu Overlay -->
@@ -463,6 +485,7 @@
         </footer>
     </main>
 
+    @include('partials.command_palette')
     @include('partials.system_modal')
     @yield('scripts')
 </body>

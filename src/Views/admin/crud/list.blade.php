@@ -135,14 +135,14 @@
                 </a>
             @endif
             @if(\App\Core\Auth::hasPermission('module:api', 'view_keys'))
-            <a href="{{ $baseUrl }}admin/api/docs?db_id={{ $ctx['db_id'] }}#table-{{ $ctx['table'] }}"
-                class="btn-primary !bg-emerald-500/10 !text-emerald-400 border border-emerald-500/20 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                {{ \App\Core\Lang::get('tables.api_docs') }}
-            </a>
+                <a href="{{ $baseUrl }}admin/api/docs?db_id={{ $ctx['db_id'] }}#table-{{ $ctx['table'] }}"
+                    class="btn-primary !bg-emerald-500/10 !text-emerald-400 border border-emerald-500/20 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    {{ \App\Core\Lang::get('tables.api_docs') }}
+                </a>
             @endif
             <a href="{{ $baseUrl }}admin/crud/export?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}"
                 class="btn-primary !bg-emerald-600/20 !text-emerald-400 border border-emerald-500/30 flex items-center gap-2 hover:!bg-emerald-600/30">
@@ -162,14 +162,46 @@
     </header>
 
     <section class="glass-card !p-0 overflow-hidden shadow-2xl">
-        <div class="px-8 py-5 bg-white/[0.03] border-b border-glass-border flex justify-between items-center">
-            <h3 class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em]">
-                {{ \App\Core\Lang::get('crud_list.matrix') }}
-            </h3>
-            <span
-                class="text-[10px] font-black bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20 tracking-widest">
-                {{ str_replace(':count', count($records), \App\Core\Lang::get('crud_list.active_records')) }}
-            </span>
+        <div
+            class="px-8 py-5 bg-white/[0.03] border-b border-glass-border flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <h3 class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em] whitespace-nowrap">
+                    {{ \App\Core\Lang::get('crud_list.matrix') }}
+                </h3>
+                <form action="" method="GET" class="relative group w-full md:w-80">
+                    <input type="hidden" name="db_id" value="{{ $ctx['db_id'] }}">
+                    <input type="hidden" name="table" value="{{ $ctx['table'] }}">
+                    <input type="text" name="s" value="{{ $search ?? '' }}"
+                        placeholder="{{ \App\Core\Lang::get('common.search') }}..."
+                        class="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-10 pr-4 text-xs font-medium text-p-title focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all outline-none">
+                    <svg class="w-4 h-4 absolute left-3 top-2.5 text-p-muted group-focus-within:text-primary transition-colors"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    @if(!empty($search))
+                        <a href="?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}"
+                            class="absolute right-3 top-2.5 text-p-muted hover:text-red-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </a>
+                    @endif
+                </form>
+            </div>
+            <div class="flex items-center gap-3">
+                @if(!empty($search))
+                    <span
+                        class="text-[10px] font-black bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20 tracking-widest uppercase">
+                        Filtrado
+                    </span>
+                @endif
+                <span
+                    class="text-[10px] font-black bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20 tracking-widest">
+                    {{ str_replace(':count', count($records), \App\Core\Lang::get('crud_list.active_records')) }}
+                </span>
+            </div>
         </div>
 
         <div class="overflow-x-auto custom-scrollbar">
