@@ -424,14 +424,14 @@
         </div>
     </div>
 </div>
-@endsection
 
-@section('styles')
 <style>
+    /* In-line fix for Grid overlap */
     #mediaGrid {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 1rem !important;
+        grid-auto-rows: min-content !important;
+        gap: 1.5rem !important;
         align-content: start !important;
     }
     @media (min-width: 768px) {
@@ -439,50 +439,53 @@
             grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
         }
     }
-    .media-card {
+    #mediaGrid .media-card {
         aspect-ratio: 1/1 !important;
+        width: 100% !important;
+        height: auto !important;
         position: relative !important;
+        display: block !important;
         overflow: hidden !important;
         cursor: pointer !important;
-        border-radius: 1rem !important;
-        background: rgba(15, 23, 42, 0.6) !important;
+        border-radius: 1.5rem !important;
+        background: #0f172a !important;
         border: 2px solid rgba(255, 255, 255, 0.05) !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin: 0 !important;
     }
-    .media-card:hover {
+    #mediaGrid .media-card:hover {
         border-color: rgba(255, 255, 255, 0.2) !important;
+        transform: translateY(-2px) !important;
     }
-    .media-card.selected {
+    #mediaGrid .media-card.selected {
         border-color: var(--p-primary) !important;
-        box-shadow: 0 0 20px rgba(var(--p-primary-rgb), 0.3) !important;
+        box-shadow: 0 0 30px rgba(var(--p-primary-rgb), 0.4) !important;
     }
-    .media-card img {
+    #mediaGrid .media-card img {
         width: 100% !important;
         height: 100% !important;
         object-fit: cover !important;
-        transition: transform 0.5s ease !important;
+        display: block !important;
     }
-    .media-card:hover img {
-        transform: scale(1.05) !important;
-    }
-    .media-card.selected img {
-        opacity: 0.4 !important;
-    }
-    .media-card .info-overlay {
+    #mediaGrid .media-card .info-overlay {
         position: absolute !important;
         inset: 0 !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-end !important;
-        padding: 0.75rem !important;
-        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%) !important;
+        padding: 1rem !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%) !important;
         opacity: 0 !important;
         transition: opacity 0.3s ease !important;
+        pointer-events: none !important;
     }
-    .media-card:hover .info-overlay {
+    #mediaGrid .media-card:hover .info-overlay {
         opacity: 1 !important;
     }
 </style>
+@endsection
+
+@section('scripts')
 <script>
     const tinyMceScript = document.createElement('script');
     tinyMceScript.src = `https://cdn.tiny.cloud/1/${window.appConfig.tinyMceApiKey}/tinymce/6/tinymce.min.js`;
