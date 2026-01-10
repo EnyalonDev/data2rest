@@ -62,20 +62,20 @@
 
         <div class="lg:col-span-2 space-y-4">
             @foreach ($databases as $db)
-                <div
-                    class="glass-card flex flex-col sm:flex-row sm:items-center justify-between group overflow-hidden relative gap-4">
+                <div class="glass-card flex flex-col group overflow-hidden relative">
                     <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="flex items-center gap-4 sm:gap-6 relative z-10 w-full sm:w-auto">
+
+                    <div class="flex items-center gap-6 relative z-10 mb-6">
                         <div
-                            class="w-12 h-12 sm:w-14 sm:h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500 border border-primary/20 text-primary flex-shrink-0">
-                            <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500 border border-primary/20 text-primary flex-shrink-0">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                     d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
                                 </path>
                             </svg>
                         </div>
                         <div class="min-w-0">
-                            <h3 class="text-lg sm:text-xl font-bold text-p-title mb-1 tracking-tight uppercase italic truncate">
+                            <h3 class="text-xl font-bold text-p-title mb-1 tracking-tight uppercase italic truncate">
                                 {{ $db['name'] }}
                             </h3>
                             <p class="text-[9px] text-p-muted font-black uppercase tracking-widest truncate">
@@ -83,16 +83,16 @@
                             </p>
                         </div>
                     </div>
-                    <div
-                        class="flex items-center gap-2 sm:gap-3 relative z-10 transition-opacity opacity-80 group-hover:opacity-100 w-full sm:w-auto justify-end">
+
+                    <div class="flex items-center gap-3 relative z-10 pt-6 border-t border-white/5">
                         <a href="{{ $baseUrl }}admin/databases/view?id={{ $db['id'] }}"
-                            class="flex-1 sm:flex-none btn-primary !bg-p-bg dark:!bg-white/5 !text-p-title dark:!text-slate-300 hover:!bg-primary/20 flex items-center justify-center gap-2 italic uppercase text-xs tracking-wider !py-2 shadow-sm whitespace-nowrap">
+                            class="flex-1 btn-primary !bg-p-bg dark:!bg-white/5 !text-p-title dark:!text-slate-300 hover:!bg-primary/20 flex items-center justify-center gap-2 italic uppercase text-[10px] font-black tracking-widest !py-3 shadow-sm">
                             {{ \App\Core\Lang::get('databases.interface') }} &rarr;
                         </a>
                         @if(\App\Core\Auth::hasPermission('module:databases.delete_db'))
                             <button onclick="confirmDeleteDB({{ $db['id'] }}, '{{ addslashes($db['name']) }}')"
-                                class="p-2 sm:p-2.5 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="p-3 bg-p-bg dark:bg-white/5 rounded-xl text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                     </path>
