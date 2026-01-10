@@ -436,7 +436,7 @@
     }
     @media (min-width: 768px) {
         #mediaGrid {
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
         }
     }
     #mediaGrid .media-card {
