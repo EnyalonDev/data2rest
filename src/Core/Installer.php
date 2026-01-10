@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-        private static $SCHEMA = [
+            private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +53,7 @@ class Installer
                 name TEXT,
                 path TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                , project_id INTEGER, last_edit_at DATETIME)"
+                , project_id INTEGER, last_edit_at DATETIME, config TEXT)"
         ],
         'fields_config' => [
             'sql' => "CREATE TABLE fields_config (
