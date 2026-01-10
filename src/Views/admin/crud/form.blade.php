@@ -285,10 +285,10 @@
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6 mb-4 lg:mb-8 border-b border-white/5 pb-4 lg:pb-6">
             <div class="flex items-center justify-between w-full lg:w-auto">
                 <div>
-                    <h2 class="text-2xl lg:text-3xl font-black text-p-title italic tracking-tighter">
+                    <h2 class="text-xl lg:text-3xl font-black text-p-title italic tracking-tighter leading-none">
                         {{ \App\Core\Lang::get('media.explorer') }}
                     </h2>
-                    <p class="text-[9px] lg:text-[10px] text-p-muted font-bold uppercase tracking-[0.3em] mt-1 hidden xs:block">
+                    <p class="text-[8px] lg:text-[10px] text-p-muted font-bold uppercase tracking-[0.2em] mt-1 lg:mt-2 hidden lg:block">
                         {{ \App\Core\Lang::get('media.system') }}
                     </p>
                 </div>
@@ -452,12 +452,22 @@
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         grid-auto-rows: min-content !important;
-        gap: 1.5rem !important;
+        gap: 0.75rem !important;
         align-content: start !important;
     }
-    @media (min-width: 768px) {
+    @media (max-width: 1024px) {
+        #mediaModal aside {
+            display: none !important;
+        }
+        #mediaModal .glass-card {
+            padding: 1.25rem !important;
+            height: 95vh !important;
+        }
+    }
+    @media (min-width: 1024px) {
         #mediaGrid {
             grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 1.5rem !important;
         }
     }
     #mediaGrid .media-card {
@@ -468,7 +478,7 @@
         display: block !important;
         overflow: hidden !important;
         cursor: pointer !important;
-        border-radius: 1.5rem !important;
+        border-radius: 1rem !important;
         background: #0f172a !important;
         border: 2px solid rgba(255, 255, 255, 0.05) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
