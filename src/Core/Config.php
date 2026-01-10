@@ -21,12 +21,13 @@ class Config
         }
 
         self::$config = [
-            'db_path' => __DIR__ . '/../../data/system.sqlite',
-            'app_name' => 'Data2Rest',
-            'base_url' => '',
+            'db_path' => getenv('DB_PATH') ?: __DIR__ . '/../../data/system.sqlite',
+            'app_name' => getenv('APP_NAME') ?: 'Data2Rest',
+            'base_url' => getenv('BASE_URL') ?: '',
             'upload_dir' => realpath(__DIR__ . '/../../public/uploads/') . '/',
             'db_storage_path' => realpath(__DIR__ . '/../../data/') . '/',
             'allowed_roles' => ['admin', 'user'],
+            'dev_mode' => getenv('DEV_MODE') === 'true',
         ];
     }
 
