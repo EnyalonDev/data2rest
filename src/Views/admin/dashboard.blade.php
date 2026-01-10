@@ -290,8 +290,20 @@
                 @php $isDev = \App\Core\Auth::isDevMode(); @endphp
                 <button onclick="toggleDevMode()" id="btn-dev-mode"
                     class="px-8 py-4 rounded-xl border {{ $isDev ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-500/30 text-amber-500' }} text-[10px] font-black uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-white transition-all duration-300">
-                    {{ \App\Core\Lang::get('dashboard.dev_mode') }}: {{ $isDev ? 'ON' : 'OFF' }}
+                    🛠️ {{ \App\Core\Lang::get('dashboard.dev_mode') }}: {{ $isDev ? 'ON' : 'OFF' }}
                 </button>
+
+                @if($isDev)
+                    <button onclick="clearCache()"
+                        class="px-8 py-4 rounded-xl border border-blue-500/30 text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500 hover:text-white transition-all duration-300">
+                        🧹 {{ \App\Core\Lang::get('dashboard.clear_cache') }}
+                    </button>
+                    <button onclick="clearSessions()"
+                        class="px-8 py-4 rounded-xl border border-purple-500/30 text-purple-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-purple-500 hover:text-white transition-all duration-300">
+                        👥 {{ \App\Core\Lang::get('dashboard.clear_sessions') }}
+                    </button>
+                @endif
+
                 <button onclick="triggerResetSystem()"
                     class="px-8 py-4 rounded-xl border border-red-500/30 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all duration-300">
                     ⚡ {{ \App\Core\Lang::get('dashboard.reset_system') }}
@@ -304,7 +316,10 @@
 @section('scripts')
     <script>
         function toggleDevMode() {
-            fetch('{{ $baseUrl }}admin/system/dev-mode', { method: 'POST' })
+            fetch('{{ $baseUrl }}admin/system/dev-mode', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
@@ -336,13 +351,13 @@
                     };
 
                     let html = `
-                                        <div class="mb-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-                                            <p class="text-sm md:text-base text-slate-200 leading-relaxed font-medium">
-                                                {!! addslashes(\App\Core\Lang::get('dashboard.system_intro')) !!}
-                                            </p>
-                                        </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
-                                    `;
+                                            <div class="mb-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                                                <p class="text-sm md:text-base text-slate-200 leading-relaxed font-medium">
+                                                    {!! addslashes(\App\Core\Lang::get('dashboard.system_intro')) !!}
+                                                </p>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+                                        `;
 
                     for (const [key, value] of Object.entries(data)) {
                         const label = key.replace(/_/g, ' ').toUpperCase();
@@ -355,32 +370,32 @@
                         }
 
                         html += `
-                                            <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
-                                                <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
-                                                <span class="text-lg font-black text-white block mb-2">${value}</span>
-                                                ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
-                                                ${extraWarning}
-                                            </div>
-                                        `;
+                                                <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+                                                    <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
+                                                    <span class="text-lg font-black text-white block mb-2">${value}</span>
+                                                    ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
+                                                    ${extraWarning}
+                                                </div>
+                                            `;
                     }
 
                     html += `
-                                        </div>
-                                        <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
-                                            <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-                                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
-                                                {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
-                                            </h4>
-                                            <p class="text-sm text-p-muted leading-relaxed mb-6">
-                                                {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
-                                            </p>
-                                            <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                                <p class="text-xs md:text-sm text-p-muted leading-relaxed">
-                                                    {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
-                                                </p>
                                             </div>
-                                        </div>
-                                    `;
+                                            <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
+                                                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
+                                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
+                                                    {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
+                                                </h4>
+                                                <p class="text-sm text-p-muted leading-relaxed mb-6">
+                                                    {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
+                                                </p>
+                                                <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                                    <p class="text-xs md:text-sm text-p-muted leading-relaxed">
+                                                        {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        `;
 
                     showModal({
                         title: '{!! addslashes(\App\Core\Lang::get('dashboard.server_config')) !!}',
@@ -424,11 +439,55 @@
                 message: '¿Ocultar este mensaje para siempre? Podrás reactivarlo desde los ajustes del sistema.',
                 type: 'confirm',
                 onConfirm: () => {
-                    fetch('{{ $baseUrl }}admin/system/dismiss-banner', { method: 'POST' })
+                    fetch('{{ $baseUrl }}admin/system/dismiss-banner', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+                    })
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
                                 window.location.reload();
+                            }
+                        });
+                }
+            });
+        }
+
+        function clearCache() {
+            fetch('{{ $baseUrl }}admin/system/clear-cache', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showModal({
+                            title: '{!! addslashes(\App\Core\Lang::get('dashboard.cache_modal_title')) !!}',
+                            message: '{!! addslashes(\App\Core\Lang::get('dashboard.cache_modal_msg')) !!}',
+                            type: 'success'
+                        });
+                    }
+                });
+        }
+
+        function clearSessions() {
+            showModal({
+                title: '{!! addslashes(\App\Core\Lang::get('dashboard.sessions_modal_title')) !!}',
+                message: '{!! addslashes(\App\Core\Lang::get('dashboard.sessions_modal_msg')) !!}',
+                type: 'confirm',
+                onConfirm: () => {
+                    fetch('{{ $baseUrl }}admin/system/clear-sessions', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                showModal({
+                                    title: '{!! addslashes(\App\Core\Lang::get('dashboard.sessions_modal_title')) !!}',
+                                    message: '{!! addslashes(\App\Core\Lang::get('dashboard.sessions_cleared_msg')) !!}'.replace(':count', data.cleared),
+                                    type: 'success'
+                                });
                             }
                         });
                 }

@@ -48,6 +48,7 @@ $router->add('GET', '/admin/system/info', 'System\\SystemController@info');
 $router->add('POST', '/admin/system/dev-mode', 'System\\SystemController@toggleDevMode');
 $router->add('POST', '/admin/system/clear-cache', 'System\\SystemController@clearCache');
 $router->add('POST', '/admin/system/clear-sessions', 'System\\SystemController@clearSessions');
+$router->add('POST', '/admin/system/dismiss-banner', 'System\\SystemController@dismissBanner');
 
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
