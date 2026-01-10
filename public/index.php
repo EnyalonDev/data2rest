@@ -7,8 +7,12 @@ error_reporting(E_ALL);
 use App\Core\Auth;
 use App\Core\Router;
 use App\Core\Installer;
+use App\Core\Config;
 
 require_once __DIR__ . '/../src/autoload.php';
+
+// Load ENV variables
+Config::loadEnv();
 
 Installer::check();
 Auth::init();
