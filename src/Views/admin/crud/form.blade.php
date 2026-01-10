@@ -426,7 +426,63 @@
 </div>
 @endsection
 
-@section('scripts')
+@section('styles')
+<style>
+    #mediaGrid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 1rem !important;
+        align-content: start !important;
+    }
+    @media (min-width: 768px) {
+        #mediaGrid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+    .media-card {
+        aspect-ratio: 1/1 !important;
+        position: relative !important;
+        overflow: hidden !important;
+        cursor: pointer !important;
+        border-radius: 1rem !important;
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 2px solid rgba(255, 255, 255, 0.05) !important;
+        transition: all 0.3s ease !important;
+    }
+    .media-card:hover {
+        border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+    .media-card.selected {
+        border-color: var(--p-primary) !important;
+        box-shadow: 0 0 20px rgba(var(--p-primary-rgb), 0.3) !important;
+    }
+    .media-card img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        transition: transform 0.5s ease !important;
+    }
+    .media-card:hover img {
+        transform: scale(1.05) !important;
+    }
+    .media-card.selected img {
+        opacity: 0.4 !important;
+    }
+    .media-card .info-overlay {
+        position: absolute !important;
+        inset: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        padding: 0.75rem !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%) !important;
+        opacity: 0 !important;
+        transition: opacity 0.3s ease !important;
+    }
+    .media-card:hover .info-overlay {
+        opacity: 1 !important;
+    }
+</style>
 <script>
     const tinyMceScript = document.createElement('script');
     tinyMceScript.src = `https://cdn.tiny.cloud/1/${window.appConfig.tinyMceApiKey}/tinymce/6/tinymce.min.js`;
@@ -552,19 +608,18 @@
             const isImage = imageExtensions.includes(item.extension);
             const div = document.createElement('div');
             
-            // Premium Card Style
-            div.className = `group relative aspect-square bg-slate-900/60 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${isSelected ? 'border-primary shadow-[0_0_20px_rgba(var(--p-primary-rgb),0.3)]' : 'border-white/5 hover:border-white/20'}`;
+            div.className = `media-card ${isSelected ? 'selected' : ''}`;
             div.onclick = () => selectMedia(item.url);
 
             let previewHtml = '';
             if (isImage) {
-                previewHtml = `<img src="${item.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isSelected ? 'opacity-40' : ''}">`;
+                previewHtml = `<img src="${item.url}">`;
             } else {
                 let icon = 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z';
                 let color = 'text-slate-500';
                 if (item.extension === 'pdf') { icon = 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'; color = 'text-red-400'; }
                 previewHtml = `
-                    <div class="w-full h-full flex flex-col items-center justify-center gap-2 p-4 bg-white/5 group-hover:bg-white/10 transition-colors">
+                    <div class="w-full h-full flex flex-col items-center justify-center gap-2 bg-white/5">
                         <svg class="w-10 h-10 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${icon}"></path></svg>
                         <span class="text-[8px] font-black uppercase text-p-muted tracking-widest">${item.extension}</span>
                     </div>
@@ -573,8 +628,7 @@
 
             div.innerHTML = `
                 ${previewHtml}
-                <!-- Info Overlay -->
-                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <div class="info-overlay">
                     <p class="text-[10px] font-bold text-white truncate mb-0.5">${item.name}</p>
                     <p class="text-[8px] text-p-muted font-bold uppercase tracking-tighter">${item.table_folder}</p>
                 </div>
