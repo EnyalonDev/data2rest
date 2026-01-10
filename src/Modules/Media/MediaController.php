@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
 use App\Core\BaseController;
+use App\Core\Logger;
 use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
@@ -250,6 +251,7 @@ class MediaController extends BaseController
                 'name' => $safeName,
                 'url' => Auth::getFullBaseUrl() . 'uploads/' . $scopePath . '/' . ($path ? $path . '/' : '') . $safeName
             ]);
+            Logger::log('UPLOAD_FILE', ['name' => $safeName, 'path' => $path], $db_id);
         }
 
         $this->json(['error' => 'Failed to move uploaded file'], 500);
@@ -280,6 +282,7 @@ class MediaController extends BaseController
 
         try {
             $this->moveToTrash($fullPath, $path, $scopePath);
+            Logger::log('DELETE_FILE', ['path' => $path], $db_id);
             $this->json(['success' => true]);
         } catch (Exception $e) {
             $this->json(['error' => $e->getMessage()], 500);
@@ -332,6 +335,9 @@ class MediaController extends BaseController
             }
         }
 
+        if (!empty($results['success'])) {
+            Logger::log('BULK_DELETE', ['count' => count($results['success']), 'paths' => $results['success']]);
+        }
         $this->json($results);
     }
 
@@ -380,11 +386,15 @@ class MediaController extends BaseController
 
             if (rename($fullSrcPath, $fullDestPath)) {
                 $results['success'][] = $path;
+                Logger::log('MOVE_FILE', ['path' => $path, 'target' => $targetDir]);
             } else {
                 $results['error'][] = "Failed to move $fileName";
             }
         }
 
+        if (!empty($results['success'])) {
+            Logger::log('BULK_MOVE', ['count' => count($results['success']), 'target' => $targetDir]);
+        }
         $this->json($results);
     }
 
@@ -419,6 +429,7 @@ class MediaController extends BaseController
         }
 
         if (rename($fullOldPath, $fullNewPath)) {
+            Logger::log('RENAME_FILE', ['old' => $oldPath, 'new' => $newName]);
             $this->json(['success' => true]);
         }
 
@@ -474,6 +485,7 @@ class MediaController extends BaseController
         if (rename($srcPath, $destPath)) {
             $stmt = $db->prepare("DELETE FROM media_trash WHERE id = ?");
             $stmt->execute([$item['id']]);
+            Logger::log('RESTORE_FILE', ['path' => $item['original_path']]);
             $this->json(['success' => true]);
         } else {
             $this->json(['error' => 'Failed to restore file'], 500);
@@ -619,6 +631,7 @@ class MediaController extends BaseController
         imagedestroy($image);
 
         if ($success) {
+            Logger::log('EDIT_IMAGE', ['path' => $path]);
             $this->json(['success' => true, 'new_name' => basename($savePath)]);
         } else {
             $this->json(['error' => 'Failed to save processed image'], 500);

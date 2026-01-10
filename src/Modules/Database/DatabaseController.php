@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
 use App\Core\BaseController;
+use App\Core\Logger;
 use PDO;
 
 /**
@@ -104,6 +105,7 @@ class DatabaseController extends BaseController
 
             $stmt = $db->prepare("INSERT INTO databases (name, path, project_id) VALUES (?, ?, ?)");
             $stmt->execute([$name, $path, $projectId]);
+            Logger::log('CREATE_DATABASE', ['name' => $name, 'path' => $path], $projectId);
 
             // Auto-trigger sync if the file already had data
             $dbId = $db->lastInsertId();
@@ -132,6 +134,7 @@ class DatabaseController extends BaseController
                 $stmt->execute([$id]);
                 $stmt = $db->prepare("DELETE FROM fields_config WHERE db_id = ?");
                 $stmt->execute([$id]);
+                Logger::log('DELETE_DATABASE', ['id' => $id, 'path' => $database['path']]);
                 if (file_exists($database['path'])) {
                     unlink($database['path']);
                 }
@@ -252,6 +255,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
             // Initialize table metadata
             $stmt = $db->prepare("INSERT INTO table_metadata (db_id, table_name) VALUES (?, ?)");
             $stmt->execute([$db_id, $table_name]);
+            Logger::log('CREATE_TABLE', ['database_id' => $db_id, 'table' => $table_name], $db_id);
 
             // Update DB last edit
             $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
@@ -283,6 +287,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
                     $targetDb->exec("DROP TABLE $table_name");
                     $stmt = $db->prepare("DELETE FROM fields_config WHERE db_id = ? AND table_name = ?");
                     $stmt->execute([$db_id, $table_name]);
+                    Logger::log('DELETE_TABLE', ['database_id' => $db_id, 'table' => $table_name], $db_id);
                 } catch (\PDOException $e) {
                     die("No se pudo eliminar la tabla: " . $e->getMessage());
                 }
@@ -364,6 +369,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
             $targetDb->exec("ALTER TABLE $table_name ADD COLUMN $field_name $data_type");
             $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_required) VALUES (?, ?, ?, ?, ?, 0)");
             $stmt->execute([$db_id, $table_name, $field_name, $data_type, $view_type]);
+            Logger::log('ADD_FIELD', ['database_id' => $db_id, 'table' => $table_name, 'field' => $field_name], $db_id);
             header('Location: ' . Auth::getBaseUrl() . "admin/databases/fields?db_id=$db_id&table=$table_name");
         } catch (\PDOException $e) {
             die("Error adding field: " . $e->getMessage());
@@ -406,6 +412,7 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         // Delete from Config
         $stmt = $db->prepare("DELETE FROM fields_config WHERE id = ?");
         $stmt->execute([$config_id]);
+        Logger::log('DELETE_FIELD', ['database_id' => $db_id, 'table' => $table_name, 'field' => $field_name], $db_id);
 
         // Attempt to Drop Column from Structure
         $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
@@ -663,6 +670,7 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
         if ($hasSqlite3) {
             $cmd = "sqlite3 " . escapeshellarg($dbPath) . " .dump";
             passthru($cmd);
+            Logger::log('EXPORT_SQL', ['database_id' => $id]);
         } else {
             try {
                 $targetDb = new PDO('sqlite:' . $dbPath);

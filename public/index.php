@@ -66,8 +66,8 @@ $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@man
 $router->add('POST', '/admin/databases/fields/add', 'Database\\DatabaseController@addField');
 $router->add('GET', '/admin/databases/fields/delete', 'Database\\DatabaseController@deleteField');
 $router->add('POST', '/admin/databases/fields/update', 'Database\\DatabaseController@updateFieldConfig');
-$router->add('GET', '/admin/demo/load', 'Database\\SystemController@loadDemo');
-$router->add('GET', '/admin/system/reset', 'Database\\SystemController@resetSystem');
+$router->add('GET', '/admin/demo/load', 'Database\\MaintenanceController@loadDemo');
+$router->add('GET', '/admin/system/reset', 'Database\\MaintenanceController@resetSystem');
 
 // --- Dynamic CRUD ---
 $router->add('GET', '/admin/crud/list', 'Database\\CrudController@list');
@@ -128,6 +128,9 @@ $router->add('GET', '/admin/projects/delete', 'Projects\\ProjectController@delet
 $router->add('GET', '/admin/projects/select', 'Projects\\ProjectController@select');
 $router->add('GET', '/admin/projects/switch', 'Projects\\ProjectController@switch');
 $router->add('POST', '/admin/projects/plan/update', 'Projects\\ProjectController@updatePlan');
+
+// --- Module: Activity Logs ---
+$router->add('GET', '/admin/logs', 'Logs\\LogController@index');
 
 // --- REST API Engine ---
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');

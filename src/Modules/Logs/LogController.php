@@ -78,8 +78,38 @@ class LogController extends BaseController
         $stmt->execute($params);
         $logs = $stmt->fetchAll();
 
+        // Stats: API Usage count by Action/Endpoint
+        $stats = [
+            'api_calls' => 0,
+            'data_changes' => 0,
+            'top_endpoints' => []
+        ];
+
+        foreach ($logs as $log) {
+            if (strpos($log['action'], 'API_') === 0) {
+                $stats['api_calls']++;
+            }
+            if (in_array($log['action'], ['INSERT_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD'])) {
+                $stats['data_changes']++;
+            }
+        }
+
+        // Top Endpoints (simplified from actions for now)
+        $sqlTop = "SELECT action, COUNT(*) as count FROM activity_logs WHERE action LIKE 'API_%'";
+        $topParams = [];
+        if ($projectId) {
+            $sqlTop .= " AND project_id = ?";
+            $topParams[] = $projectId;
+        }
+        $sqlTop .= " GROUP BY action ORDER BY count DESC LIMIT 5";
+        $stmtTop = $db->prepare($sqlTop);
+        $stmtTop->execute($topParams);
+        $stats['top_endpoints'] = $stmtTop->fetchAll();
+
         $this->view('admin/logs/index', [
             'logs' => $logs,
+            'stats' => $stats,
+            'projectId' => $projectId,
             'title' => 'Activity Logs',
             'breadcrumbs' => ['Activity' => null]
         ]);

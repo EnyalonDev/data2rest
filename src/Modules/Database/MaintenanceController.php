@@ -8,7 +8,7 @@ use App\Core\Config;
 use App\Core\BaseController;
 use PDO;
 
-class SystemController extends BaseController
+class MaintenanceController extends BaseController
 {
     public function __construct()
     {

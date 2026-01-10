@@ -239,9 +239,15 @@
 
         <!-- Recent Activity -->
         <aside>
-            <h2 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-                <span class="w-8 h-[1px] bg-slate-800"></span> {{ \App\Core\Lang::get('dashboard.activity.title') }}
-            </h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] flex items-center gap-3">
+                    <span class="w-8 h-[1px] bg-slate-800"></span> {{ \App\Core\Lang::get('dashboard.activity.title') }}
+                </h2>
+                <a href="{{ $baseUrl }}admin/logs"
+                    class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">
+                    {{ \App\Core\Lang::get('common.all') }} &rarr;
+                </a>
+            </div>
             <div class="glass-card !p-6 space-y-6">
                 @if(empty($stats['recent_activity']))
                     <div class="py-10 text-center text-p-muted">
@@ -328,13 +334,13 @@
                     };
 
                     let html = `
-                                <div class="mb-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-                                    <p class="text-sm md:text-base text-slate-200 leading-relaxed font-medium">
-                                        {!! addslashes(\App\Core\Lang::get('dashboard.system_intro')) !!}
-                                    </p>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
-                            `;
+                                    <div class="mb-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                                        <p class="text-sm md:text-base text-slate-200 leading-relaxed font-medium">
+                                            {!! addslashes(\App\Core\Lang::get('dashboard.system_intro')) !!}
+                                        </p>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+                                `;
 
                     for (const [key, value] of Object.entries(data)) {
                         const label = key.replace(/_/g, ' ').toUpperCase();
@@ -347,32 +353,32 @@
                         }
 
                         html += `
-                                    <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
-                                        <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
-                                        <span class="text-lg font-black text-white block mb-2">${value}</span>
-                                        ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
-                                        ${extraWarning}
-                                    </div>
-                                `;
+                                        <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+                                            <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
+                                            <span class="text-lg font-black text-white block mb-2">${value}</span>
+                                            ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
+                                            ${extraWarning}
+                                        </div>
+                                    `;
                     }
 
                     html += `
-                                </div>
-                                <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
-                                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
-                                        {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
-                                    </h4>
-                                    <p class="text-sm text-p-muted leading-relaxed mb-6">
-                                        {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
-                                    </p>
-                                    <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                        <p class="text-xs md:text-sm text-p-muted leading-relaxed">
-                                            {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
-                                        </p>
                                     </div>
-                                </div>
-                            `;
+                                    <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
+                                        <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
+                                            {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
+                                        </h4>
+                                        <p class="text-sm text-p-muted leading-relaxed mb-6">
+                                            {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
+                                        </p>
+                                        <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                            <p class="text-xs md:text-sm text-p-muted leading-relaxed">
+                                                {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `;
 
                     showModal({
                         title: '{!! addslashes(\App\Core\Lang::get('dashboard.server_config')) !!}',

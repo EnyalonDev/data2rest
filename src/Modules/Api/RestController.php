@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Core\Config;
 use App\Core\Auth;
 use App\Core\BaseController;
+use App\Core\Logger;
 use PDO;
 
 class RestController extends BaseController
@@ -65,19 +66,23 @@ class RestController extends BaseController
 
             switch ($method) {
                 case 'GET':
+                    Logger::log('API_GET', "Table: $table" . ($id ? " ID: $id" : ""), $db_id);
                     $this->handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id);
                     break;
 
                 case 'POST':
+                    Logger::log('API_POST', "Table: $table", $db_id);
                     $this->handlePostRequest($targetDb, $table, $db_id);
                     break;
 
                 case 'PUT':
                 case 'PATCH':
+                    Logger::log('API_UPDATE', "Table: $table ID: $id Method: $method", $db_id);
                     $this->handleUpdateRequest($targetDb, $table, $id, $db_id);
                     break;
 
                 case 'DELETE':
+                    Logger::log('API_DELETE', "Table: $table ID: $id", $db_id);
                     $this->handleDeleteRequest($targetDb, $table, $id);
                     break;
 

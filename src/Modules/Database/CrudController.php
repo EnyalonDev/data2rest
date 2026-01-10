@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
 use App\Core\BaseController;
+use App\Core\Logger;
 use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
@@ -325,6 +326,7 @@ LIMIT 1");
                 $values[] = $id;
                 $stmt = $targetDb->prepare("UPDATE $tableName SET " . implode(', ', $sets) . " WHERE id = ?");
                 $stmt->execute($values);
+                Logger::log('UPDATE_RECORD', ['table' => $tableName, 'id' => $id, 'fields' => array_keys($data)], $ctx['db_id']);
             } else {
                 foreach ($ctx['fields'] as $field) {
                     if ($field['field_name'] === 'fecha_de_creacion')
@@ -341,6 +343,7 @@ LIMIT 1");
                     $placeholders
                 ) . ")");
                 $stmt->execute(array_values($data));
+                Logger::log('INSERT_RECORD', ['table' => $tableName, 'id' => $targetDb->lastInsertId()], $ctx['db_id']);
             }
 
             // Update metadata timestamps
@@ -365,6 +368,7 @@ LIMIT 1");
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
                 $stmt = $targetDb->prepare("DELETE FROM $tableName WHERE id = ?");
                 $stmt->execute([$id]);
+                Logger::log('DELETE_RECORD', ['table' => $tableName, 'id' => $id], $ctx['db_id']);
 
                 // Update metadata timestamps
                 $this->updateMetadata($ctx['db_id'], $ctx['table']);
@@ -467,6 +471,7 @@ LIMIT 1");
             }
 
             fclose($output);
+            Logger::log('EXPORT_CSV', ['table' => $tableName], $ctx['db_id']);
             exit;
 
         } catch (\PDOException $e) {
