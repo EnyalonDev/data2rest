@@ -13,8 +13,8 @@ class Config
         'db_path' => __DIR__ . '/../../data/system.sqlite',
         'app_name' => 'Data2Rest',
         'base_url' => '', // Detected automatically if empty
-        'upload_dir' => __DIR__ . '/../../public/uploads/',
-        'db_storage_path' => __DIR__ . '/../../data/',
+        'upload_dir' => realpath(__DIR__ . '/../../public/uploads/') . '/',
+        'db_storage_path' => realpath(__DIR__ . '/../../data/') . '/',
         'allowed_roles' => ['admin', 'user'],
     ];
 
