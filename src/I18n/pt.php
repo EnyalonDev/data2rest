@@ -267,6 +267,8 @@ return [
                 'system' => 'Gerenciador de Arquivos e Imagens',
                 'library_subtitle' => 'Gerencie todos os seus ativos, rastreie o uso e encontre arquivos órfãos.',
                 'upload' => 'Enviar Arquivo',
+                'new_folder' => 'Nova Pasta',
+                'folder_name_placeholder' => 'Nome da pasta...',
                 'drop' => 'Solte os arquivos aqui para enviar',
                 'search' => 'Buscar arquivos...',
                 'scanning' => 'Carregando arquivos...',

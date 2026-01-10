@@ -282,7 +282,7 @@
 <!-- Media Modal -->
 <div id="mediaModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xl transition-all">
     <div class="glass-card w-full h-[90vh] flex flex-col shadow-2xl ring-1 ring-white/10 relative">
-        <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-white/5 pb-6">
             <div>
                 <h2 class="text-3xl font-black text-p-title italic tracking-tighter">
                     {{ \App\Core\Lang::get('media.explorer') }}
@@ -291,20 +291,43 @@
                     {{ \App\Core\Lang::get('media.system') }}
                 </p>
             </div>
-            <div class="flex items-center gap-6">
+            
+            <div class="flex items-center gap-3 flex-1 max-w-2xl">
                 <!-- Search Input -->
-                <div class="relative">
+                <div class="relative flex-1">
                     <input type="text" id="media-search" placeholder="{{ \App\Core\Lang::get('media.search') }}"
-                        oninput="handleSearch(this.value)" class="search-input pl-10">
+                        oninput="handleSearch(this.value)" 
+                        class="w-full pl-10 pr-4 py-2.5 bg-p-input border border-glass-border rounded-xl text-xs text-p-title placeholder:text-p-muted transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/20">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-p-muted">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </span>
                 </div>
+                
+                <!-- Type Filters in Header -->
+                <div class="flex bg-black/40 p-1 rounded-xl border border-glass-border">
+                    <button onclick="setTypeFilter('all')" id="header-type-filter-all" class="header-type-filter-btn px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all bg-primary/20 text-primary">
+                        {{ \App\Core\Lang::get('media.all') }}
+                    </button>
+                    <button onclick="setTypeFilter('images')" id="header-type-filter-images" class="header-type-filter-btn px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all text-p-muted hover:text-p-title">
+                        {{ \App\Core\Lang::get('media.only_images') }}
+                    </button>
+                    <button onclick="setTypeFilter('files')" id="header-type-filter-files" class="header-type-filter-btn px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all text-p-muted hover:text-p-title">
+                        {{ \App\Core\Lang::get('media.only_files') }}
+                    </button>
+                </div>
+
+                <!-- New Folder Button -->
+                <button onclick="promptCreateFolder()" class="p-2.5 bg-emerald-500/10 border border-emerald-200/20 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all group" title="{{ \App\Core\Lang::get('media.new_folder') }}">
+                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+                    </svg>
+                </button>
+
                 <button onclick="closeMediaGallery()"
                     class="text-p-muted hover:text-p-title transition-colors bg-white/5 p-2 rounded-xl">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12">
                         </path>
                     </svg>
@@ -350,6 +373,8 @@
                     </div>
                 </div>
 
+                <!-- Sidebar Filters Hidden for Type (Moved to Header) -->
+                <div class="hidden">
                     <h4 class="text-[10px] font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-primary/40"></span>
                         {{ \App\Core\Lang::get('media.resource_type') }}
@@ -359,6 +384,7 @@
                         <button onclick="setTypeFilter('images')" id="type-filter-images" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5">{{ \App\Core\Lang::get('media.only_images') }}</button>
                         <button onclick="setTypeFilter('files')" id="type-filter-files" class="type-filter-btn w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all text-p-muted hover:bg-white/5">{{ \App\Core\Lang::get('media.only_files') }}</button>
                     </div>
+                </div>
             </aside>
 
             <!-- Grid Area -->
@@ -454,19 +480,41 @@
     function setTypeFilter(type) {
         activeTypeFilter = type;
         
-        // Update UI classes
-        document.querySelectorAll('.type-filter-btn').forEach(btn => {
+        // Update Header UI classes
+        document.querySelectorAll('.header-type-filter-btn').forEach(btn => {
             btn.classList.remove('bg-primary/20', 'text-primary');
             btn.classList.add('text-p-muted');
         });
         
-        const activeBtn = document.getElementById('type-filter-' + type);
+        const activeBtn = document.getElementById('header-type-filter-' + type);
         if (activeBtn) {
             activeBtn.classList.add('bg-primary/20', 'text-primary');
             activeBtn.classList.remove('text-p-muted');
         }
         
         renderGrid();
+    }
+
+    function promptCreateFolder() {
+        const name = prompt('{{ \App\Core\Lang::get("media.folder_name_placeholder") }}');
+        if (!name) return;
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('_token', '{{ $csrf_token }}');
+
+        fetch('{{ $baseUrl }}admin/media/api/create-folder', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                openMediaGallery(currentTargetField, isMultiMode); // Refresh
+            } else {
+                alert(data.error || 'Error creating folder');
+            }
+        });
     }
 
     function renderGrid() {
@@ -501,42 +549,41 @@
 
         filtered.forEach(item => {
             const isSelected = selectedImages.includes(item.url);
-            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(item.extension);
+            const isImage = imageExtensions.includes(item.extension);
             const div = document.createElement('div');
-            div.className = `group relative aspect-square bg-black/40 rounded-2xl overflow-hidden cursor-pointer border ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-glass-border'} hover:border-primary/50 transition-all shadow-xl`;
+            
+            // Premium Card Style
+            div.className = `group relative aspect-square bg-slate-900/60 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${isSelected ? 'border-primary shadow-[0_0_20px_rgba(var(--p-primary-rgb),0.3)]' : 'border-white/5 hover:border-white/20'}`;
             div.onclick = () => selectMedia(item.url);
 
             let previewHtml = '';
             if (isImage) {
-                previewHtml = `<img src="${item.url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${isSelected ? 'opacity-50' : ''}">`;
+                previewHtml = `<img src="${item.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isSelected ? 'opacity-40' : ''}">`;
             } else {
-                let icon = 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z'; // Default file
-                let color = 'text-p-muted';
-                
+                let icon = 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z';
+                let color = 'text-slate-500';
                 if (item.extension === 'pdf') { icon = 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'; color = 'text-red-400'; }
-                else if (['zip', 'rar'].includes(item.extension)) { icon = 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4'; color = 'text-yellow-500'; }
-                else if (['doc', 'docx'].includes(item.extension)) { icon = 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z'; color = 'text-blue-400'; }
-                else if (['mp4', 'mov'].includes(item.extension)) { icon = 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'; color = 'text-purple-400'; }
-
                 previewHtml = `
-                    <div class="w-full h-full flex flex-col items-center justify-center gap-3 p-4 bg-white/5 group-hover:bg-white/10 transition-colors">
-                        <svg class="w-12 h-12 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${icon}"></path></svg>
-                        <span class="text-[8px] font-black uppercase text-p-title tracking-widest bg-black/40 px-2 py-1 rounded-md border border-white/5 truncate w-full text-center">${item.extension}</span>
+                    <div class="w-full h-full flex flex-col items-center justify-center gap-2 p-4 bg-white/5 group-hover:bg-white/10 transition-colors">
+                        <svg class="w-10 h-10 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${icon}"></path></svg>
+                        <span class="text-[8px] font-black uppercase text-p-muted tracking-widest">${item.extension}</span>
                     </div>
                 `;
             }
 
             div.innerHTML = `
                 ${previewHtml}
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                    <p class="text-[9px] font-black text-primary truncate uppercase tracking-widest mb-1">${item.name}</p>
-                    <p class="text-[7px] text-p-muted font-bold uppercase">${item.date_folder} / ${item.table_folder}</p>
+                <!-- Info Overlay -->
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <p class="text-[10px] font-bold text-white truncate mb-0.5">${item.name}</p>
+                    <p class="text-[8px] text-p-muted font-bold uppercase tracking-tighter">${item.table_folder}</p>
                 </div>
-                ${isSelected ? `
-                    <div class="absolute top-2 right-2 bg-primary text-black p-1 rounded-full z-10">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3"></path></svg>
+                <!-- Selection Indicator -->
+                <div class="absolute top-3 right-3 transition-transform ${isSelected ? 'scale-100' : 'scale-0'}">
+                    <div class="bg-primary text-dark p-1 rounded-full shadow-lg">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </div>
-                ` : ''}
+                </div>
             `;
             grid.appendChild(div);
         });

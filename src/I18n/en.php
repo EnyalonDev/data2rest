@@ -267,6 +267,8 @@ return [
                 'system' => 'File & Image Manager',
                 'library_subtitle' => 'Manage all your assets, track usage and find orphan files.',
                 'upload' => 'Upload File',
+                'new_folder' => 'New Folder',
+                'folder_name_placeholder' => 'Folder name...',
                 'drop' => 'Drop files here to upload',
                 'search' => 'Search files...',
                 'scanning' => 'Loading files...',

@@ -921,5 +921,36 @@ class MediaController extends BaseController
         rmdir($dir);
     }
 
-    // Local sanitizeFilename removed: using standardized version from BaseController
+    /**
+     * Creates a new folder.
+     */
+    public function createFolder()
+    {
+        $name = $_POST['name'] ?? null;
+        $path = $_POST['path'] ?? ''; // Relative to project root
+        $db_id = $_POST['db_id'] ?? null;
+
+        if (!$name) {
+            $this->json(['error' => 'Folder name is required'], 400);
+        }
+
+        // Clean name and path (sanitize)
+        $name = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $name);
+        $path = str_replace(['..', '\\'], '', $path);
+
+        $uploadBase = Config::get('upload_dir');
+        $scopePath = $this->getStoragePrefix($db_id);
+        $targetDir = $uploadBase . $scopePath . DIRECTORY_SEPARATOR . $path . DIRECTORY_SEPARATOR . $name;
+        $targetDir = str_replace([DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR], [DIRECTORY_SEPARATOR], $targetDir);
+
+        if (file_exists($targetDir)) {
+            $this->json(['error' => 'Folder already exists'], 400);
+        }
+
+        if (mkdir($targetDir, 0777, true)) {
+            $this->json(['success' => true]);
+        } else {
+            $this->json(['error' => 'Failed to create folder'], 500);
+        }
+    }
 }

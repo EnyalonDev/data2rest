@@ -277,6 +277,8 @@ return [
                 'system' => 'Gestor de Archivos e Imágenes',
                 'library_subtitle' => 'Administra todos tus activos, rastrea su uso y encuentra archivos huérfanos.',
                 'upload' => 'Subir Archivo',
+                'new_folder' => 'Nueva Carpeta',
+                'folder_name_placeholder' => 'Nombre de la carpeta...',
                 'drop' => 'Suelta los archivos aquí para subirlos',
                 'search' => 'Buscar archivos...',
                 'scanning' => 'Cargando archivos...',

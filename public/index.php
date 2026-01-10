@@ -89,6 +89,7 @@ $router->add('POST', '/admin/media/api/edit', 'Media\\MediaController@edit');
 $router->add('POST', '/admin/media/api/settings', 'Media\\MediaController@updateSettings');
 $router->add('POST', '/admin/media/api/restore', 'Media\\MediaController@restore');
 $router->add('POST', '/admin/media/api/purge', 'Media\\MediaController@purge');
+$router->add('POST', '/admin/media/api/create-folder', 'Media\\MediaController@createFolder');
 
 // Legacy compatibility for CRUD forms
 $router->add('GET', '/admin/media/list', 'Media\\MediaController@mediaList');
