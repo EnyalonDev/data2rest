@@ -305,7 +305,7 @@
 
         <!-- Mobile Menu Overlay -->
         <div id="mobile-menu"
-            class="hidden fixed top-16 left-0 w-full bg-p-nav/95 backdrop-blur-xl border-b border-glass-border z-40 flex-col p-6 gap-6 shadow-2xl lg:hidden">
+            class="hidden fixed top-16 left-0 w-full bg-white dark:bg-dark border-b border-glass-border z-40 flex-col p-6 gap-6 shadow-2xl lg:hidden">
             @if(\App\Core\Auth::check() && isset($_SESSION['user_projects']))
                 <div class="space-y-2">
                     <span
@@ -346,7 +346,8 @@
                     <div class="flex items-center gap-3">
                         <div
                             class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-black uppercase">
-                            {{ substr($_SESSION['username'], 0, 1) }}</div>
+                            {{ substr($_SESSION['username'], 0, 1) }}
+                        </div>
                         <div class="flex flex-col">
                             <span class="text-xs text-p-muted">{{ \App\Core\Lang::get('common.welcome') }}</span>
                             <span class="text-sm font-bold text-p-title">{{ $_SESSION['username'] }}</span>
@@ -409,7 +410,10 @@
                 </div>
                 <script>
                     function devClearCache() {
-                        fetch('{{ $baseUrl }}admin/system/clear-cache', { method: 'POST' })
+                        fetch('{{ $baseUrl }}admin/system/clear-cache', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+                        })
                             .then(res => res.json())
                             .then(data => {
                                 if (data.success) {
@@ -423,7 +427,10 @@
                             message: 'Esto cerrará la sesión de todos los demás usuarios. ¿Continuar?',
                             type: 'confirm',
                             onConfirm: () => {
-                                fetch('{{ $baseUrl }}admin/system/clear-sessions', { method: 'POST' })
+                                fetch('{{ $baseUrl }}admin/system/clear-sessions', {
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+                                })
                                     .then(res => res.json())
                                     .then(data => {
                                         if (data.success) {
