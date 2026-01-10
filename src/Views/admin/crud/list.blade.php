@@ -134,6 +134,7 @@
                     {{ \App\Core\Lang::get('fields.title') }}
                 </a>
             @endif
+            @if(\App\Core\Auth::hasPermission('module:api', 'view_keys'))
             <a href="{{ $baseUrl }}admin/api/docs?db_id={{ $ctx['db_id'] }}#table-{{ $ctx['table'] }}"
                 class="btn-primary !bg-emerald-500/10 !text-emerald-400 border border-emerald-500/20 flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,6 +143,7 @@
                 </svg>
                 {{ \App\Core\Lang::get('tables.api_docs') }}
             </a>
+            @endif
             <a href="{{ $baseUrl }}admin/crud/export?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}"
                 class="btn-primary !bg-emerald-600/20 !text-emerald-400 border border-emerald-500/30 flex items-center gap-2 hover:!bg-emerald-600/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

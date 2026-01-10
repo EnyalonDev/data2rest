@@ -401,7 +401,12 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    const tinyMceScript = document.createElement('script');
+    tinyMceScript.src = `https://cdn.tiny.cloud/1/${window.appConfig.tinyMceApiKey}/tinymce/6/tinymce.min.js`;
+    tinyMceScript.referrerPolicy = "origin";
+    document.head.appendChild(tinyMceScript);
+</script>
 <script>
     let currentTargetField = null;
     let isMultiMode = false;

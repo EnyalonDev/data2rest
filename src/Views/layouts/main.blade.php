@@ -8,6 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        window.appConfig = {
+            tinyMceApiKey: "{{ getenv('TINY_MCE_API_KEY') ?: 'no-api-key-found' }}"
+        };
+
         tailwind.config = {
             darkMode: 'class',
             theme: {
