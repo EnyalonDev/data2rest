@@ -53,7 +53,16 @@ class BaseController
         // but BladeOne accepts both. Dots are standard.)
         $path = str_replace('/', '.', $path);
 
-        echo $this->blade->run($path, $data);
+        try {
+            echo $this->blade->run($path, $data);
+        } catch (\Exception $e) {
+            die("<div style='background: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; padding: 2rem; font-family: sans-serif; border-radius: 0.5rem; margin: 2rem;'>
+                <h2 style='margin-top:0'>🛑 View Rendering Error</h2>
+                <p><strong>File:</strong> {$path}</p>
+                <p>{$e->getMessage()}</p>
+                <pre style='background:#1e293b; color:#fbbf24; padding:1rem; overflow:auto;'>{$e->getTraceAsString()}</pre>
+            </div>");
+        }
     }
 
     /**
@@ -159,7 +168,7 @@ class BaseController
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
         // Skip API
         if (strpos($uri, '/api/') === 0) {
-            return true; 
+            return true;
         }
 
         // Verify Token
