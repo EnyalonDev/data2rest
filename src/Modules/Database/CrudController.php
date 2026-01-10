@@ -247,7 +247,7 @@ LIMIT 1");
         $ctx = $this->getContext($id ? 'crud_edit' : 'crud_create');
 
         $data = $_POST;
-        unset($data['db_id'], $data['table'], $data['id']);
+        unset($data['db_id'], $data['table'], $data['id'], $data['_token']);
 
         foreach ($ctx['fields'] as $field) {
             $galleryKey = 'gallery_' . $field['field_name'];
@@ -418,17 +418,18 @@ LIMIT 1");
             }
 
             // Headers for CSV
-            if (ob_get_level()) ob_end_clean();
-            
+            if (ob_get_level())
+                ob_end_clean();
+
             $filename = $tableName . "_" . date('Y-m-d_H-i') . ".csv";
-            
+
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="' . $filename . '"');
-            
+
             $output = fopen('php://output', 'w');
-            
+
             // Add BOM for Excel to recognize UTF-8
-            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             // Column Headers
             $headers = [];
@@ -449,7 +450,7 @@ LIMIT 1");
                 }
                 fputcsv($output, $line);
             }
-            
+
             fclose($output);
             exit;
 

@@ -12,6 +12,7 @@
         </div>
 
         <form action="{{ $baseUrl }}admin/projects/save" method="POST" class="space-y-6">
+            {!! $csrf_field !!}
             @if ($project)
                 <input type="hidden" name="id" value="{{ $project['id'] }}">
             @endif
@@ -40,9 +41,11 @@
                                 {{ \App\Core\Lang::get('projects.monthly_plan') }}
                             </option>
                             <option value="quarterly" {{ ($project['plan_type'] ?? '') == 'quarterly' ? 'selected' : '' }}>
-                                {{ \App\Core\Lang::get('projects.quarterly_plan') }}</option>
+                                {{ \App\Core\Lang::get('projects.quarterly_plan') }}
+                            </option>
                             <option value="semiannual" {{ ($project['plan_type'] ?? '') == 'semiannual' ? 'selected' : '' }}>
-                                {{ \App\Core\Lang::get('projects.semiannual_plan') }}</option>
+                                {{ \App\Core\Lang::get('projects.semiannual_plan') }}
+                            </option>
                             <option value="annual" {{ ($project['plan_type'] ?? '') == 'annual' ? 'selected' : '' }}>
                                 {{ \App\Core\Lang::get('projects.annual_plan') }}
                             </option>
@@ -166,10 +169,10 @@
             // 1. Render Assigned
             if (assignedUserIds.length === 0) {
                 assignedContainer.innerHTML = `
-                    <div class="text-center py-10 opacity-30 italic text-xs">
-                        {!! addslashes(\App\Core\Lang::get('projects.no_users_assigned')) !!}
-                    </div>
-                `;
+                        <div class="text-center py-10 opacity-30 italic text-xs">
+                            {!! addslashes(\App\Core\Lang::get('projects.no_users_assigned')) !!}
+                        </div>
+                    `;
             }
 
             allUsers.forEach(user => {
@@ -180,19 +183,19 @@
                     const card = document.createElement('div');
                     card.className = 'flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-xl hover:border-red-500/30 transition-all group';
                     card.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs capitalize">
-                                ${user.username.charAt(0)}
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs capitalize">
+                                    ${user.username.charAt(0)}
+                                </div>
+                                <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
                             </div>
-                            <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
-                        </div>
-                        <button type="button" onclick="removeUserAccess('${user.id}', \`${user.username}\`)" 
-                                class="p-2 text-p-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    `;
+                            <button type="button" onclick="removeUserAccess('${user.id}', \`${user.username}\`)" 
+                                    class="p-2 text-p-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        `;
                     assignedContainer.appendChild(card);
 
                     // Add hidden input for form submission
@@ -209,14 +212,14 @@
                         card.className = 'flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-xl hover:border-primary/50 transition-all group cursor-pointer';
                         card.onclick = () => assignUser(user.id);
                         card.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs capitalize">
-                                    ${user.username.charAt(0)}
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs capitalize">
+                                        ${user.username.charAt(0)}
+                                    </div>
+                                    <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
                                 </div>
-                                <span class="text-sm font-bold text-p-title capitalize">${user.username}</span>
-                            </div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">{!! addslashes(\App\Core\Lang::get('common.add')) !!} +</span>
-                        `;
+                                <span class="text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">{!! addslashes(\App\Core\Lang::get('common.add')) !!} +</span>
+                            `;
                         searchResultsContainer.appendChild(card);
                     }
                 }

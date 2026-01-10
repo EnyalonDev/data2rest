@@ -51,3 +51,7 @@ yarn-error.log*
 # Documentation and Private Assets
 /docs/API_GUIDE.md
 /private_docs/
+
+# Agent Workflows
+.agent/
+/data/cache/

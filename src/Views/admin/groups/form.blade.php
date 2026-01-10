@@ -13,6 +13,7 @@
 
     <section class="max-w-2xl mx-auto">
         <form action="{{ $baseUrl }}admin/groups/save" method="POST" class="glass-card space-y-8">
+            {!! $csrf_field !!}
             <input type="hidden" name="id" value="{{ $group['id'] ?? '' }}">
 
             <div>

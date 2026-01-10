@@ -46,6 +46,8 @@ class BaseController
         $data['baseUrl'] = Auth::getBaseUrl();
         $data['flash'] = Auth::getFlashMsg();
         $data['lang'] = Lang::current();
+        $data['csrf_token'] = Csrf::getToken();
+        $data['csrf_field'] = Csrf::field();
 
         // Normalize path (convert slashes to dots for BladeOne if needed, 
         // but BladeOne accepts both. Dots are standard.)
@@ -146,6 +148,27 @@ class BaseController
 
         $projectId = Auth::getActiveProject();
         return $projectId ? 'p' . $projectId : 'global';
+    }
+
+    /**
+     * Manually verify CSRF token (Middleware Logic).
+     * Note: This is primarily handled in Router.php, but exposed here for manual checks.
+     */
+    protected function verifyCsrf()
+    {
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        // Skip API
+        if (strpos($uri, '/api/') === 0) {
+            return true; 
+        }
+
+        // Verify Token
+        $token = $_POST['_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        if (!Csrf::verify($token)) {
+            http_response_code(403);
+            die('CSRF Security Error: Invalid or missing token.');
+        }
+        return true;
     }
 }
 

@@ -18,11 +18,12 @@
                         {{ \App\Core\Lang::get('databases.new_node') }}
                     </h2>
                     <form action="{{ $baseUrl }}admin/databases/create" method="POST" class="space-y-4">
+                        {!! $csrf_field !!}
                         <div class="flex flex-col gap-2">
                             <label
                                 class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.node_name') }}</label>
                             <input type="text" name="name" placeholder="{{ \App\Core\Lang::get('databases.node_placeholder') }}"
-                                required class="input-glass w-full">
+                                required class="form-input w-full">
                         </div>
                         <button type="submit"
                             class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">{{ \App\Core\Lang::get('databases.create_node') }}</button>
@@ -39,16 +40,16 @@
                     </h2>
                     <form action="{{ $baseUrl }}admin/databases/import" method="POST" enctype="multipart/form-data"
                         class="space-y-4">
+                        {!! $csrf_field !!}
                         <div class="flex flex-col gap-2">
                             <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">Nombre del
                                 Nodo</label>
-                            <input type="text" name="name" placeholder="Ej: Mi DB Importada" required
-                                class="input-glass w-full">
+                            <input type="text" name="name" placeholder="Ej: Mi DB Importada" required class="form-input w-full">
                         </div>
                         <div class="flex flex-col gap-2">
                             <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">Archivo
                                 .sql</label>
-                            <input type="file" name="sql_file" accept=".sql" required class="input-glass w-full text-xs">
+                            <input type="file" name="sql_file" accept=".sql" required class="form-input w-full text-xs">
                         </div>
                         <button type="submit" class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">Crear
                             desde SQL</button>

@@ -57,6 +57,18 @@ class Router
             $uri = '/';
         $uri = '/' . trim($uri, '/');
 
+        // CSRF Protection
+        if (in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'])) {
+            // Exclude API routes from CSRF check (they use API Keys)
+            if (strpos($uri, '/api/') !== 0) {
+                $token = $_POST['_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+                if (!\App\Core\Csrf::verify($token)) {
+                    http_response_code(403);
+                    die('CSRF Security Error: Invalid or missing token. Please refresh the page and try again.');
+                }
+            }
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] === $method) {
                 // Convert route path to regex (e.g., {id} becomes ([^/]+))

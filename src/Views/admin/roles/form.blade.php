@@ -11,6 +11,7 @@
     </header>
 
     <form action="{{ $baseUrl }}admin/roles/save" method="POST" class="space-y-10">
+        {!! $csrf_field !!}
         <input type="hidden" name="id" value="{{ $role['id'] ?? '' }}">
 
         <section class="glass-card">

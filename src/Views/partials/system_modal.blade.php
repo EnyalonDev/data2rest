@@ -95,11 +95,13 @@
         } else if (options.type === 'confirm') {
             icon.innerText = '🛡️';
             icon.className = 'w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20';
-            confirmBtn.classList.remove('hidden');
-            confirmBtn.onclick = () => {
-                if (options.onConfirm) options.onConfirm();
-                if (!options.stayOpen) closeModal();
-            };
+        } else if (options.type === 'success') {
+            icon.innerText = '✅';
+            icon.className = 'w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
+        } else {
+            // Default Info
+            icon.innerText = 'ℹ️';
+            icon.className = 'w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl bg-blue-500/10 text-blue-500 border border-blue-500/20';
         }
 
         modal.classList.remove('hidden');
@@ -123,17 +125,17 @@
         }, 300);
     }
 
-    // Auto-show flash message if type is modal
+    // Auto-show flash message for ALL types
     @php
     $fm = \App\Core\Auth::getFlashMsg();
     @endphp
-    @if($fm && $fm['type'] === 'modal')
+    @if($fm)
         document.addEventListener('DOMContentLoaded', () => {
             showModal({
-                title: 'Security Override',
+                title: '{{ $fm['type'] === 'success' ? 'Operación Exitosa' : ($fm['type'] === 'error' ? 'Error de Sistema' : 'Notificación') }}',
                 message: '{!! addslashes($fm['text']) !!}',
-                type: 'error',
-                typeLabel: 'ACCESS POLICY VIOLATION'
+                type: '{{ $fm['type'] }}',
+                typeLabel: '{{ strtoupper($fm['type']) }}'
             });
         });
     @endif

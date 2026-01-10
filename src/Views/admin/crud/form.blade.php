@@ -15,6 +15,7 @@
 
 <section class="form-container">
     <form action="{{ $baseUrl }}admin/crud/save" method="POST" id="crud-form" enctype="multipart/form-data" class="w-full">
+        {!! $csrf_field !!}
         <input type="hidden" name="db_id" value="{{ $ctx['db_id'] }}">
         <input type="hidden" name="table" value="{{ $ctx['table'] }}">
         <input type="hidden" name="id" value="{{ $record['id'] ?? '' }}">
@@ -656,6 +657,7 @@
         const formData = new FormData();
         formData.append('file', file);
         formData.append('db_id', '{{ $ctx['db_id'] }}');
+        formData.append('_token', '{{ $csrf_token }}');
 
         const status = document.getElementById('gallery-status');
         status.innerText = 'Uploading: ' + file.name + '...';

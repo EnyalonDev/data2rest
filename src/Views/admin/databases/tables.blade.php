@@ -45,6 +45,7 @@
                     {{ \App\Core\Lang::get('tables.init_table') }}
                 </h2>
                 <form action="{{ $baseUrl }}admin/databases/table/create" method="POST" class="flex gap-2">
+                    {!! $csrf_field !!}
                     <input type="hidden" name="db_id" value="{{ $database['id'] }}">
                     <input type="text" name="table_name" placeholder="{{ \App\Core\Lang::get('tables.table_placeholder') }}"
                         required class="form-input !py-2 !px-3 text-sm">

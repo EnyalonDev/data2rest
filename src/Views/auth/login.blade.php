@@ -3,7 +3,7 @@
 @section('title', 'Login - Data2Rest')
 
 @section('content')
-    <div class="w-full max-w-md animate-in fade-in slide-in-from-bottom-10 duration-1000">
+    <div class="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-10 duration-1000">
         <div class="text-center mb-10">
             <div class="relative inline-block mb-6">
                 <div class="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
@@ -26,6 +26,7 @@
             @endif
 
             <form action="{{ $baseUrl }}login" method="POST" class="space-y-6">
+                {!! $csrf_field !!}
                 <div class="space-y-2">
                     <label class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] ml-1">Universal
                         Identifier</label>

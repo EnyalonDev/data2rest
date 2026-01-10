@@ -11,6 +11,7 @@
     </header>
 
     <form action="{{ $baseUrl }}admin/users/save" method="POST" class="space-y-8 max-w-4xl mx-auto">
+        {!! $csrf_field !!}
         <input type="hidden" name="id" value="{{ $user['id'] ?? '' }}">
 
         <section class="glass-card space-y-6">

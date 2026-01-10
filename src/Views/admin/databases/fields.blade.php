@@ -22,6 +22,7 @@
             @foreach ($configFields as $field)
                 <form action="{{ $baseUrl }}admin/databases/fields/update" method="POST"
                     class="bg-white/[0.02] border border-glass-border rounded-2xl p-6 mb-6 transition-all hover:bg-p-bg/50 dark:hover:bg-white/[0.04] hover:border-primary/20">
+                    {!! $csrf_field !!}
                     <input type="hidden" name="config_id" value="{{ $field['id'] }}">
 
                     <div
@@ -138,6 +139,7 @@
                 {{ \App\Core\Lang::get('fields.inject') }}
             </h3>
             <form action="{{ $baseUrl }}admin/databases/fields/add" method="POST" class="space-y-6">
+                {!! $csrf_field !!}
                 <input type="hidden" name="db_id" value="{{ $database['id'] }}">
                 <input type="hidden" name="table_name" value="{{ $table_name }}">
 

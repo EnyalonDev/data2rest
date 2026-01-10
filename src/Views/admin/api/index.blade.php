@@ -5,9 +5,9 @@
 @section('styles')
     <style type="text/tailwindcss">
         .input-dark {
-            @apply bg-black/40 border-2 border-glass-border rounded-xl px-4 py-2 text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-        }
-    </style>
+                @apply bg-black/40 border-2 border-glass-border rounded-xl px-4 py-2 text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+            }
+        </style>
 @endsection
 
 @section('content')
@@ -31,6 +31,7 @@
             </div>
 
             <form action="{{ $baseUrl }}admin/api/keys/create" method="POST" class="mb-8 flex gap-2">
+                {!! $csrf_field !!}
                 <input type="text" name="name" placeholder="{{ \App\Core\Lang::get('api_control.placeholder') }}" required
                     class="input-dark flex-1">
                 <button type="submit" class="btn-primary">{{ \App\Core\Lang::get('api_control.generate') }}</button>
