@@ -113,7 +113,7 @@
         function confirmDeleteTable(table) {
             showModal({
                 title: '{!! addslashes(\App\Core\Lang::get('tables.delete_confirm_title')) !!}',
-                message: `{!! addslashes(\App\Core\Lang::get('tables.delete_confirm_msg')) !!}`.replace(':table', table),
+                message: '{!! addslashes(\App\Core\Lang::get('tables.delete_confirm_msg')) !!}'.replace(':table', table),
                 type: 'confirm',
                 typeLabel: '{!! addslashes(\App\Core\Lang::get('tables.delete_confirm_btn')) !!}',
                 onConfirm: () => {
