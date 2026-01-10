@@ -59,6 +59,21 @@ class CrudController extends BaseController
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
+        // --- PATH SELF-HEALING ---
+        // Fix issues where absolute paths from local dev don't match server paths
+        if ($database && !file_exists($database['path'])) {
+            $filename = basename($database['path']);
+            $localPath = Config::get('db_storage_path') . $filename;
+
+            if (file_exists($localPath)) {
+                // Found it locally! Update DB to fix permanently
+                $database['path'] = realpath($localPath);
+                $upd = $db->prepare("UPDATE databases SET path = ? WHERE id = ?");
+                $upd->execute([$database['path'], $db_id]);
+            }
+        }
+        // -------------------------
+
         if (!$database) {
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
             exit;
