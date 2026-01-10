@@ -282,22 +282,31 @@
 <!-- Media Modal -->
 <div id="mediaModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xl transition-all">
     <div class="glass-card w-full h-[90vh] flex flex-col shadow-2xl ring-1 ring-white/10 relative">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-white/5 pb-6">
-            <div>
-                <h2 class="text-3xl font-black text-p-title italic tracking-tighter">
-                    {{ \App\Core\Lang::get('media.explorer') }}
-                </h2>
-                <p class="text-[10px] text-p-muted font-bold uppercase tracking-[0.3em] mt-1">
-                    {{ \App\Core\Lang::get('media.system') }}
-                </p>
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6 mb-4 lg:mb-8 border-b border-white/5 pb-4 lg:pb-6">
+            <div class="flex items-center justify-between w-full lg:w-auto">
+                <div>
+                    <h2 class="text-2xl lg:text-3xl font-black text-p-title italic tracking-tighter">
+                        {{ \App\Core\Lang::get('media.explorer') }}
+                    </h2>
+                    <p class="text-[9px] lg:text-[10px] text-p-muted font-bold uppercase tracking-[0.3em] mt-1 hidden xs:block">
+                        {{ \App\Core\Lang::get('media.system') }}
+                    </p>
+                </div>
+                <!-- Mobile Close Button -->
+                <button onclick="closeMediaGallery()"
+                    class="lg:hidden text-p-muted hover:text-p-title transition-colors bg-white/5 p-2 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
             
-            <div class="flex items-center gap-3 flex-1 max-w-2xl">
+            <div class="flex items-center gap-2 lg:gap-3 w-full lg:flex-1 lg:max-w-2xl">
                 <!-- Search Input -->
                 <div class="relative flex-1">
                     <input type="text" id="media-search" placeholder="{{ \App\Core\Lang::get('media.search') }}"
                         oninput="handleSearch(this.value)" 
-                        class="w-full pl-10 pr-4 py-2.5 bg-p-input border border-glass-border rounded-xl text-xs text-p-title placeholder:text-p-muted transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/20">
+                        class="w-full pl-9 pr-4 py-2 bg-p-input border border-glass-border rounded-xl text-xs text-p-title placeholder:text-p-muted transition-all focus:border-primary/50">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-p-muted">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -305,39 +314,51 @@
                     </span>
                 </div>
                 
-                <!-- Type Filters in Header -->
-                <div class="flex bg-black/40 p-1 rounded-xl border border-glass-border">
-                    <button onclick="setTypeFilter('all')" id="header-type-filter-all" class="header-type-filter-btn px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all bg-primary/20 text-primary">
+                <!-- Type Filters (Hidden icons on very small) -->
+                <div class="flex bg-black/40 p-1 rounded-xl border border-glass-border shrink-0">
+                    <button onclick="setTypeFilter('all')" id="header-type-filter-all" class="header-type-filter-btn px-2 lg:px-3 py-1.5 rounded-lg text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all bg-primary/20 text-primary">
                         {{ \App\Core\Lang::get('media.all') }}
                     </button>
-                    <button onclick="setTypeFilter('images')" id="header-type-filter-images" class="header-type-filter-btn px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all text-p-muted hover:text-p-title">
-                        {{ \App\Core\Lang::get('media.only_images') }}
+                    <button onclick="setTypeFilter('images')" id="header-type-filter-images" class="header-type-filter-btn px-2 lg:px-3 py-1.5 rounded-lg text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all text-p-muted hover:text-p-title">
+                        <span class="hidden sm:inline">{{ \App\Core\Lang::get('media.only_images') }}</span>
+                        <span class="sm:hidden">IMG</span>
                     </button>
-                    <button onclick="setTypeFilter('files')" id="header-type-filter-files" class="header-type-filter-btn px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all text-p-muted hover:text-p-title">
-                        {{ \App\Core\Lang::get('media.only_files') }}
+                    <button onclick="setTypeFilter('files')" id="header-type-filter-files" class="header-type-filter-btn px-2 lg:px-3 py-1.5 rounded-lg text-[8px] lg:text-[9px] font-black uppercase tracking-widest transition-all text-p-muted hover:text-p-title">
+                        <span class="hidden sm:inline">{{ \App\Core\Lang::get('media.only_files') }}</span>
+                        <span class="sm:hidden">DOC</span>
                     </button>
                 </div>
 
-                <!-- New Folder Button -->
-                <button onclick="promptCreateFolder()" class="p-2.5 bg-emerald-500/10 border border-emerald-200/20 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all group" title="{{ \App\Core\Lang::get('media.new_folder') }}">
-                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
-                    </svg>
-                </button>
-
+                <!-- Desktop Close Button -->
                 <button onclick="closeMediaGallery()"
-                    class="text-p-muted hover:text-p-title transition-colors bg-white/5 p-2 rounded-xl">
+                    class="hidden lg:block text-p-muted hover:text-p-title transition-colors bg-white/5 p-2 rounded-xl">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
         </div>
 
-        <div class="flex-1 flex gap-8 overflow-hidden">
+        <div class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-8 overflow-hidden">
+            <!-- Mobile Folder Button (Floating or prominent) -->
+            <div class="flex lg:hidden gap-2">
+                <button onclick="promptCreateFolder()" class="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500/10 border border-emerald-200/20 text-emerald-400 rounded-xl font-black uppercase tracking-widest text-[10px]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+                    </svg>
+                    {{ \App\Core\Lang::get('media.new_folder') }}
+                </button>
+                <label class="flex-1 flex items-center justify-center gap-2 py-3 bg-primary/10 border border-primary/20 text-primary rounded-xl font-black uppercase tracking-widest text-[10px] cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                    {{ \App\Core\Lang::get('media.upload') }}
+                    <input type="file" class="hidden" onchange="handleDirectUpload(this.files[0])" accept="image/*,video/*,application/pdf,.zip,.rar,.doc,.docx,.txt">
+                </label>
+            </div>
+
             <!-- Sidebar Filters -->
-            <aside class="w-64 flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar border-r border-white/5">
+            <aside class="hidden lg:flex w-64 flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar border-r border-white/5">
                 <!-- Drop to Upload Button/Zone -->
                 <div class="mb-4">
                     <label
@@ -412,14 +433,14 @@
             </div>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-glass-border flex justify-between items-center">
+        <div class="mt-4 lg:mt-8 pt-4 lg:pt-6 border-t border-glass-border flex flex-col sm:flex-row justify-between items-center gap-4">
             <span id="gallery-status"
-                class="text-[10px] font-bold text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('media.scanning') }}</span>
-            <div class="flex gap-4">
+                class="text-[9px] lg:text-[10px] font-bold text-p-muted uppercase tracking-widest order-2 sm:order-1">{{ \App\Core\Lang::get('media.scanning') }}</span>
+            <div class="flex gap-2 lg:gap-4 w-full sm:w-auto order-1 sm:order-2">
                 <button onclick="closeMediaGallery()"
-                    class="btn-outline">{{ \App\Core\Lang::get('media.abort_selection') }}</button>
+                    class="btn-outline flex-1 sm:flex-none !py-2.5 !px-4 text-[9px] lg:text-[10px]">{{ \App\Core\Lang::get('media.abort_selection') }}</button>
                 <button id="gallery-done-btn" onclick="closeMediaGallery()"
-                    class="btn-primary !py-2 hidden">{{ \App\Core\Lang::get('common.commit') }}</button>
+                    class="btn-primary flex-1 sm:flex-none !py-2.5 !px-8 text-[9px] lg:text-[10px] hidden">{{ \App\Core\Lang::get('common.commit') }}</button>
             </div>
         </div>
     </div>
