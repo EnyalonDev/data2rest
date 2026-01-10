@@ -145,23 +145,42 @@ class DatabaseController extends BaseController
      */
     public function viewTables()
     {
-        $id = $_GET['id'] ?? null;
-        Auth::requirePermission('module:databases.view_tables');
-
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
-        $stmt->execute([$id]);
-        $database = $stmt->fetch();
-
-        if (!$database) {
-            Auth::setFlashError("Database configuration not found.");
-            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
-            exit;
-        }
-
         try {
+            $id = $_GET['id'] ?? null;
+            Auth::requirePermission('module:databases.view_tables');
+
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+            $stmt->execute([$id]);
+            $database = $stmt->fetch();
+
+            if (!$database) {
+                Auth::setFlashError("Database configuration not found.");
+                header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+                exit;
+            }
+
+            // --- PATH SELF-HEALING (Replicated from CrudController) ---
+            if (!file_exists($database['path'])) {
+                $filename = basename($database['path']);
+                // Direct file check in data dir
+                $localPath = realpath(__DIR__ . '/../../data/') . '/' . $filename;
+
+                if (file_exists($localPath)) {
+                    $database['path'] = $localPath;
+                    // Update DB
+                    $upd = $db->prepare("UPDATE databases SET path = ? WHERE id = ?");
+                    $upd->execute([$localPath, $id]);
+                } else {
+                    throw new \Exception("Database file not found at: {$database['path']} OR $localPath");
+                }
+            }
+            // -----------------------------------------------------------
+
+            // Create connection to Target DB
             $targetDb = new PDO('sqlite:' . $database['path']);
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
             $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
             $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -174,20 +193,20 @@ class DatabaseController extends BaseController
                 }
                 $tables[$tableName] = $count;
             }
-        } catch (\PDOException $e) {
-            Auth::setFlashError("Error connecting to database node: " . $e->getMessage());
-            $tables = [];
-        }
 
-        $this->view('admin/databases/tables', [
-            'title' => 'Tables - ' . ($database['name'] ?? 'DB'),
-            'tables' => $tables,
-            'database' => $database,
-            'breadcrumbs' => [
-                \App\Core\Lang::get('databases.title') => 'admin/databases',
-                ($database['name'] ?? 'Database') => null
-            ]
-        ]);
+            $this->view('admin/databases/tables', [
+                'title' => 'Tables - ' . ($database['name'] ?? 'DB'),
+                'tables' => $tables,
+                'database' => $database,
+                'breadcrumbs' => [
+                    \App\Core\Lang::get('databases.title') => 'admin/databases',
+                    ($database['name'] ?? 'Database') => null
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            die("<h1>Fatal Error in ViewTables</h1><pre>" . $e->getMessage() . "\n" . $e->getTraceAsString() . "</pre>");
+        }
     }
 
     /**
