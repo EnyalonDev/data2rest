@@ -80,6 +80,17 @@ class CrudController extends BaseController
             exit;
         }
 
+        // Check if table is hidden for non-admins
+        if (!Auth::isAdmin()) {
+            $config = json_decode($database['config'] ?? '{}', true);
+            $hiddenTables = $config['hidden_tables'] ?? [];
+            if (in_array($table, $hiddenTables)) {
+                Auth::setFlashError("Acceso Denegado: Esta tabla ha sido ocultada por el administrador.", 'modal');
+                header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
+                exit;
+            }
+        }
+
         $stmt = $db->prepare("SELECT * FROM fields_config WHERE db_id = ? AND table_name = ? ORDER BY id ASC");
         $stmt->execute([$db_id, $table]);
         $fields = $stmt->fetchAll();

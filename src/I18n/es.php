@@ -123,6 +123,7 @@ return [
                 'node_placeholder' => 'Ej: Mi Inventario de Productos',
                 'create_node' => 'Crear Base de Datos +',
                 'interface' => 'Interfaz',
+                'config_visibility' => 'Configurar Visibilidad',
                 'delete_confirm_title' => 'Eliminar Base de Datos',
                 'delete_confirm_msg' => '¿Estás seguro de que deseas eliminar la base de datos ":name"? Esta acción borrará todas sus tablas y registros permanentemente.',
                 'delete_confirm_btn' => 'SÍ, ELIMINAR TODO',

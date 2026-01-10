@@ -57,6 +57,8 @@ $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/databases', 'Database\\DatabaseController@index');
 $router->add('POST', '/admin/databases/create', 'Database\\DatabaseController@create');
 $router->add('GET', '/admin/databases/delete', 'Database\\DatabaseController@delete');
+$router->add('GET', '/admin/databases/edit', 'Database\\DatabaseController@edit');
+$router->add('POST', '/admin/databases/config/save', 'Database\\DatabaseController@saveConfig');
 $router->add('GET', '/admin/databases/view', 'Database\\DatabaseController@viewTables');
 $router->add('GET', '/admin/databases/sync', 'Database\\DatabaseController@syncDatabase');
 $router->add('POST', '/admin/databases/import', 'Database\\DatabaseController@importSql');

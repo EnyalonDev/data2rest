@@ -144,6 +144,67 @@ class DatabaseController extends BaseController
     }
 
     /**
+     * Shows the configuration form for a database (visibility settings, etc).
+     */
+    public function edit()
+    {
+        Auth::requirePermission('module:databases.edit_db');
+        $id = $_GET['id'] ?? null;
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$id]);
+        $database = $stmt->fetch();
+
+        if (!$database) {
+            Auth::setFlashError("Database not found.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
+
+        // Get actual tables from the SQLite file
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (\Exception $e) {
+            $tables = [];
+        }
+
+        $config = json_decode($database['config'] ?? '{}', true);
+
+        $this->view('admin/databases/edit', [
+            'database' => $database,
+            'tables' => $tables,
+            'config' => $config,
+            'breadcrumbs' => [
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
+                'Configurar Visibilidad' => null
+            ]
+        ]);
+    }
+
+    /**
+     * Saves the database configuration (hidden tables).
+     */
+    public function saveConfig()
+    {
+        Auth::requirePermission('module:databases.edit_db');
+        $id = $_POST['id'] ?? null;
+        $hiddenTables = $_POST['hidden_tables'] ?? [];
+
+        $config = ['hidden_tables' => $hiddenTables];
+        $configJson = json_encode($config);
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("UPDATE databases SET config = ? WHERE id = ?");
+        $stmt->execute([$configJson, $id]);
+
+        Auth::setFlashError("Configuración guardada correctamente.", 'success');
+        header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+        exit;
+    }
+
+    /**
      * Lists all tables within a specific database.
      */
     public function viewTables()
@@ -187,8 +248,17 @@ class DatabaseController extends BaseController
             $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
             $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+            // Filter hidden tables for non-admins
+            $config = json_decode($database['config'] ?? '{}', true);
+            $hiddenTables = $config['hidden_tables'] ?? [];
+
             $tables = [];
             foreach ($tableNames as $tableName) {
+                // If not Admin, check if table is hidden
+                if (!Auth::isAdmin() && in_array($tableName, $hiddenTables)) {
+                    continue;
+                }
+
                 try {
                     $count = $targetDb->query("SELECT COUNT(*) FROM $tableName")->fetchColumn();
                 } catch (\Exception $e) {
@@ -201,6 +271,7 @@ class DatabaseController extends BaseController
                 'title' => 'Tables - ' . ($database['name'] ?? 'DB'),
                 'tables' => $tables,
                 'database' => $database,
+                'hidden_tables' => $hiddenTables,
                 'breadcrumbs' => [
                     \App\Core\Lang::get('databases.title') => 'admin/databases',
                     ($database['name'] ?? 'Database') => null
