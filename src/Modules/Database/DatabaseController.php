@@ -332,8 +332,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
             $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
 
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
-        } catch (\PDOException $e) {
-            die("Error creating table: " . $e->getMessage());
+            exit;
+        } catch (\Throwable $e) {
+            Auth::setFlashError("Error creando tabla: " . $e->getMessage());
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
+            exit;
         }
     }
     /**
@@ -366,13 +369,13 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
             // Update DB last edit
             $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
 
-            Auth::setFlashError("Tabla creada exitosamente mediante SQL.", 'success');
+            Auth::setFlashError("Tabla creada exitosamente mediante SQL. Sincronizando estructura...", 'success');
             Logger::log('CREATE_TABLE_SQL', ['database_id' => $db_id], $db_id);
 
             // Redirect to sync to ensure all fields are registered and audit columns injected
-            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $db_id);
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $db_id . '&from_sql=1');
             exit;
-        } catch (\PDOException $e) {
+        } catch (\Throwable $e) {
             Auth::setFlashError("Error ejecutando SQL: " . $e->getMessage());
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
             exit;
@@ -681,10 +684,12 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
                     }
                 }
             }
-            Auth::setFlashError(
-                "Audit completed: $syncedTables tables synchronized. Missing columns 'fecha_de_creacion/edicion' were automatically injected for consistency.",
-                'success'
-            );
+            if (empty($_GET['from_sql'])) {
+                Auth::setFlashError(
+                    "Audit completed: $syncedTables tables synchronized. Missing columns 'fecha_de_creacion/edicion' were automatically injected for consistency.",
+                    'success'
+                );
+            }
         } catch (\PDOException $e) {
             Auth::setFlashError("Audit Signal Error: " . $e->getMessage());
         }

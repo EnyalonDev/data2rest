@@ -562,4 +562,19 @@ return [
                 'desc_placeholder' => 'Descripción opcional de este grupo...',
                 'permissions' => 'Permisos del Grupo',
         ],
+        'profile' => [
+                'title' => 'Mi Perfil',
+                'subtitle' => 'Gestiona tu identidad pública e información de contacto',
+                'personal_info' => 'Información Personal',
+                'public_name' => 'Nombre Público',
+                'email' => 'Correo Electrónico',
+                'phone' => 'Teléfono',
+                'address' => 'Dirección',
+                'security' => 'Seguridad',
+                'new_password' => 'Nueva Contraseña',
+                'leave_blank' => 'Dejar en blanco para mantener actual',
+                'password_help' => 'Usa al menos 8 caracteres con números y letras.',
+                'save_changes' => 'Guardar Cambios',
+                'member_since' => 'Miembro desde'
+        ],
 ];

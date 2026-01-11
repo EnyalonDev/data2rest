@@ -304,9 +304,9 @@
 
                 @if(\App\Core\Auth::check())
                     <span class="text-sm text-p-muted">{{ \App\Core\Lang::get('common.welcome') }},
-                        <b class="text-p-title">
-                            {{ $_SESSION['username'] }}
-                        </b></span>
+                        <a href="{{ $baseUrl }}admin/profile" class="text-p-title hover:text-primary transition-colors border-b border-dashed border-primary/30 hover:border-primary">
+                            <b>{{ $_SESSION['username'] }}</b>
+                        </a></span>
                     <a href="{{ $baseUrl }}logout"
                         class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-red-500/20">{{ \App\Core\Lang::get('common.logout') }}</a>
                 @endif

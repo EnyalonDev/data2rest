@@ -552,4 +552,19 @@ return [
                 'desc_placeholder' => 'Optional description of this group...',
                 'permissions' => 'Group Permissions',
         ],
+        'profile' => [
+                'title' => 'My Profile',
+                'subtitle' => 'Manage your public identity and contact information',
+                'personal_info' => 'Personal Information',
+                'public_name' => 'Public Name',
+                'email' => 'Email Address',
+                'phone' => 'Phone',
+                'address' => 'Address',
+                'security' => 'Security',
+                'new_password' => 'New Password',
+                'leave_blank' => 'Leave blank to keep current',
+                'password_help' => 'Use at least 8 characters with numbers and letters.',
+                'save_changes' => 'Save Changes',
+                'member_since' => 'Member since'
+        ],
 ];

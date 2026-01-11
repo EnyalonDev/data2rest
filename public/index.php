@@ -146,6 +146,8 @@ $router->add('GET', '/admin/api/keys/delete', 'Api\\ApiDocsController@deleteKey'
 $router->add('GET', '/admin/api/docs', 'Api\\ApiDocsController@docs');
 
 // --- Module: User & Role Management ---
+$router->add('GET', '/admin/profile', 'Auth\\ProfileController@index');
+$router->add('POST', '/admin/profile/save', 'Auth\\ProfileController@save');
 $router->add('GET', '/admin/users', 'Auth\\UserController@index');
 $router->add('GET', '/admin/users/new', 'Auth\\UserController@form');
 $router->add('GET', '/admin/users/edit', 'Auth\\UserController@form');
