@@ -101,7 +101,7 @@ class ProjectController extends BaseController
         $description = $_POST['description'] ?? '';
         $storageQuota = $_POST['storage_quota'] ?? 300;
         $planType = $_POST['plan_type'] ?? 'monthly';
-        $startDate = $_POST['start_date'] ?? date('Y-m-d H:i:s');
+        $startDate = $_POST['start_date'] ?? Auth::getCurrentTime();
 
         if (empty($name)) {
             Auth::setFlashError("Project name is required.");

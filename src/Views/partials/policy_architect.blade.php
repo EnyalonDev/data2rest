@@ -15,6 +15,8 @@
                     'create_table' => \App\Core\Lang::get('roles_form.perm_create_table'),
                     'edit_table' => \App\Core\Lang::get('roles_form.perm_fields_config'),
                     'drop_table' => \App\Core\Lang::get('roles_form.perm_drop_table'),
+                    'export_data' => \App\Core\Lang::get('roles_form.perm_export_data'),
+                    'import_data' => \App\Core\Lang::get('roles_form.perm_import_data'),
                     'crud_read' => \App\Core\Lang::get('roles_form.perm_crud_read'),
                     'crud_create' => \App\Core\Lang::get('roles_form.perm_crud_create'),
                     'crud_update' => \App\Core\Lang::get('roles_form.perm_crud_update'),

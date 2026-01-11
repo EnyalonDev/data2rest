@@ -55,6 +55,12 @@
                                         class="form-input" data-type="{{ $field['data_type'] }}">
                                     @break
 
+                                @case('number')
+                                    <input type="number" name="{{ $field['field_name'] }}"
+                                        value="{{ $val }}" {{ $field['is_required'] ? 'required' : '' }}
+                                        class="form-input" data-type="{{ $field['data_type'] }}">
+                                    @break
+
                                 @case('password')
                                     <div class="relative group">
                                         <input type="password" name="{{ $field['field_name'] }}" id="pass-{{ $field['field_name'] }}"

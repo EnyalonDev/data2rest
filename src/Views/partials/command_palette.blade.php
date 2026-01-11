@@ -8,8 +8,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input type="text" id="palette-search"
-                placeholder="Buscar en todo el sistema... (Tablas, registros, bases de datos)"
+            <input type="text" id="palette-search" placeholder="{{ \App\Core\Lang::get('common.search_placeholder') }}"
                 class="w-full bg-transparent p-6 pl-16 text-lg font-medium text-p-title outline-none placeholder:text-p-muted border-b border-white/5"
                 autocomplete="off">
             <div id="palette-loader" class="absolute right-6 top-6 hidden">
@@ -23,10 +22,11 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                         d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p class="text-sm font-black uppercase tracking-widest italic">Escribe para empezar a buscar</p>
+                <p class="text-sm font-black uppercase tracking-widest italic">
+                    {{ \App\Core\Lang::get('command_palette.placeholder') }}</p>
                 <div class="flex gap-2 text-[10px]">
                     <span class="px-2 py-1 bg-white/5 rounded-lg border border-white/10 uppercase tracking-widest">Esc
-                        para cerrar</span>
+                        {{ \App\Core\Lang::get('command_palette.close') }}</span>
                 </div>
             </div>
         </div>
@@ -34,8 +34,8 @@
         <div
             class="p-4 bg-white/[0.02] border-t border-white/5 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-p-muted">
             <div class="flex gap-4">
-                <span>↑↓ para navegar</span>
-                <span>Enter para ir</span>
+                <span>{{ \App\Core\Lang::get('command_palette.navigate') }}</span>
+                <span>{{ \App\Core\Lang::get('command_palette.go') }}</span>
             </div>
             <div class="text-primary italic">Command Palette</div>
         </div>
@@ -77,9 +77,9 @@
                 <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p class="text-sm font-black uppercase tracking-widest italic">Escribe para empezar a buscar</p>
+                <p class="text-sm font-black uppercase tracking-widest italic">${'{!! addslashes(\App\Core\Lang::get('command_palette.placeholder')) !!}'}</p>
                 <div class="flex gap-2 text-[10px]">
-                    <span class="px-2 py-1 bg-white/5 rounded-lg border border-white/10 uppercase tracking-widest">Esc para cerrar</span>
+                    <span class="px-2 py-1 bg-white/5 rounded-lg border border-white/10 uppercase tracking-widest">${'{!! addslashes(\App\Core\Lang::get('command_palette.close')) !!}'}</span>
                 </div>
             </div>`;
     }
@@ -129,7 +129,7 @@
             const data = await res.json();
             renderResults(data.results, q);
         } catch (err) {
-            results.innerHTML = '<div class="p-8 text-center text-red-400 font-bold uppercase tracking-widest text-xs">Error al buscar datos</div>';
+            results.innerHTML = `<div class="p-8 text-center text-red-400 font-bold uppercase tracking-widest text-xs">${'{!! addslashes(\App\Core\Lang::get('command_palette.error')) !!}'}</div>`;
         } finally {
             loader.classList.add('hidden');
         }
@@ -137,7 +137,8 @@
 
     function renderResults(list, q) {
         if (!list || list.length === 0) {
-            results.innerHTML = `<div class="p-12 text-center text-p-muted italic opacity-50 uppercase tracking-[0.2em] text-xs font-black">No se encontraron resultados para "${q}"</div>`;
+            const noResultsText = "{!! addslashes(\App\Core\Lang::get('command_palette.no_results')) !!}".replace(':q', q);
+            results.innerHTML = `<div class="p-12 text-center text-p-muted italic opacity-50 uppercase tracking-[0.2em] text-xs font-black">${noResultsText}</div>`;
             return;
         }
 

@@ -254,9 +254,9 @@ class RestController extends BaseController
             $this->json(['error' => 'No valid data provided'], 400);
 
         if (!isset($input['fecha_de_creacion']) && in_array('fecha_de_creacion', $validCols))
-            $input['fecha_de_creacion'] = date('Y-m-d H:i:s');
+            $input['fecha_de_creacion'] = Auth::getCurrentTime();
         if (!isset($input['fecha_edicion']) && in_array('fecha_edicion', $validCols))
-            $input['fecha_edicion'] = date('Y-m-d H:i:s');
+            $input['fecha_edicion'] = Auth::getCurrentTime();
 
         $keys = array_map(function ($k) {
             return preg_replace('/[^a-zA-Z0-9_]/', '', $k);
@@ -294,7 +294,7 @@ class RestController extends BaseController
             $this->json(['error' => 'No valid data to update'], 400);
 
         if (in_array('fecha_edicion', $validCols)) {
-            $input['fecha_edicion'] = date('Y-m-d H:i:s');
+            $input['fecha_edicion'] = Auth::getCurrentTime();
         }
 
         $sets = [];

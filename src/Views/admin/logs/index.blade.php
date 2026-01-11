@@ -23,19 +23,23 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-blue-500/50">
             <span class="text-4xl font-black text-p-title mb-2">{{ count($logs) }}</span>
-            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('common.all') }}</span>
+            <span
+                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('common.all') }}</span>
         </div>
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-emerald-500/50">
             <span class="text-4xl font-black text-p-title mb-2">{{ $stats['api_calls'] }}</span>
-            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.api_usage') }}</span>
+            <span
+                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.api_usage') }}</span>
         </div>
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-amber-500/50">
             <span class="text-4xl font-black text-p-title mb-2">{{ $stats['data_changes'] }}</span>
-            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.data_mutations') }}</span>
+            <span
+                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.data_mutations') }}</span>
         </div>
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-purple-500/50">
             <span class="text-4xl font-black text-p-title mb-2">{{ count($stats['top_endpoints']) }}</span>
-            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.active_endpoints') }}</span>
+            <span
+                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.active_endpoints') }}</span>
         </div>
     </div>
 
@@ -44,11 +48,11 @@
         <div class="lg:col-span-2 space-y-8">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] flex items-center gap-3">
-                    <span class="w-8 h-[1px] bg-slate-800"></span> Recent Events
+                    <span class="w-8 h-[1px] bg-slate-800"></span> {{ \App\Core\Lang::get('logs.recent_events') }}
                 </h2>
                 <button onclick="window.location.reload()"
                     class="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-white transition-colors">
-                    Refresh ↻
+                    {{ \App\Core\Lang::get('logs.refresh') }} ↻
                 </button>
             </div>
 
@@ -56,10 +60,14 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-white/5 border-b border-white/10">
-                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.event') }}</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.user') }}</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.details') }}</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.time') }}</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">
+                                {{ \App\Core\Lang::get('dashboard.activity.event') }}</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">
+                                {{ \App\Core\Lang::get('dashboard.activity.user') }}</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">
+                                {{ \App\Core\Lang::get('dashboard.activity.details') }}</th>
+                            <th class="px-6 py-4 text-[10px] font-black text-p-muted uppercase tracking-widest">
+                                {{ \App\Core\Lang::get('dashboard.activity.time') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
@@ -116,8 +124,8 @@
                         @empty
                             <tr>
                                 <td colspan="4" class="px-6 py-20 text-center">
-                                    <p class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em]">No activity
-                                        recorded yet.</p>
+                                    <p class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em]">
+                                        {{ \App\Core\Lang::get('logs.no_activity') }}</p>
                                 </td>
                             </tr>
                         @endforelse
@@ -130,7 +138,7 @@
         <aside class="space-y-12">
             <div>
                 <h2 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-                    <span class="w-8 h-[1px] bg-slate-800"></span> Top API Endpoints
+                    <span class="w-8 h-[1px] bg-slate-800"></span> {{ \App\Core\Lang::get('logs.top_endpoints') }}
                 </h2>
                 <div class="glass-card !p-6 space-y-4">
                     @forelse($stats['top_endpoints'] as $top)
@@ -148,21 +156,24 @@
 
             <div>
                 <h2 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-                    <span class="w-8 h-[1px] bg-slate-800"></span> System Health
+                    <span class="w-8 h-[1px] bg-slate-800"></span> {{ \App\Core\Lang::get('logs.system_health') }}
                 </h2>
                 <div class="glass-card !p-6">
                     <div class="space-y-6">
                         <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">Database Sync</span>
                             <span
-                                class="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 rounded text-[9px] font-black uppercase tracking-widest border border-emerald-500/30">Optimal</span>
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('logs.db_sync') }}</span>
+                            <span
+                                class="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 rounded text-[9px] font-black uppercase tracking-widest border border-emerald-500/30">{{ \App\Core\Lang::get('logs.optimal') }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">Log Retention</span>
+                            <span
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('logs.log_retention') }}</span>
                             <span class="text-[10px] font-black text-p-title">30 Days</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">API Latency</span>
+                            <span
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('logs.api_latency') }}</span>
                             <span class="text-[10px] font-black text-p-title italic">&lt; 15ms</span>
                         </div>
                     </div>

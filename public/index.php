@@ -17,6 +17,31 @@ Config::loadEnv();
 Installer::check();
 Auth::init();
 
+// Apply Time Offset if exists
+try {
+    $db = \App\Core\Database::getInstance()->getConnection();
+    $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'time_offset_total'");
+    $offset = $stmt->fetchColumn();
+    if ($offset !== false) {
+        $offset = (int) $offset;
+        // Convert minutes to a timezone string like +HH:MM or -HH:MM
+        $hours = floor(abs($offset) / 60);
+        $minutes = abs($offset) % 60;
+        $sign = $offset >= 0 ? '+' : '-';
+        $tzString = sprintf('%s%02d:%02d', $sign, $hours, $minutes);
+
+        // We can't easily use date_default_timezone_set with offsets directly in all PHP versions 
+        // without a name, but we can set the default timezone to UTC and then adjust our needs 
+        // or use a generic GMT offset name. Better: just set the environment or use it in a helper.
+        // For now, let's set a global constant for the app to use.
+        define('APP_TIME_OFFSET', $offset);
+    } else {
+        define('APP_TIME_OFFSET', 0);
+    }
+} catch (\Exception $e) {
+    define('APP_TIME_OFFSET', 0);
+}
+
 $router = new Router();
 
 // Handle CORS for all API requests
@@ -48,6 +73,7 @@ $router->add('GET', '/admin/system/info', 'System\\SystemController@info');
 $router->add('POST', '/admin/system/dev-mode', 'System\\SystemController@toggleDevMode');
 $router->add('POST', '/admin/system/clear-cache', 'System\\SystemController@clearCache');
 $router->add('POST', '/admin/system/clear-sessions', 'System\\SystemController@clearSessions');
+$router->add('POST', '/admin/system/time-offset', 'System\\SystemController@updateTimeOffset');
 $router->add('POST', '/admin/system/dismiss-banner', 'System\\SystemController@dismissBanner');
 $router->add('POST', '/admin/system/global-search', 'System\\SystemController@globalSearch');
 
@@ -73,11 +99,24 @@ $router->add('POST', '/admin/databases/fields/update', 'Database\\DatabaseContro
 $router->add('GET', '/admin/demo/load', 'Database\\MaintenanceController@loadDemo');
 $router->add('GET', '/admin/system/reset', 'Database\\MaintenanceController@resetSystem');
 
+// Table-level Import/Export
+$router->add('GET', '/admin/databases/table/export-sql', 'Database\\DatabaseController@exportTableSql');
+$router->add('GET', '/admin/databases/table/export-excel', 'Database\\DatabaseController@exportTableExcel');
+$router->add('GET', '/admin/databases/table/export-csv', 'Database\\DatabaseController@exportTableCsv');
+$router->add('GET', '/admin/databases/table/template-excel', 'Database\\DatabaseController@generateExcelTemplate');
+$router->add('GET', '/admin/databases/table/template-csv', 'Database\\DatabaseController@generateCsvTemplate');
+$router->add('POST', '/admin/databases/table/import-sql', 'Database\\DatabaseController@importTableSql');
+$router->add('POST', '/admin/databases/table/import-sql-text', 'Database\\DatabaseController@importTableSqlText');
+$router->add('POST', '/admin/databases/table/import-excel', 'Database\\DatabaseController@importTableExcel');
+$router->add('POST', '/admin/databases/table/import-csv', 'Database\\DatabaseController@importTableCsv');
+
+
 // --- Dynamic CRUD ---
 $router->add('GET', '/admin/crud/list', 'Database\\CrudController@list');
 $router->add('GET', '/admin/crud/new', 'Database\\CrudController@form');
 $router->add('GET', '/admin/crud/edit', 'Database\\CrudController@form');
 $router->add('POST', '/admin/crud/save', 'Database\\CrudController@save');
+$router->add('POST', '/admin/crud/delete', 'Database\\CrudController@delete');
 $router->add('GET', '/admin/crud/delete', 'Database\\CrudController@delete');
 $router->add('GET', '/admin/crud/export', 'Database\\CrudController@export');
 // --- Module: Media Library ---

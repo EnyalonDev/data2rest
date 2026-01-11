@@ -21,6 +21,15 @@ class SystemController extends BaseController
      */
     public function info()
     {
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'time_offset_total' ");
+        $offset = (int) ($stmt->fetchColumn() ?: 0);
+
+        $now = new \DateTime();
+        if ($offset !== 0) {
+            $now->modify(($offset >= 0 ? '+' : '') . $offset . ' minutes');
+        }
+
         header('Content-Type: application/json');
         echo json_encode([
             'php_version' => PHP_VERSION,
@@ -32,9 +41,36 @@ class SystemController extends BaseController
             'max_input_vars' => ini_get('max_input_vars'),
             'display_errors' => ini_get('display_errors') ? 'ON' : 'OFF',
             'timezone' => date_default_timezone_get(),
+            'server_time' => $now->format('Y-m-d H:i:s'),
+            'time_offset' => $offset,
             'os' => PHP_OS,
             'sqlite_version' => \PDO::class ? (new \PDO('sqlite::memory:'))->query('select sqlite_version()')->fetchColumn() : 'N/A'
         ]);
+        exit;
+    }
+
+    /**
+     * Updates the global time offset in minutes.
+     */
+    public function updateTimeOffset()
+    {
+        Auth::requireAdmin();
+        $hours = (int) ($_POST['hours'] ?? 0);
+        $minutes = (int) ($_POST['minutes'] ?? 0);
+        $totalMinutes = ($hours * 60) + ($minutes >= 0 ? $minutes : 0);
+        if ($hours < 0 && $minutes > 0) {
+            // If someone puts -1 hour and 30 minutes, they probably mean -1:30, which is -90 min.
+            // But if they put -1 and 30 in separate inputs, it's ambiguous.
+            // Let's assume the sign of hours dictates the sign of the whole offset if minutes are positive.
+            $totalMinutes = ($hours * 60) - $minutes;
+        }
+
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $stmt = $db->prepare("REPLACE INTO system_settings (key, value) VALUES ('time_offset_total', ?)");
+        $stmt->execute([$totalMinutes]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'new_offset' => $totalMinutes]);
         exit;
     }
 

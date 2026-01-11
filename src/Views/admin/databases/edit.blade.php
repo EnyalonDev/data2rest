@@ -1,13 +1,13 @@
 @extends('layouts.main')
 
-@section('title', 'Configurar Visibilidad - ' . $database['name'])
+@section('title', \App\Core\Lang::get('visibility.title') . ' - ' . $database['name'])
 
 @section('content')
     <header class="mb-12">
         <h1 class="text-5xl font-black text-p-title italic tracking-tighter uppercase">
             {{ $database['name'] }}
         </h1>
-        <p class="text-p-muted font-medium tracking-tight">Selecciona las tablas que deseas ocultar para usuarios sin permisos de administrador.</p>
+        <p class="text-p-muted font-medium tracking-tight">{{ \App\Core\Lang::get('visibility.subtitle') }}</p>
     </header>
 
     <div class="max-w-4xl">
@@ -22,11 +22,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        Gestión de Visibilidad
+                        {{ \App\Core\Lang::get('visibility.section_title') }}
                     </h2>
-                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">
-                        {{ count($tables) }} Tablas Totales
-                    </span>
+                        {{ \App\Core\Lang::get('visibility.total_tables', ['count' => count($tables)]) }}
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -41,9 +39,9 @@
                                 <div>
                                     <span class="text-sm font-bold text-p-title block">{{ $table }}</span>
                                     @if(in_array($table, $config['hidden_tables'] ?? []))
-                                        <span class="text-[9px] text-red-400 font-black uppercase tracking-widest">Oculta</span>
+                                        <span class="text-[9px] text-red-400 font-black uppercase tracking-widest">{{ \App\Core\Lang::get('visibility.hidden') }}</span>
                                     @else
-                                        <span class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Visible</span>
+                                        <span class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">{{ \App\Core\Lang::get('visibility.visible') }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -57,10 +55,10 @@
 
                 <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row gap-4">
                     <button type="submit" class="btn-primary !py-4 px-12 font-black uppercase tracking-widest text-xs flex-1 sm:flex-none">
-                        Guardar Configuración
+                        {{ \App\Core\Lang::get('visibility.save') }}
                     </button>
                     <a href="{{ $baseUrl }}admin/databases" class="btn-primary !bg-slate-800 !text-slate-300 !py-4 px-12 font-black uppercase tracking-widest text-xs flex-1 sm:flex-none text-center">
-                        Cancelar
+                        {{ \App\Core\Lang::get('common.cancel') }}
                     </a>
                 </div>
 
@@ -69,10 +67,10 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Nota Informativa
+                        {{ \App\Core\Lang::get('visibility.note_title') }}
                     </p>
                     <p class="text-xs text-p-muted mt-2">
-                        Las tablas marcadas como "Ocultas" no aparecerán en la lista de tablas para los usuarios del proyecto. Sin embargo, los Administradores de Sistema siempre tendrán acceso total a todas las tablas.
+                        {{ \App\Core\Lang::get('visibility.note_text') }}
                     </p>
                 </div>
             </div>

@@ -22,6 +22,19 @@ class Auth
     }
 
     /**
+     * Gets the current server time adjusted by the user-defined offset.
+     */
+    public static function getCurrentTime($format = 'Y-m-d H:i:s')
+    {
+        $offset = defined('APP_TIME_OFFSET') ? APP_TIME_OFFSET : 0;
+        $now = new \DateTime();
+        if ($offset !== 0) {
+            $now->modify(($offset >= 0 ? '+' : '') . $offset . ' minutes');
+        }
+        return $now->format($format);
+    }
+
+    /**
      * Attempts to log in a user.
      * 
      * @param string $username

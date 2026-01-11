@@ -62,7 +62,7 @@ class PlanManager
         $stmt->execute([$projectId, $oldPlan, $newPlanType]);
 
         // Re-initialize billing dates
-        $start = $activationDate ?: date('Y-m-d H:i:s');
+        $start = $activationDate ?: Auth::getCurrentTime();
         $next = self::calculateNextBillingDate($start, $newPlanType);
 
         $stmt = $db->prepare("INSERT OR REPLACE INTO project_plans (project_id, plan_type, start_date, next_billing_date, status) 

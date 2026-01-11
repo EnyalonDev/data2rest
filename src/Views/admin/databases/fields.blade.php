@@ -61,7 +61,7 @@
                             <label
                                 class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-3">{{ \App\Core\Lang::get('fields.ui_rep') }}</label>
                             <select name="view_type" class="custom-select w-full" {{ in_array($field['field_name'], ['id', 'fecha_de_creacion', 'fecha_edicion']) ? 'disabled' : '' }}>
-                                @php $types = ['text', 'textarea', 'wysiwyg', 'image', 'gallery', 'file', 'boolean', 'datetime']; @endphp
+                                @php $types = ['text', 'number', 'textarea', 'wysiwyg', 'image', 'gallery', 'file', 'boolean', 'datetime']; @endphp
                                 @foreach($types as $type)
                                     <option value="{{ $type }}" {{ $field['view_type'] == $type ? 'selected' : '' }}>
                                         {{ \App\Core\Lang::get('fields.types.' . $type) }}

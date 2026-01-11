@@ -261,7 +261,7 @@
                             </span>
                             <div class="w-[1px] h-4 bg-glass-border mx-2"></div>
                             <span
-                                class="text-[9px] font-black text-primary uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">Cambiar
+                                class="text-[9px] font-black text-primary uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">{{ \App\Core\Lang::get('common.edit') }}
                                 &rarr;</span>
                         </a>
                     </div>
@@ -276,7 +276,7 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <span
-                        class="text-xs font-medium text-p-muted group-hover:text-p-title transition-colors">Buscar...</span>
+                        class="text-xs font-medium text-p-muted group-hover:text-p-title transition-colors">{{ \App\Core\Lang::get('common.search') }}...</span>
                     <span
                         class="text-[9px] font-black bg-white/5 px-2 py-0.5 rounded border border-white/10 text-p-muted tracking-tighter">⌘K</span>
                 </button>
@@ -338,14 +338,14 @@
                             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             <span class="text-sm font-bold text-p-title uppercase italic">{{ $activeName }}</span>
                         </div>
-                        <span class="text-primary text-[10px] font-black">CAMBIAR &rarr;</span>
+                        <span class="text-primary text-[10px] font-black">{{ \App\Core\Lang::get('common.edit') }} &rarr;</span>
                     </a>
                 </div>
             @endif
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">Idioma</span>
+                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">{{ \App\Core\Lang::get('common.language') }}</span>
                     <div class="flex items-center bg-black/40 rounded-xl p-1 justify-around">
                         <a href="{{ $baseUrl }}lang/es"
                             class="flex-1 py-2 text-center rounded-lg text-xs font-black {{ \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500' }}">ES</a>
@@ -356,7 +356,7 @@
                     </div>
                 </div>
                 <div class="space-y-2 text-right">
-                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">Tema</span>
+                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">{{ \App\Core\Lang::get('common.theme') }}</span>
                     <div class="flex justify-end p-2 px-1">
                         @include('partials.theme_toggle')
                     </div>
@@ -478,8 +478,23 @@
             @endif
 
             <div class="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
-                <!-- Left Spacer -->
-                <div class="hidden md:block w-72"></div>
+                <!-- Left Content (System Time) -->
+                <div class="w-full md:w-72">
+                    <div
+                        class="bg-black/20 backdrop-blur-md border border-white/5 p-4 rounded-2xl hover:border-primary/20 transition-all group flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl">
+                            🕒
+                        </div>
+                        <div>
+                            <h4 class="text-[10px] font-black text-p-muted uppercase tracking-widest italic leading-none mb-1">
+                                {{ \App\Core\Lang::get('dashboard.server_time') }}
+                            </h4>
+                            <p id="footer-clock" class="text-xs font-black text-p-title tabular-nums">
+                                {{ \App\Core\Auth::getCurrentTime('H:i:s') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Center Content -->
                 <div class="flex flex-col items-center gap-2 text-center flex-1">
@@ -495,7 +510,7 @@
                                 <path
                                     d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                             </svg>
-                            View on GitHub
+                            {{ \App\Core\Lang::get('common.view_github') }}
                         </a>
                     </p>
                 </div>
@@ -508,7 +523,7 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                             <h4
                                 class="text-[10px] font-black text-p-muted uppercase tracking-widest italic leading-none">
-                                El último cómic</h4>
+                                {{ \App\Core\Lang::get('common.last_commit') }}</h4>
                         </div>
                         <p class="text-[11px] font-bold text-p-title leading-tight line-clamp-2">
                             {{ $last_commit }}
@@ -519,6 +534,20 @@
         </footer>
     </main>
 
+    <script>
+        // Footer Clock Synchronization
+        (function() {
+            let serverTime = new Date("{{ date('Y-m-d H:i:s', strtotime(\App\Core\Auth::getCurrentTime())) }}");
+            const clockEl = document.getElementById('footer-clock');
+            
+            if (clockEl) {
+                setInterval(() => {
+                    serverTime.setSeconds(serverTime.getSeconds() + 1);
+                    clockEl.innerText = serverTime.toLocaleTimeString('es-ES', { hour12: false });
+                }, 1000);
+            }
+        })();
+    </script>
     @include('partials.command_palette')
     @include('partials.system_modal')
     @yield('scripts')

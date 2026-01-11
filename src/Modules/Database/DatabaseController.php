@@ -308,13 +308,13 @@ class DatabaseController extends BaseController
         try {
             $targetDb = new PDO('sqlite:' . $database['path']);
             $targetDb->exec("CREATE TABLE $table_name (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-fecha_de_creacion TEXT,
-fecha_edicion TEXT
-)");
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
 
             $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
-is_visible, is_required) VALUES (?, ?, 'id', 'INTEGER', 'text', 0, 1, 0)");
+is_visible, is_required) VALUES (?, ?, 'id', 'INTEGER', 'number', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
             $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
 is_visible, is_required) VALUES (?, ?, 'fecha_de_creacion', 'TEXT', 'text', 0, 1, 0)");
@@ -583,7 +583,7 @@ WHERE id = ?");
                 $columnNames = array_map(function ($c) {
                     return strtolower($c['name']);
                 }, $columns);
-                $now = date('Y-m-d H:i:s');
+                $now = Auth::getCurrentTime();
                 $auditChanged = false;
 
                 if (!in_array('fecha_de_creacion', $columnNames)) {
@@ -766,5 +766,538 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
             }
         }
         exit;
+    }
+
+    /**
+     * Export a single table as SQL
+     */
+    public function exportTableSql()
+    {
+        $db_id = $_GET['db_id'] ?? null;
+        $table = $_GET['table'] ?? null;
+        Auth::requirePermission('module:databases.export_data');
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database || !$table) {
+            Auth::setFlashError("Invalid parameters.");
+            $this->redirect('admin/databases');
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // Get table schema
+            $schemaStmt = $targetDb->query("SELECT sql FROM sqlite_master WHERE type='table' AND name='$table'");
+            $schema = $schemaStmt->fetchColumn();
+
+            // Get data
+            $dataStmt = $targetDb->query("SELECT * FROM $table");
+            $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (ob_get_level())
+                ob_end_clean();
+            header('Content-Type: application/sql');
+            header('Content-Disposition: attachment; filename="' . $table . '_export.sql"');
+
+            echo "-- Data2Rest Table Export: $table\n";
+            echo "-- Database: {$database['name']}\n";
+            echo "-- Exported: " . Auth::getCurrentTime() . "\n\n";
+            echo "$schema;\n\n";
+
+            foreach ($rows as $row) {
+                $cols = implode(', ', array_keys($row));
+                $vals = implode(', ', array_map(function ($v) use ($targetDb) {
+                    return $v === null ? 'NULL' : $targetDb->quote($v);
+                }, array_values($row)));
+                echo "INSERT INTO $table ($cols) VALUES ($vals);\n";
+            }
+
+            Logger::log('EXPORT_TABLE_SQL', ['database_id' => $db_id, 'table' => $table]);
+            exit;
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error exporting table: " . $e->getMessage());
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+    }
+
+    /**
+     * Export a single table as Excel
+     */
+    public function exportTableExcel()
+    {
+        $db_id = $_GET['db_id'] ?? null;
+        $table = $_GET['table'] ?? null;
+        Auth::requirePermission('module:databases.export_data');
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database || !$table) {
+            Auth::setFlashError("Invalid parameters.");
+            $this->redirect('admin/databases');
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $dataStmt = $targetDb->query("SELECT * FROM $table");
+            $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (ob_get_level())
+                ob_end_clean();
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment; filename="' . $table . '_export.xls"');
+
+            echo "<table border='1'>";
+            if (!empty($rows)) {
+                echo "<tr>";
+                foreach (array_keys($rows[0]) as $header) {
+                    echo "<th>" . htmlspecialchars($header) . "</th>";
+                }
+                echo "</tr>";
+
+                foreach ($rows as $row) {
+                    echo "<tr>";
+                    foreach ($row as $cell) {
+                        echo "<td>" . htmlspecialchars($cell ?? '') . "</td>";
+                    }
+                    echo "</tr>";
+                }
+            }
+            echo "</table>";
+
+            Logger::log('EXPORT_TABLE_EXCEL', ['database_id' => $db_id, 'table' => $table]);
+            exit;
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error exporting table: " . $e->getMessage());
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+    }
+
+    /**
+     * Export a single table as CSV
+     */
+    public function exportTableCsv()
+    {
+        $db_id = $_GET['db_id'] ?? null;
+        $table = $_GET['table'] ?? null;
+        Auth::requirePermission('module:databases.export_data');
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database || !$table) {
+            Auth::setFlashError("Invalid parameters.");
+            $this->redirect('admin/databases');
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $dataStmt = $targetDb->query("SELECT * FROM $table");
+            $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (ob_get_level())
+                ob_end_clean();
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="' . $table . '_export.csv"');
+
+            $output = fopen('php://output', 'w');
+
+            if (!empty($rows)) {
+                fputcsv($output, array_keys($rows[0]));
+                foreach ($rows as $row) {
+                    fputcsv($output, $row);
+                }
+            }
+
+            fclose($output);
+            Logger::log('EXPORT_TABLE_CSV', ['database_id' => $db_id, 'table' => $table]);
+            exit;
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error exporting table: " . $e->getMessage());
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+    }
+
+    /**
+     * Generate Excel template for import
+     */
+    public function generateExcelTemplate()
+    {
+        $db_id = $_GET['db_id'] ?? null;
+        $table = $_GET['table'] ?? null;
+        Auth::requirePermission('module:databases.export_data');
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database || !$table) {
+            Auth::setFlashError("Invalid parameters.");
+            $this->redirect('admin/databases');
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $stmt = $targetDb->query("PRAGMA table_info($table)");
+            $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (ob_get_level())
+                ob_end_clean();
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment; filename="' . $table . '_template.xls"');
+
+            echo "<table border='1'>";
+            echo "<tr>";
+            foreach ($columns as $col) {
+                // Skip auto-increment ID and audit fields
+                if ($col['name'] !== 'id' && $col['name'] !== 'fecha_de_creacion' && $col['name'] !== 'fecha_edicion') {
+                    echo "<th>" . htmlspecialchars($col['name']) . "</th>";
+                }
+            }
+            echo "</tr>";
+            // Add 3 example rows
+            for ($i = 0; $i < 3; $i++) {
+                echo "<tr>";
+                foreach ($columns as $col) {
+                    if ($col['name'] !== 'id' && $col['name'] !== 'fecha_de_creacion' && $col['name'] !== 'fecha_edicion') {
+                        echo "<td>ejemplo_" . ($i + 1) . "</td>";
+                    }
+                }
+                echo "</tr>";
+            }
+            echo "</table>";
+            exit;
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error generating template: " . $e->getMessage());
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+    }
+
+    /**
+     * Generate CSV template for import
+     */
+    public function generateCsvTemplate()
+    {
+        $db_id = $_GET['db_id'] ?? null;
+        $table = $_GET['table'] ?? null;
+        Auth::requirePermission('module:databases.export_data');
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database || !$table) {
+            Auth::setFlashError("Invalid parameters.");
+            $this->redirect('admin/databases');
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $stmt = $targetDb->query("PRAGMA table_info($table)");
+            $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (ob_get_level())
+                ob_end_clean();
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="' . $table . '_template.csv"');
+
+            $output = fopen('php://output', 'w');
+
+            // Headers (skip ID and audit fields)
+            $headers = [];
+            foreach ($columns as $col) {
+                if ($col['name'] !== 'id' && $col['name'] !== 'fecha_de_creacion' && $col['name'] !== 'fecha_edicion') {
+                    $headers[] = $col['name'];
+                }
+            }
+            fputcsv($output, $headers);
+
+            // Add 3 example rows
+            for ($i = 0; $i < 3; $i++) {
+                $row = array_fill(0, count($headers), 'ejemplo_' . ($i + 1));
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error generating template: " . $e->getMessage());
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+    }
+
+    /**
+     * Import SQL into a table
+     */
+    public function importTableSql()
+    {
+        $db_id = $_POST['db_id'] ?? null;
+        $table = $_POST['table'] ?? null;
+        $file = $_FILES['sql_file'] ?? null;
+        Auth::requirePermission('module:databases.import_data');
+
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            Auth::setFlashError("No SQL file uploaded.", 'error');
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = file_get_contents($file['tmp_name']);
+            $targetDb->exec($sql);
+
+            // POST-PROCESSING: Fill missing audit timestamps for the affected table
+            $now = Auth::getCurrentTime();
+            $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+            $tableCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+
+            if (in_array('fecha_de_creacion', $tableCols)) {
+                $targetDb->exec("UPDATE $table SET fecha_de_creacion = '$now' WHERE fecha_de_creacion IS NULL OR fecha_de_creacion = ''");
+            }
+            if (in_array('fecha_edicion', $tableCols)) {
+                $targetDb->exec("UPDATE $table SET fecha_edicion = '$now' WHERE fecha_edicion IS NULL OR fecha_edicion = ''");
+            }
+
+            Auth::setFlashError("Datos importados exitosamente.", 'success');
+            Logger::log('IMPORT_TABLE_SQL', ['database_id' => $db_id, 'table' => $table]);
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error importing SQL: " . $e->getMessage(), 'error');
+        }
+
+        $this->redirect("admin/databases/view?id=$db_id");
+    }
+
+    /**
+     * Import SQL from text input into a table
+     */
+    public function importTableSqlText()
+    {
+        $db_id = $_POST['db_id'] ?? null;
+        $table = $_POST['table'] ?? null;
+        $sql_code = $_POST['sql_code'] ?? null;
+        Auth::requirePermission('module:databases.import_data');
+
+        if (empty($sql_code)) {
+            Auth::setFlashError("No se proporcionó código SQL.", 'error');
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database) {
+            Auth::setFlashError("Base de datos no encontrada.", 'error');
+            $this->redirect("admin/databases");
+        }
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // Execute the SQL code
+            $targetDb->exec($sql_code);
+
+            // POST-PROCESSING: Fill missing audit timestamps for the affected table
+            $now = Auth::getCurrentTime();
+            $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+            $tableCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+
+            if (in_array('fecha_de_creacion', $tableCols)) {
+                $targetDb->exec("UPDATE $table SET fecha_de_creacion = '$now' WHERE fecha_de_creacion IS NULL OR fecha_de_creacion = ''");
+            }
+            if (in_array('fecha_edicion', $tableCols)) {
+                $targetDb->exec("UPDATE $table SET fecha_edicion = '$now' WHERE fecha_edicion IS NULL OR fecha_edicion = ''");
+            }
+
+            // Count affected rows (approximate)
+            $affectedRows = $targetDb->query("SELECT changes()")->fetchColumn();
+
+            Auth::setFlashError("SQL ejecutado exitosamente. Filas afectadas: $affectedRows", 'success');
+            Logger::log('IMPORT_TABLE_SQL_TEXT', ['database_id' => $db_id, 'table' => $table, 'affected_rows' => $affectedRows]);
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error ejecutando SQL: " . $e->getMessage(), 'error');
+        }
+
+        $this->redirect("admin/databases/view?id=$db_id");
+    }
+
+
+    /**
+     * Import Excel into a table
+     */
+    public function importTableExcel()
+    {
+        $db_id = $_POST['db_id'] ?? null;
+        $table = $_POST['table'] ?? null;
+        $file = $_FILES['excel_file'] ?? null;
+        Auth::requirePermission('module:databases.import_data');
+
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            Auth::setFlashError("No Excel file uploaded.", 'error');
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        try {
+            // Simple Excel parsing (HTML table format)
+            $content = file_get_contents($file['tmp_name']);
+            $dom = new \DOMDocument();
+            @$dom->loadHTML($content);
+            $rows = $dom->getElementsByTagName('tr');
+
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $headers = [];
+            $imported = 0;
+
+            foreach ($rows as $index => $row) {
+                if (!($row instanceof \DOMElement))
+                    continue;
+
+                if ($index === 0) {
+                    // Get headers
+                    $headerCells = $row->getElementsByTagName('th');
+                    foreach ($headerCells as $cell) {
+                        $headers[] = trim($cell->nodeValue);
+                    }
+                    continue;
+                }
+
+                if (empty($headers))
+                    continue;
+
+                $cells = $row->getElementsByTagName('td');
+                $values = [];
+                foreach ($cells as $cell) {
+                    $values[] = trim($cell->nodeValue);
+                }
+
+                if (count($values) === count($headers)) {
+                    $rowValues = $values;
+                    $rowHeaders = $headers;
+                    $now = Auth::getCurrentTime();
+
+                    // Check if table columns exist via a quick PRAGMA check once outside if possible
+                    // But for simplicity and robustness in a dynamic environment:
+                    if (!isset($tableCols)) {
+                        $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+                        $tableCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+                    }
+
+                    if (!in_array('fecha_de_creacion', $rowHeaders) && in_array('fecha_de_creacion', $tableCols)) {
+                        $rowHeaders[] = 'fecha_de_creacion';
+                        $rowValues[] = $now;
+                    }
+                    if (!in_array('fecha_edicion', $rowHeaders) && in_array('fecha_edicion', $tableCols)) {
+                        $rowHeaders[] = 'fecha_edicion';
+                        $rowValues[] = $now;
+                    }
+
+                    $placeholders = implode(',', array_fill(0, count($rowHeaders), '?'));
+                    $cols = implode(',', $rowHeaders);
+                    $stmt = $targetDb->prepare("INSERT INTO $table ($cols) VALUES ($placeholders)");
+                    $stmt->execute($rowValues);
+                    $imported++;
+                }
+            }
+
+            Auth::setFlashError("$imported registros importados exitosamente.", 'success');
+            Logger::log('IMPORT_TABLE_EXCEL', ['database_id' => $db_id, 'table' => $table, 'count' => $imported]);
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error importing Excel: " . $e->getMessage(), 'error');
+        }
+
+        $this->redirect("admin/databases/view?id=$db_id");
+    }
+
+    /**
+     * Import CSV into a table
+     */
+    public function importTableCsv()
+    {
+        $db_id = $_POST['db_id'] ?? null;
+        $table = $_POST['table'] ?? null;
+        $file = $_FILES['csv_file'] ?? null;
+        Auth::requirePermission('module:databases.import_data');
+
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            Auth::setFlashError("No CSV file uploaded.", 'error');
+            $this->redirect("admin/databases/view?id=$db_id");
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $handle = fopen($file['tmp_name'], 'r');
+            $headers = fgetcsv($handle);
+            $imported = 0;
+
+            while (($data = fgetcsv($handle)) !== false) {
+                if (count($data) === count($headers)) {
+                    $rowValues = $data;
+                    $rowHeaders = $headers;
+                    $now = Auth::getCurrentTime();
+
+                    if (!isset($tableCols)) {
+                        $stmtCols = $targetDb->query("PRAGMA table_info($table)");
+                        $tableCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+                    }
+
+                    if (!in_array('fecha_de_creacion', $rowHeaders) && in_array('fecha_de_creacion', $tableCols)) {
+                        $rowHeaders[] = 'fecha_de_creacion';
+                        $rowValues[] = $now;
+                    }
+                    if (!in_array('fecha_edicion', $rowHeaders) && in_array('fecha_edicion', $tableCols)) {
+                        $rowHeaders[] = 'fecha_edicion';
+                        $rowValues[] = $now;
+                    }
+
+                    $placeholders = implode(',', array_fill(0, count($rowHeaders), '?'));
+                    $cols = implode(',', $rowHeaders);
+                    $stmt = $targetDb->prepare("INSERT INTO $table ($cols) VALUES ($placeholders)");
+                    $stmt->execute($rowValues);
+                    $imported++;
+                }
+            }
+
+            fclose($handle);
+            Auth::setFlashError("$imported registros importados exitosamente.", 'success');
+            Logger::log('IMPORT_TABLE_CSV', ['database_id' => $db_id, 'table' => $table, 'count' => $imported]);
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error importing CSV: " . $e->getMessage(), 'error');
+        }
+
+        $this->redirect("admin/databases/view?id=$db_id");
     }
 }

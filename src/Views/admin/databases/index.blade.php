@@ -36,25 +36,21 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
-                        Importar SQL
+                        {{ \App\Core\Lang::get('databases.import_sql_title') }}
                     </h2>
                     <form action="{{ $baseUrl }}admin/databases/import" method="POST" enctype="multipart/form-data"
                         class="space-y-4">
                         {!! $csrf_field !!}
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">Nombre del
-                                Nodo</label>
-                            <input type="text" name="name" placeholder="Ej: Mi DB Importada" required class="form-input w-full">
+                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_node_name') }}</label>
+                            <input type="text" name="name" placeholder="{{ \App\Core\Lang::get('databases.import_node_placeholder') }}" required class="form-input w-full">
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">Archivo
-                                .sql</label>
+                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_file') }}</label>
                             <input type="file" name="sql_file" accept=".sql" required class="form-input w-full text-xs">
                         </div>
-                        <button type="submit" class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">Crear
-                            desde SQL</button>
-                        <p class="text-[9px] text-p-muted italic opacity-70">El script debe contener sentencias CREATE TABLE
-                            compatibles con SQLite.</p>
+                        <button type="submit" class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">{{ \App\Core\Lang::get('databases.import_btn') }}</button>
+                        <p class="text-[9px] text-p-muted italic opacity-70">{{ \App\Core\Lang::get('databases.import_help') }}</p>
                     </form>
                 </div>
             @endif

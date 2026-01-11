@@ -332,7 +332,7 @@
                                         @endif
 
                                         @if(\App\Core\Auth::hasPermission('module:databases.crud_delete'))
-                                            <button onclick="confirmRecordDelete({{ $row['id'] }})"
+                                            <button onclick="confirmRecordDelete('{{ $row['id'] }}')"
                                                 class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm hover:shadow-md"
                                                 title="{{ \App\Core\Lang::get('common.delete') }}"><svg class="w-4 h-4" fill="none"
                                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +361,27 @@
                 type: 'confirm',
                 typeLabel: '{!! addslashes(\App\Core\Lang::get('crud_list.delete_confirm_btn')) !!}',
                 onConfirm: () => {
-                    window.location.href = `{{ $baseUrl }}admin/crud/delete?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&id=${id}`;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ $baseUrl }}admin/crud/delete';
+
+                    const params = {
+                        db_id: '{{ $ctx['db_id'] }}',
+                        table: '{{ $ctx['table'] }}',
+                        id: id,
+                        _token: '{{ $csrf_token }}'
+                    };
+
+                    for (const key in params) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = params[key];
+                        form.appendChild(input);
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
                 }
             });
         }

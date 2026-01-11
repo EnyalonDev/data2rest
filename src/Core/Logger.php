@@ -29,8 +29,8 @@ class Logger
                 $details = json_encode($details);
             }
 
-            $stmt = $db->prepare("INSERT INTO activity_logs (user_id, project_id, action, details, ip_address) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$userId, $projectId, $action, $details, $ip]);
+            $stmt = $db->prepare("INSERT INTO activity_logs (user_id, project_id, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$userId, $projectId, $action, $details, $ip, Auth::getCurrentTime()]);
         } catch (\Exception $e) {
             // Silently fail logging if it fails, to avoid breaking main functionality
             error_log("Logging failed: " . $e->getMessage());

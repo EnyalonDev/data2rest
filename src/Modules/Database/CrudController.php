@@ -338,18 +338,27 @@ LIMIT 1");
 
         try {
             $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
-            $now = date('Y-m-d H:i:s');
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $now = Auth::getCurrentTime();
             $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
 
+            // Fetch target table info to check if timestamp columns exist
+            $stmtCols = $targetDb->query("PRAGMA table_info($tableName)");
+            $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+
             if ($id) {
-                foreach ($ctx['fields'] as $field) {
-                    if ($field['field_name'] === 'fecha_edicion')
-                        $data['fecha_edicion'] = $now;
+                if (in_array('fecha_edicion', $columns)) {
+                    $data['fecha_edicion'] = $now;
                 }
+
                 $sets = [];
                 $values = [];
                 foreach ($data as $key => $value) {
                     $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
+                    // Avoid updating id or non-existent columns
+                    if ($safeKey === 'id' || !in_array($safeKey, $columns))
+                        continue;
+
                     $sets[] = "$safeKey = ?";
                     $values[] = $value;
                 }
@@ -358,21 +367,26 @@ LIMIT 1");
                 $stmt->execute($values);
                 Logger::log('UPDATE_RECORD', ['table' => $tableName, 'id' => $id, 'fields' => array_keys($data)], $ctx['db_id']);
             } else {
-                foreach ($ctx['fields'] as $field) {
-                    if ($field['field_name'] === 'fecha_de_creacion')
-                        $data['fecha_de_creacion'] = $now;
-                    if ($field['field_name'] === 'fecha_edicion')
-                        $data['fecha_edicion'] = $now;
+                if (in_array('fecha_de_creacion', $columns)) {
+                    $data['fecha_de_creacion'] = $now;
                 }
-                $keys = array_map(function ($k) {
-                    return preg_replace('/[^a-zA-Z0-9_]/', '', $k);
-                }, array_keys($data));
+                if (in_array('fecha_edicion', $columns)) {
+                    $data['fecha_edicion'] = $now;
+                }
+
+                // Filter data to only include existing columns
+                $filteredData = [];
+                foreach ($data as $k => $v) {
+                    $safeK = preg_replace('/[^a-zA-Z0-9_]/', '', $k);
+                    if (in_array($safeK, $columns) && $safeK !== 'id') {
+                        $filteredData[$safeK] = $v;
+                    }
+                }
+
+                $keys = array_keys($filteredData);
                 $placeholders = array_fill(0, count($keys), '?');
-                $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(
-                    ', ',
-                    $placeholders
-                ) . ")");
-                $stmt->execute(array_values($data));
+                $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $placeholders) . ")");
+                $stmt->execute(array_values($filteredData));
                 Logger::log('INSERT_RECORD', ['table' => $tableName, 'id' => $targetDb->lastInsertId()], $ctx['db_id']);
             }
 
@@ -390,20 +404,29 @@ LIMIT 1");
      */
     public function delete()
     {
+        $id = $_POST['id'] ?? $_GET['id'] ?? null;
+        $db_id = $_POST['db_id'] ?? $_GET['db_id'] ?? null;
+
+        // Log for diagnosis
+        error_log("CRUD DELETE - Attempting ID: $id on DB: $db_id");
+
         $ctx = $this->getContext('crud_delete');
-        $id = $_GET['id'] ?? null;
         if ($id) {
             try {
                 $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
+                $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
                 $stmt = $targetDb->prepare("DELETE FROM $tableName WHERE id = ?");
                 $stmt->execute([$id]);
+
+                Auth::setFlashError("Registro eliminado exitosamente.", 'success');
                 Logger::log('DELETE_RECORD', ['table' => $tableName, 'id' => $id], $ctx['db_id']);
 
                 // Update metadata timestamps
                 $this->updateMetadata($ctx['db_id'], $ctx['table']);
             } catch (\PDOException $e) {
-                die("Error deleting record: " . $e->getMessage());
+                Auth::setFlashError("Error eliminando registro: " . $e->getMessage(), 'error');
             }
         }
         header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
@@ -417,7 +440,7 @@ LIMIT 1");
     protected function updateMetadata($db_id, $table)
     {
         $db = Database::getInstance()->getConnection();
-        $now = date('Y-m-d H:i:s');
+        $now = Auth::getCurrentTime();
 
         // Update database last edit
         $db->prepare("UPDATE databases SET last_edit_at = ? WHERE id = ?")->execute([$now, $db_id]);

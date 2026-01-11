@@ -98,7 +98,7 @@ class MaintenanceController extends BaseController
             $targetDb = new PDO('sqlite:' . $path);
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $now = date('Y-m-d H:i:s');
+            $now = Auth::getCurrentTime();
 
             // 1. Create Tables and Insert Data
             foreach ($demoData['tables'] as $tableName => $config) {

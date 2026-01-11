@@ -100,9 +100,53 @@
                 <h3 class="text-2xl font-black text-p-title mb-6 uppercase tracking-tight">
                     {{ $tableName }}
                 </h3>
-                <div class="flex gap-4">
+                <div class="flex flex-col gap-3">
                     <a href="{{ $baseUrl }}admin/crud/list?db_id={{ $database['id'] }}&table={{ $tableName }}"
-                        class="btn-primary flex-1 text-center font-bold italic tracking-wider !py-2">{{ \App\Core\Lang::get('tables.enter') }}</a>
+                        class="btn-primary text-center font-bold italic tracking-wider !py-3">{{ \App\Core\Lang::get('tables.enter') }}</a>
+
+                    <!-- Import/Export Section -->
+                    <div class="flex gap-2">
+                        <!-- Export Dropdown -->
+                        @if(\App\Core\Auth::hasPermission('module:databases.export_data'))
+                            <div class="relative group/export flex-1">
+                                <button onclick="toggleExportMenu('{{ $tableName }}')"
+                                    class="w-full px-3 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-emerald-500/20 flex items-center justify-center gap-2">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Exportar
+                                </button>
+                                <div id="export-menu-{{ $tableName }}"
+                                    class="hidden absolute bottom-full mb-2 left-0 w-full bg-bg-glass dark:bg-slate-800 border border-glass-border rounded-xl shadow-2xl overflow-hidden z-50">
+                                    <a href="{{ $baseUrl }}admin/databases/table/export-sql?db_id={{ $database['id'] }}&table={{ $tableName }}"
+                                        class="block px-4 py-3 text-[10px] font-black uppercase tracking-widest text-p-muted hover:bg-primary/10 hover:text-primary transition-all border-b border-glass-border">
+                                        📄 SQL
+                                    </a>
+                                    <a href="{{ $baseUrl }}admin/databases/table/export-excel?db_id={{ $database['id'] }}&table={{ $tableName }}"
+                                        class="block px-4 py-3 text-[10px] font-black uppercase tracking-widest text-p-muted hover:bg-primary/10 hover:text-primary transition-all border-b border-glass-border">
+                                        📊 Excel
+                                    </a>
+                                    <a href="{{ $baseUrl }}admin/databases/table/export-csv?db_id={{ $database['id'] }}&table={{ $tableName }}"
+                                        class="block px-4 py-3 text-[10px] font-black uppercase tracking-widest text-p-muted hover:bg-primary/10 hover:text-primary transition-all">
+                                        📋 CSV
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Import Button -->
+                        @if(\App\Core\Auth::hasPermission('module:databases.import_data'))
+                            <button onclick="openImportModal('{{ $tableName }}', '{{ $database['id'] }}')"
+                                class="flex-1 px-3 py-2 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-amber-500/20 flex items-center justify-center gap-2">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Importar
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
         @endforeach
@@ -121,6 +165,209 @@
                     window.location.href = `{{ $baseUrl }}admin/databases/table/delete?db_id={{ $database['id'] }}&table=${table}`;
                 }
             });
+        }
+
+        function toggleExportMenu(tableName) {
+            const menu = document.getElementById(`export-menu-${tableName}`);
+            // Close all other menus
+            document.querySelectorAll('[id^="export-menu-"]').forEach(m => {
+                if (m.id !== `export-menu-${tableName}`) {
+                    m.classList.add('hidden');
+                }
+            });
+            menu.classList.toggle('hidden');
+        }
+
+        // Close export menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('[onclick^="toggleExportMenu"]') && !e.target.closest('[id^="export-menu-"]')) {
+                document.querySelectorAll('[id^="export-menu-"]').forEach(m => m.classList.add('hidden'));
+            }
+        });
+
+        function openImportModal(tableName, dbId) {
+            const modalHTML = `
+                                <div id="import-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onclick="if(event.target === this) closeImportModal()">
+                                    <div class="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                                        <div class="flex items-center justify-between mb-6">
+                                            <h2 class="text-2xl font-black text-p-title uppercase italic tracking-tight">
+                                                {{ \App\Core\Lang::get('tables.import_data') }} - ${tableName}
+                                            </h2>
+                                            <button onclick="closeImportModal()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                                                <svg class="w-6 h-6 text-p-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <!-- Import Tabs -->
+                                        <div class="flex gap-2 mb-6 border-b border-glass-border pb-2">
+                                            <button onclick="switchImportTab('sql')" id="tab-sql" class="import-tab px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all bg-primary text-dark">
+                                                SQL
+                                            </button>
+                                            <button onclick="switchImportTab('excel')" id="tab-excel" class="import-tab px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-p-muted hover:bg-white/5">
+                                                Excel
+                                            </button>
+                                            <button onclick="switchImportTab('csv')" id="tab-csv" class="import-tab px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-p-muted hover:bg-white/5">
+                                                CSV
+                                            </button>
+                                        </div>
+
+                                        <!-- SQL Import -->
+                                        <div id="import-content-sql" class="import-content">
+                                            <!-- SQL Sub-tabs -->
+                                            <div class="flex gap-2 mb-4 border-b border-glass-border/50 pb-2">
+                                                <button onclick="switchSqlMode('file')" id="sql-mode-file" class="sql-mode-tab px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all bg-primary/20 text-primary border border-primary/30">
+                                                    📁 {{ \App\Core\Lang::get('tables.sql_file') }}
+                                                </button>
+                                                <button onclick="switchSqlMode('text')" id="sql-mode-text" class="sql-mode-tab px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all text-p-muted hover:bg-white/5">
+                                                    📝 {{ \App\Core\Lang::get('tables.sql_text') }}
+                                                </button>
+                                            </div>
+
+                                            <!-- SQL File Upload -->
+                                            <div id="sql-mode-content-file" class="sql-mode-content">
+                                                <form action="{{ $baseUrl }}admin/databases/table/import-sql" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                                    {!! $csrf_field !!}
+                                                    <input type="hidden" name="db_id" value="${dbId}">
+                                                    <input type="hidden" name="table" value="${tableName}">
+
+                                                    <div class="space-y-2">
+                                                        <label class="form-label">{{ \App\Core\Lang::get('tables.sql_file') }}</label>
+                                                        <input type="file" name="sql_file" accept=".sql" required class="form-input">
+                                                        <p class="text-[9px] text-p-muted italic">{{ \App\Core\Lang::get('tables.import_sql_help') }}</p>
+                                                    </div>
+
+                                                    <button type="submit" class="btn-primary w-full">
+                                                        📤 {{ \App\Core\Lang::get('tables.import_from_file') }}
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            <!-- SQL Text Input -->
+                                            <div id="sql-mode-content-text" class="sql-mode-content hidden">
+                                                <form action="{{ $baseUrl }}admin/databases/table/import-sql-text" method="POST" class="space-y-4">
+                                                    {!! $csrf_field !!}
+                                                    <input type="hidden" name="db_id" value="${dbId}">
+                                                    <input type="hidden" name="table" value="${tableName}">
+
+                                                    <div class="space-y-2">
+                                                        <label class="form-label">Código SQL</label>
+                                                        <textarea name="sql_code" rows="12" required 
+                                                            class="form-input font-mono text-xs resize-y"
+                                                            placeholder="INSERT INTO ${tableName} (campo1, campo2) VALUES ('valor1', 'valor2');
+            INSERT INTO ${tableName} (campo1, campo2) VALUES ('valor3', 'valor4');"></textarea>
+                                                        <p class="text-[9px] text-p-muted italic">Pega tus sentencias SQL INSERT aquí. Puedes incluir múltiples sentencias.</p>
+                                                    </div>
+
+                                                    <button type="submit" class="btn-primary w-full">
+                                                        ⚡ Ejecutar SQL
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        <!-- Excel Import -->
+                                        <div id="import-content-excel" class="import-content hidden">
+                                            <form action="{{ $baseUrl }}admin/databases/table/import-excel" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                                {!! $csrf_field !!}
+                                                <input type="hidden" name="db_id" value="${dbId}">
+                                                <input type="hidden" name="table" value="${tableName}">
+
+                                                <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+                                                    <p class="text-[10px] font-black text-primary uppercase tracking-widest mb-2">📥 Descargar Plantilla</p>
+                                                    <a href="{{ $baseUrl }}admin/databases/table/template-excel?db_id=${dbId}&table=${tableName}" 
+                                                       class="inline-flex items-center gap-2 text-[10px] font-black text-p-title hover:text-primary transition-colors">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                                        </svg>
+                                                        Descargar plantilla Excel de ejemplo
+                                                    </a>
+                                                </div>
+
+                                                <div class="space-y-2">
+                                                    <label class="form-label">Archivo Excel</label>
+                                                    <input type="file" name="excel_file" accept=".xlsx,.xls" required class="form-input">
+                                                    <p class="text-[9px] text-p-muted italic">Sube un archivo Excel (.xlsx o .xls) con los datos</p>
+                                                </div>
+
+                                                <button type="submit" class="btn-primary w-full">
+                                                    Importar Excel
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        <!-- CSV Import -->
+                                        <div id="import-content-csv" class="import-content hidden">
+                                            <form action="{{ $baseUrl }}admin/databases/table/import-csv" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                                {!! $csrf_field !!}
+                                                <input type="hidden" name="db_id" value="${dbId}">
+                                                <input type="hidden" name="table" value="${tableName}">
+
+                                                <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+                                                    <p class="text-[10px] font-black text-primary uppercase tracking-widest mb-2">📥 Descargar Plantilla</p>
+                                                    <a href="{{ $baseUrl }}admin/databases/table/template-csv?db_id=${dbId}&table=${tableName}" 
+                                                       class="inline-flex items-center gap-2 text-[10px] font-black text-p-title hover:text-primary transition-colors">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                                        </svg>
+                                                        Descargar plantilla CSV de ejemplo
+                                                    </a>
+                                                </div>
+
+                                                <div class="space-y-2">
+                                                    <label class="form-label">Archivo CSV</label>
+                                                    <input type="file" name="csv_file" accept=".csv" required class="form-input">
+                                                    <p class="text-[9px] text-p-muted italic">Sube un archivo CSV con los datos (separado por comas)</p>
+                                                </div>
+
+                                                <button type="submit" class="btn-primary w-full">
+                                                    Importar CSV
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function closeImportModal() {
+            const modal = document.getElementById('import-modal');
+            if (modal) modal.remove();
+        }
+
+        function switchImportTab(type) {
+            // Update tabs
+            document.querySelectorAll('.import-tab').forEach(tab => {
+                tab.classList.remove('bg-primary', 'text-dark');
+                tab.classList.add('text-p-muted', 'hover:bg-white/5');
+            });
+            document.getElementById(`tab-${type}`).classList.add('bg-primary', 'text-dark');
+            document.getElementById(`tab-${type}`).classList.remove('text-p-muted', 'hover:bg-white/5');
+
+            // Update content
+            document.querySelectorAll('.import-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`import-content-${type}`).classList.remove('hidden');
+        }
+
+        function switchSqlMode(mode) {
+            // Update SQL mode tabs
+            document.querySelectorAll('.sql-mode-tab').forEach(tab => {
+                tab.classList.remove('bg-primary/20', 'text-primary', 'border-primary/30');
+                tab.classList.add('text-p-muted', 'hover:bg-white/5');
+            });
+            document.getElementById(`sql-mode-${mode}`).classList.add('bg-primary/20', 'text-primary', 'border-primary/30');
+            document.getElementById(`sql-mode-${mode}`).classList.remove('text-p-muted', 'hover:bg-white/5');
+
+            // Update SQL mode content
+            document.querySelectorAll('.sql-mode-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`sql-mode-content-${mode}`).classList.remove('hidden');
         }
     </script>
 @endsection

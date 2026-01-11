@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-            private static $SCHEMA = [
+    private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -306,7 +306,8 @@ class Installer
             'dev_mode' => 'off',
             'media_trash_retention' => '30',
             'app_language' => 'es',
-            'show_welcome_banner' => '1'
+            'show_welcome_banner' => '1',
+            'time_offset_total' => '0'
         ];
         $stmt = $db->prepare("INSERT INTO system_settings (key, value) VALUES (?, ?)");
         foreach ($settings as $k => $v) {
@@ -334,5 +335,6 @@ class Installer
 
         // Final sanity check for settings
         $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_trash_retention', '30')");
+        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('time_offset_total', '0')");
     }
 }
