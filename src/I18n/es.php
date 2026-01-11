@@ -356,6 +356,8 @@ return [
                 'waiting_response' => 'Esperando respuesta del servidor...',
                 'view_raw' => 'Ver JSON Plano',
                 'beautify' => 'Formatear JSON',
+                'search_tables' => 'Buscar tabla...',
+                'explore_endpoints' => 'Explorar Endpoints de Datos',
         ],
         'media' => [
                 'explorer' => 'Biblioteca de Medios',

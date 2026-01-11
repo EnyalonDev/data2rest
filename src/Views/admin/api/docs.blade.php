@@ -5,25 +5,25 @@
 @section('styles')
     <style type="text/tailwindcss">
         .badge-get {
-                    @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
-                }
+                        @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
+                    }
 
-                .endpoint-url {
-                    @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
-                }
+                    .endpoint-url {
+                        @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
+                    }
 
-                .input-dark {
-                    @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-                }
+                    .input-dark {
+                        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+                    }
 
-                .checkbox-custom {
-                    @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
-                }
+                    .checkbox-custom {
+                        @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
+                    }
 
-                .label-mini {
-                    @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
-                }
-            </style>
+                    .label-mini {
+                        @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
+                    }
+                </style>
 @endsection
 
 @section('content')
@@ -71,9 +71,38 @@
         </div>
     </section>
 
-    <div class="space-y-12">
+    <!-- Table Selector Tabs -->
+    <div class="mb-12">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em]">
+                {{ \App\Core\Lang::get('api_control.explore_endpoints') }}
+            </h3>
+            <div class="relative min-w-[250px]">
+                <input type="text" id="table-search" oninput="filterTables(this.value)"
+                    placeholder="{{ \App\Core\Lang::get('api_control.search_tables') }}"
+                    class="input-dark w-full !pl-10 !rounded-full">
+                <svg class="w-4 h-4 text-p-muted absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <div id="table-tabs" class="flex flex-wrap gap-4">
+            @foreach($tableDetails as $table => $columns)
+                <button onclick="switchTable('{{ $table }}')" id="tab-{{ $table }}" data-table-name="{{ $table }}"
+                    class="table-tab px-6 py-3 rounded-2xl border border-glass-border bg-white/5 text-xs font-black uppercase tracking-widest text-p-muted hover:text-p-title hover:bg-white/10 transition-all flex items-center gap-3">
+                    <span class="w-2 h-2 rounded-full bg-white/20 tab-indicator"></span>
+                    {{ $table }}
+                </button>
+            @endforeach
+        </div>
+    </div>
+
+    <div id="tables-container" class="space-y-12">
         @foreach($tableDetails as $table => $columns)
-            <section id="table-{{ $table }}" class="glass-card group" data-table="{{ $table }}">
+            <section id="table-{{ $table }}" class="table-section glass-card group hidden" data-table="{{ $table }}">
                 <div class="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 border-b border-white/5 pb-6">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-xl">📦</div>
@@ -259,6 +288,44 @@
         const baseRoot = "{{ \App\Core\Auth::getFullBaseUrl() }}api/v1/{{ $database['id'] }}/";
         const tableFilters = {};
 
+        function switchTable(tableName) {
+            // Hide all sections
+            document.querySelectorAll('.table-section').forEach(sec => sec.classList.add('hidden'));
+            // Remove active style from tabs
+            document.querySelectorAll('.table-tab').forEach(tab => {
+                tab.classList.remove('bg-primary/20', 'border-primary/40', 'text-p-title');
+                tab.querySelector('.tab-indicator').classList.remove('bg-primary', 'animate-pulse');
+                tab.querySelector('.tab-indicator').classList.add('bg-white/20');
+            });
+
+            // Show selected section
+            const target = document.getElementById('table-' + tableName);
+            if (target) target.classList.remove('hidden');
+
+            // Apply active style to tab
+            const tab = document.getElementById('tab-' + tableName);
+            if (tab) {
+                tab.classList.add('bg-primary/20', 'border-primary/40', 'text-p-title');
+                tab.querySelector('.tab-indicator').classList.remove('bg-white/20');
+                tab.querySelector('.tab-indicator').classList.add('bg-primary', 'animate-pulse');
+                tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+
+            updateAllUrls();
+        }
+
+        function filterTables(query) {
+            query = query.toLowerCase();
+            document.querySelectorAll('.table-tab').forEach(tab => {
+                const name = tab.getAttribute('data-table-name').toLowerCase();
+                if (name.includes(query)) {
+                    tab.classList.remove('hidden');
+                } else {
+                    tab.classList.add('hidden');
+                }
+            });
+        }
+
         function addFilter(tableName) {
             const section = document.querySelector(`section[data-table="${tableName}"]`);
             const col = section.querySelector('.filter-col-selector').value;
@@ -304,8 +371,11 @@
                 let params = [];
 
                 // 1. Pagination Params
-                const limit = section.querySelector('[data-param="limit"]').value;
-                const offset = section.querySelector('[data-param="offset"]').value;
+                const limitInput = section.querySelector('[data-param="limit"]');
+                const offsetInput = section.querySelector('[data-param="offset"]');
+                const limit = limitInput ? limitInput.value : '';
+                const offset = offsetInput ? offsetInput.value : '';
+
                 if (limit) params.push('limit=' + limit);
                 if (offset) params.push('offset=' + offset);
 
@@ -412,6 +482,14 @@
             });
         }
 
-        window.onload = updateAllUrls;
+        window.onload = () => {
+            updateAllUrls();
+            // Select first table if any
+            const firstTab = document.querySelector('.table-tab');
+            if (firstTab) {
+                const name = firstTab.getAttribute('data-table-name');
+                switchTable(name);
+            }
+        };
     </script>
 @endsection
