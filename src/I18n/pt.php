@@ -512,6 +512,9 @@ return [
                 'media_label' => 'Biblioteca de Mídia',
                 'users_label' => 'Gestão de Equipes',
                 'system_module' => 'Módulo do Sistema',
+                'webhooks_label' => 'Webhooks',
+                'perm_manage_webhooks' => 'Gerenciar Webhooks',
+                'perm_manage_backups' => 'Gerenciar Backups',
         ],
         'projects' => [
                 'title' => 'Gestão de Projetos',
