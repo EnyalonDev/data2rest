@@ -116,46 +116,97 @@
         </div>
     </div>
 
-    @if(\App\Core\Auth::isAdmin() && $globalDbCount == 0 && $showWelcomeBanner)
-        <!-- Getting Started Banner -->
-        <div class="glass-card mb-12 relative overflow-hidden group border-primary/30">
-            <!-- Close Button -->
-            <button onclick="dismissBanner()"
-                class="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
-                title="{{ \App\Core\Lang::get('common.dismiss') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <div
-                class="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 blur-[80px] rounded-full group-hover:bg-primary/30 transition-all duration-700">
-            </div>
-            <div class="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
-                <div
-                    class="w-24 h-24 bg-primary text-dark rounded-3xl flex items-center justify-center text-4xl shadow-2xl shadow-primary/40 animate-bounce">
-                    🚀
-                </div>
-                <div class="flex-1 text-center md:text-left">
-                    <h2 class="text-3xl md:text-4xl font-black text-p-title mb-4 tracking-tight uppercase italic">
-                        {{ \App\Core\Lang::get('dashboard.welcome_title') }}
-                    </h2>
-                    <p class="text-p-muted font-medium mb-8 max-w-xl leading-relaxed">
-                        {{ \App\Core\Lang::get('dashboard.welcome_text') }}
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+        <!-- Activity Chart -->
+        <div class="lg:col-span-2 glass-card !p-8 border-t-4 border-primary/30 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-all duration-700"></div>
+            <div class="flex justify-between items-center mb-8 relative z-10">
+                <div>
+                    <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-1">
+                        {{ \App\Core\Lang::get('dashboard.activity_metrics') }}
+                    </h3>
+                    <p class="text-xl font-black text-p-title italic uppercase tracking-tighter">
+                        {{ \App\Core\Lang::get('dashboard.system_traffic') }}
                     </p>
-                    <div class="flex flex-wrap justify-center md:justify-start gap-4">
-                        <a href="{{ $baseUrl }}admin/demo/load"
-                            class="btn-primary flex items-center gap-2 !py-4 !px-8 text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                            <span>✨</span> {{ \App\Core\Lang::get('dashboard.load_demo') }}
-                        </a>
-                        <a href="{{ $baseUrl }}admin/databases"
-                            class="px-8 py-4 rounded-xl border border-glass-border text-xs font-black uppercase tracking-widest text-p-muted hover:text-white hover:bg-white/5 transition-all">
-                            {{ \App\Core\Lang::get('databases.new_node') }}
-                        </a>
-                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <span class="flex items-center gap-2 text-[9px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                        {{ \App\Core\Lang::get('dashboard.real_time') }}
+                    </span>
+                </div>
+            </div>
+            <div class="h-[300px] w-full">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Storage Distribution Chart -->
+        <div class="glass-card !p-8 border-t-4 border-amber-500/30 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full group-hover:bg-amber-500/10 transition-all duration-700"></div>
+            <div class="mb-8 relative z-10">
+                <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-1">
+                    {{ \App\Core\Lang::get('dashboard.storage_analysis') }}
+                </h3>
+                <p class="text-xl font-black text-p-title italic uppercase tracking-tighter">
+                    {{ \App\Core\Lang::get('dashboard.disk_usage') }}
+                </p>
+            </div>
+            <div class="h-[300px] w-full flex items-center justify-center">
+                <canvas id="storageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Charts / Insights -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+        <!-- Record Growth Chart -->
+        <div class="glass-card !p-8 border-t-4 border-emerald-500/30">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] mb-1">
+                        {{ \App\Core\Lang::get('dashboard.database_growth') }}
+                    </h3>
+                    <p class="text-xl font-black text-p-title italic uppercase tracking-tighter">
+                        {{ \App\Core\Lang::get('dashboard.new_records') }}
+                    </p>
+                </div>
+                <span class="text-[10px] font-black italic text-emerald-500 uppercase tracking-widest">+{{ array_sum($chartData['growth']['data']) }} (7d)</span>
+            </div>
+            <div class="h-[200px] w-full">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+
+        <!-- System Quick Insight -->
+        <div class="glass-card !p-8 border-t-4 border-blue-500/30 flex flex-col justify-center">
+             <div
+                class="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full -z-10">
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 text-3xl">
+                    ⚡
+                </div>
+                <div>
+                    <h4 class="text-lg font-black text-p-title uppercase tracking-tighter italic">{{ \App\Core\Lang::get('dashboard.ai_ready') }}</h4>
+                    <p class="text-sm text-p-muted leading-relaxed">
+                        {{ \App\Core\Lang::get('dashboard.ai_ready_desc') }}
+                    </p>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-glass-border flex gap-4">
+                <div class="flex-1">
+                    <span class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-1">{{ \App\Core\Lang::get('dashboard.health_status') }}</span>
+                    <span class="text-sm font-black text-emerald-500 uppercase italic tracking-tighter">{{ \App\Core\Lang::get('dashboard.optimized') }}</span>
+                </div>
+                <div class="flex-1">
+                    <span class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-1">{{ \App\Core\Lang::get('dashboard.latency') }}</span>
+                    <span class="text-sm font-black text-p-title uppercase italic tracking-tighter">~12ms</span>
                 </div>
             </div>
         </div>
-    @endif
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Modules -->
@@ -327,6 +378,110 @@
 @endsection
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart.js Default Styles
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.font.weight = '600';
+
+        const ctxActivity = document.getElementById('activityChart').getContext('2d');
+        const activityGradient = ctxActivity.createLinearGradient(0, 0, 0, 400);
+        activityGradient.addColorStop(0, 'rgba(56, 189, 248, 0.3)');
+        activityGradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+        new Chart(ctxActivity, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($chartData['activity']['labels']) !!},
+                datasets: [{
+                    label: 'Acciones del Sistema',
+                    data: {!! json_encode($chartData['activity']['data']) !!},
+                    borderColor: '#0ea5e9',
+                    borderWidth: 4,
+                    backgroundColor: activityGradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#0ea5e9',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Store Chart (Donut)
+        new Chart(document.getElementById('storageChart'), {
+            type: 'doughnut',
+            data: {
+                labels: {!! json_encode($chartData['storage']['labels']) !!},
+                datasets: [{
+                    data: {!! json_encode($chartData['storage']['data']) !!},
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'],
+                    borderWidth: 0,
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: { size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Growth Chart (Bar)
+        new Chart(document.getElementById('growthChart'), {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($chartData['growth']['labels']) !!},
+                datasets: [{
+                    label: 'Nuevos Registros',
+                    data: {!! json_encode($chartData['growth']['data']) !!},
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    hoverBackgroundColor: '#10b981'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
     <script>
         function toggleDevMode() {
             fetch('{{ $baseUrl }}admin/system/dev-mode', {

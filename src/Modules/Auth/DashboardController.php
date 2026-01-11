@@ -123,11 +123,70 @@ class DashboardController extends BaseController
             $showWelcomeBanner = ($val === false) ? 1 : (int) $val;
         }
 
+        // 6. Chart Data Preparation
+        $chartData = [
+            'activity' => ['labels' => [], 'data' => []],
+            'storage' => ['labels' => [], 'data' => []],
+            'growth' => ['labels' => [], 'data' => []]
+        ];
+
+        // 6a. Activity (System logs - Last 7 days)
+        $stmt = $db->prepare("SELECT date(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= date('now', '-6 days') GROUP BY day ORDER BY day ASC");
+        $stmt->execute();
+        $activityDays = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $activityDays[$row['day']] = (int) $row['count'];
+        }
+
+        // 6b. Storage Distribution
+        foreach ($databases as $database) {
+            if (file_exists($database['path'])) {
+                $chartData['storage']['labels'][] = $database['name'];
+                $chartData['storage']['data'][] = round(filesize($database['path']) / 1024 / 1024, 2);
+            }
+        }
+
+        // 6c. Record Growth & Activity Fill
+        $growthDays = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $day = date('Y-m-d', strtotime("-$i days"));
+            $chartData['activity']['labels'][] = date('D', strtotime($day));
+            $chartData['activity']['data'][] = $activityDays[$day] ?? 0;
+
+            $chartData['growth']['labels'][] = date('D', strtotime($day));
+            $growthDays[$day] = 0;
+        }
+
+        foreach ($databases as $database) {
+            try {
+                if (!file_exists($database['path']))
+                    continue;
+                $targetDb = new PDO('sqlite:' . $database['path']);
+                $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $tables = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($tables as $table) {
+                    $cols = $targetDb->query("PRAGMA table_info($table)")->fetchAll(PDO::FETCH_COLUMN, 1);
+                    if (in_array('fecha_de_creacion', $cols)) {
+                        $growthStmt = $targetDb->prepare("SELECT date(fecha_de_creacion) as day, COUNT(*) as count FROM $table WHERE fecha_de_creacion >= date('now', '-6 days') GROUP BY day");
+                        $growthStmt->execute();
+                        while ($grow = $growthStmt->fetch(PDO::FETCH_ASSOC)) {
+                            if (isset($growthDays[$grow['day']])) {
+                                $growthDays[$grow['day']] += (int) $grow['count'];
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+            }
+        }
+        $chartData['growth']['data'] = array_values($growthDays);
+
         $this->view('admin/dashboard', [
             'title' => 'Dashboard - ' . ($projectInfo['name'] ?? 'Data2Rest'),
             'project' => $projectInfo,
             'globalDbCount' => $globalDbCount,
             'showWelcomeBanner' => $showWelcomeBanner,
+            'chartData' => $chartData,
             'stats' => [
                 'total_databases' => count($databases),
                 'total_records' => $totalRecords,
