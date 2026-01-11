@@ -26,6 +26,13 @@ class LogController extends BaseController
         $db = Database::getInstance()->getConnection();
         $projectId = Auth::getActiveProject();
 
+        // Get filter inputs
+        $filterUser = $_GET['user_id'] ?? null;
+        $filterAction = $_GET['action_type'] ?? null;
+        $filterStart = $_GET['start_date'] ?? null;
+        $filterEnd = $_GET['end_date'] ?? null;
+        $search = $_GET['s'] ?? '';
+
         // Base Query
         $sql = "SELECT l.*, u.username, u.group_id 
                 FROM activity_logs l 
@@ -38,45 +45,76 @@ class LogController extends BaseController
             $sql .= " AND l.project_id = ?";
             $params[] = $projectId;
         } else if (!Auth::isAdmin()) {
-            // User outside of any project context should see nothing?
-            // Or only their own global actions? 
-            // Let's hide everything if no project selected for non-admin.
             $sql .= " AND 1=0";
         }
 
         // 2. Scope by Team/Group Visibility
-        // Admin sees all.
-        // Users see: Their own logs + Logs of others IN THE SAME GROUP.
         if (!Auth::isAdmin()) {
             $currentUserId = $_SESSION['user_id'];
             $currentUserGroupId = $_SESSION['group_id'] ?? null;
 
             if ($currentUserGroupId) {
-                // See self OR members of same group
-                // Note: We need to trust u.group_id from the join, but user might have changed group.
-                // Ideally, logs should snapshot the group_id at time of event? 
-                // schema check: activity_logs usually has user_id, project_id. 
-                // We rely on current user group membership.
-
-                // Get all users currently in my group
                 $teamMembers = Auth::getTeamMembers();
                 $teamMembers[] = $currentUserId;
                 $placeholders = implode(',', array_fill(0, count($teamMembers), '?'));
-
                 $sql .= " AND l.user_id IN ($placeholders)";
                 $params = array_merge($params, $teamMembers);
             } else {
-                // No group? See only self.
                 $sql .= " AND l.user_id = ?";
                 $params[] = $currentUserId;
             }
         }
 
-        $sql .= " ORDER BY l.created_at DESC LIMIT 100";
+        // 3. Apply Advanced Filters
+        if ($filterUser) {
+            $sql .= " AND l.user_id = ?";
+            $params[] = $filterUser;
+        }
+        if ($filterAction) {
+            $sql .= " AND l.action = ?";
+            $params[] = $filterAction;
+        }
+        if ($filterStart) {
+            $sql .= " AND date(l.created_at) >= ?";
+            $params[] = $filterStart;
+        }
+        if ($filterEnd) {
+            $sql .= " AND date(l.created_at) <= ?";
+            $params[] = $filterEnd;
+        }
+        if (!empty($search)) {
+            $sql .= " AND l.details LIKE ?";
+            $params[] = "%$search%";
+        }
+
+        $sql .= " ORDER BY l.created_at DESC LIMIT 200";
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $logs = $stmt->fetchAll();
+
+        // 4. Fetch Users for Filter
+        $users = [];
+        if (Auth::isAdmin() && !$projectId) {
+            $stmtU = $db->query("SELECT id, username FROM users ORDER BY username ASC");
+            $users = $stmtU->fetchAll();
+        } else if ($projectId) {
+            // Get users with activity in this project
+            $stmtU = $db->prepare("SELECT DISTINCT u.id, u.username FROM users u JOIN activity_logs l ON l.user_id = u.id WHERE l.project_id = ? ORDER BY u.username ASC");
+            $stmtU->execute([$projectId]);
+            $users = $stmtU->fetchAll();
+        }
+
+        // 5. Fetch Unique Actions for Filter
+        $sqlActions = "SELECT DISTINCT action FROM activity_logs WHERE 1=1";
+        $actParams = [];
+        if ($projectId) {
+            $sqlActions .= " AND project_id = ?";
+            $actParams[] = $projectId;
+        }
+        $stmtA = $db->prepare($sqlActions . " ORDER BY action ASC");
+        $stmtA->execute($actParams);
+        $actions = $stmtA->fetchAll(PDO::FETCH_COLUMN);
 
         // Stats: API Usage count by Action/Endpoint
         $stats = [
@@ -94,7 +132,7 @@ class LogController extends BaseController
             }
         }
 
-        // Top Endpoints (simplified from actions for now)
+        // Top Endpoints
         $sqlTop = "SELECT action, COUNT(*) as count FROM activity_logs WHERE action LIKE 'API_%'";
         $topParams = [];
         if ($projectId) {
@@ -109,8 +147,17 @@ class LogController extends BaseController
         $this->view('admin/logs/index', [
             'logs' => $logs,
             'stats' => $stats,
+            'users' => $users,
+            'actions' => $actions,
+            'filters' => [
+                'user_id' => $filterUser,
+                'action_type' => $filterAction,
+                'start_date' => $filterStart,
+                'end_date' => $filterEnd,
+                's' => $search
+            ],
             'projectId' => $projectId,
-            'title' => 'Activity Logs',
+            'title' => 'Audit Activity Logs',
             'breadcrumbs' => ['Activity' => null]
         ]);
     }

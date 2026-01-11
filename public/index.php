@@ -179,6 +179,23 @@ $router->add('POST', '/admin/projects/plan/update', 'Projects\\ProjectController
 // --- Module: Activity Logs ---
 $router->add('GET', '/admin/logs', 'Logs\\LogController@index');
 
+// --- Module: Backups ---
+$router->add('GET', '/admin/backups', 'Backups\\BackupController@index');
+$router->add('POST', '/admin/backups/create', 'Backups\\BackupController@create');
+$router->add('POST', '/admin/backups/config', 'Backups\\BackupController@saveConfig');
+$router->add('GET', '/admin/backups/download', 'Backups\\BackupController@download');
+$router->add('GET', '/admin/backups/delete', 'Backups\\BackupController@delete');
+$router->add('POST', '/admin/backups/upload', 'Backups\\BackupController@uploadToCloud');
+
+// --- Module: Webhooks ---
+$router->add('GET', '/admin/webhooks', 'Webhooks\\WebhookController@index');
+$router->add('GET', '/admin/webhooks/new', 'Webhooks\\WebhookController@form');
+$router->add('GET', '/admin/webhooks/edit', 'Webhooks\\WebhookController@form');
+$router->add('POST', '/admin/webhooks/save', 'Webhooks\\WebhookController@save');
+$router->add('GET', '/admin/webhooks/delete', 'Webhooks\\WebhookController@delete');
+$router->add('GET', '/admin/webhooks/logs', 'Webhooks\\WebhookController@logs');
+$router->add('POST', '/admin/webhooks/test', 'Webhooks\\WebhookController@test');
+
 // --- REST API Engine ---
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('GET', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');

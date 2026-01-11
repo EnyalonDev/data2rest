@@ -11,6 +11,7 @@ use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 use Exception;
+use App\Modules\Webhooks\WebhookDispatcher;
 
 /**
  * Media Controller
@@ -259,12 +260,25 @@ class MediaController extends BaseController
         }
 
         if (move_uploaded_file($file['tmp_name'], $targetDir . $safeName)) {
+            $publicUrl = Auth::getFullBaseUrl() . 'uploads/' . $scopePath . '/' . ($path ? $path . '/' : '') . $safeName;
+
             $this->json([
                 'success' => true,
                 'name' => $safeName,
-                'url' => Auth::getFullBaseUrl() . 'uploads/' . $scopePath . '/' . ($path ? $path . '/' : '') . $safeName
+                'url' => $publicUrl
             ]);
             Logger::log('UPLOAD_FILE', ['name' => $safeName, 'path' => $path], $db_id);
+
+            // Webhook Trigger
+            $projectId = Auth::getActiveProject();
+            if ($projectId) {
+                WebhookDispatcher::dispatch($projectId, 'media.uploaded', [
+                    'filename' => $safeName,
+                    'url' => $publicUrl,
+                    'path' => $path,
+                    'size' => $fileSize
+                ]);
+            }
         }
 
         $this->json(['error' => 'Failed to move uploaded file'], 500);

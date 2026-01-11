@@ -20,7 +20,7 @@
     </header>
 
     <!-- Stats Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-blue-500/50">
             <span class="text-4xl font-black text-p-title mb-2">{{ count($logs) }}</span>
             <span
@@ -42,6 +42,70 @@
                 class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.activity.active_endpoints') }}</span>
         </div>
     </div>
+
+    <!-- Filters Section -->
+    <section class="mb-12 glass-card border-white/5 bg-white/[0.02]">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            </div>
+            <h3 class="text-xs font-black text-p-title uppercase tracking-widest">{{ \App\Core\Lang::get('logs.filters') }}</h3>
+        </div>
+        
+        <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+            <!-- User Filter -->
+            <div class="md:col-span-2">
+                <label class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-2 block px-1">{{ \App\Core\Lang::get('logs.all_users') }}</label>
+                <select name="user_id" class="form-input !bg-black/40 !border-white/10 !py-2.5 text-xs">
+                    <option value="">{{ \App\Core\Lang::get('common.all') }}</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user['id'] }}" {{ ($filters['user_id'] ?? '') == $user['id'] ? 'selected' : '' }}>
+                            {{ $user['username'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Action Filter -->
+            <div class="md:col-span-2">
+                <label class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-2 block px-1">{{ \App\Core\Lang::get('logs.all_actions') }}</label>
+                <select name="action_type" class="form-input !bg-black/40 !border-white/10 !py-2.5 text-xs">
+                    <option value="">{{ \App\Core\Lang::get('common.all') }}</option>
+                    @foreach($actions as $action)
+                        <option value="{{ $action }}" {{ ($filters['action_type'] ?? '') == $action ? 'selected' : '' }}>
+                            {{ str_replace('_', ' ', $action) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Date Range -->
+            <div class="md:col-span-2">
+                <label class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-2 block px-1">{{ \App\Core\Lang::get('logs.start_date') }}</label>
+                <input type="date" name="start_date" value="{{ $filters['start_date'] ?? '' }}" class="form-input !bg-black/40 !border-white/10 !py-2.5 text-xs text-p-muted">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-2 block px-1">{{ \App\Core\Lang::get('logs.end_date') }}</label>
+                <input type="date" name="end_date" value="{{ $filters['end_date'] ?? '' }}" class="form-input !bg-black/40 !border-white/10 !py-2.5 text-xs text-p-muted">
+            </div>
+
+            <!-- Search Details -->
+            <div class="md:col-span-3">
+                <label class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-2 block px-1">{{ \App\Core\Lang::get('logs.search_details') }}</label>
+                <div class="relative">
+                    <input type="text" name="s" value="{{ $filters['s'] ?? '' }}" placeholder="..." class="form-input !bg-black/40 !border-white/10 !py-2.5 !pl-9 text-xs">
+                    <svg class="absolute left-3 top-2.5 text-p-muted" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="md:col-span-1">
+                <button type="submit" class="btn-primary w-full !h-[38px] !px-0 flex items-center justify-center" title="{{ \App\Core\Lang::get('logs.filter_btn') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </button>
+            </div>
+        </form>
+    </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <!-- Logs Timeline -->

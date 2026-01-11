@@ -196,9 +196,17 @@ Gestión avanzada de archivos con edición de imágenes integrada.
 - **Rastreador de Uso**: Identificación de archivos huérfanos y referencias en BD.
 - **Interfaz Fluida**: Vista de mosaico/lista y panel de inspección flotante.
 
+### 5. [Módulo de Webhooks](docs/WEBHOOKS.md) (Nuevo ✨)
+Notificaciones en tiempo real a sistemas externos.
+- **Eventos Reactivos**: `record.created`, `record.updated`, `media.uploaded`, etc.
+- **Seguridad**: Firmas HMAC-SHA256 para verificar la autenticidad.
+- **Logs**: Historial completo de ejecuciones y respuestas.
+- **Integraciones**: Conecta fácilmente con Zapier, Slack, Discord o Scripts propios.
+
 ---
 
-## ⚙️ Configuración
+- **Webhooks**: Notificaciones en tiempo real (Ver [WEBHOOKS.md](docs/WEBHOOKS.md))
+- **Backups**: Sistema de copias de seguridad local y nube (Ver [CLOUD_BACKUPS.md](docs/CLOUD_BACKUPS.md))
 
 ### Archivo de Configuración
 
@@ -385,7 +393,7 @@ Si encuentras algún problema o tienes preguntas:
   - Filtros combinados
   - Búsqueda global en todas las tablas
 
-- [ ] **Webhooks**
+- [x] **[Webhooks](docs/WEBHOOKS.md)** (Completado ✅)
   - Notificaciones en tiempo real
   - Eventos personalizables (create, update, delete)
   - Integración con servicios externos

@@ -7,6 +7,7 @@ use App\Core\Config;
 use App\Core\Auth;
 use App\Core\BaseController;
 use App\Core\Logger;
+use App\Modules\Webhooks\WebhookDispatcher;
 use PDO;
 
 class RestController extends BaseController
@@ -80,19 +81,19 @@ class RestController extends BaseController
                     break;
 
                 case 'POST':
-                    Logger::log('API_POST', "Table: $table", $db_id);
-                    $this->handlePostRequest($targetDb, $table, $db_id);
+                    Logger::log('API_POST', "Table: $table", $database['id']);
+                    $this->handlePostRequest($targetDb, $table, $database['id']);
                     break;
 
                 case 'PUT':
                 case 'PATCH':
-                    Logger::log('API_UPDATE', "Table: $table ID: $id Method: $method", $db_id);
-                    $this->handleUpdateRequest($targetDb, $table, $id, $db_id);
+                    Logger::log('API_UPDATE', "Table: $table ID: $id Method: $method", $database['id']);
+                    $this->handleUpdateRequest($targetDb, $table, $id, $database['id']);
                     break;
 
                 case 'DELETE':
-                    Logger::log('API_DELETE', "Table: $table ID: $id", $db_id);
-                    $this->handleDeleteRequest($targetDb, $table, $id);
+                    Logger::log('API_DELETE', "Table: $table ID: $id", $database['id']);
+                    $this->handleDeleteRequest($targetDb, $table, $id, $database['id']);
                     break;
 
                 default:
@@ -275,8 +276,28 @@ class RestController extends BaseController
 
         $stmt = $targetDb->prepare("INSERT INTO $table ($cols) VALUES ($vals)");
         $stmt->execute(array_values($input));
+        $newId = $targetDb->lastInsertId();
 
-        $this->json(['success' => true, 'id' => $targetDb->lastInsertId()], 201);
+        // Webhook Trigger
+        try {
+            $sysDb = Database::getInstance()->getConnection();
+            $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $projectStmt->execute([$db_id]);
+            $projectId = $projectStmt->fetchColumn();
+
+            if ($projectId) {
+                WebhookDispatcher::dispatch($projectId, 'record.created', [
+                    'database_id' => $db_id,
+                    'table' => $table,
+                    'id' => $newId,
+                    'data' => $input
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Ignore webhook failures
+        }
+
+        $this->json(['success' => true, 'id' => $newId], 201);
     }
 
     private function handleUpdateRequest($targetDb, $table, $id, $db_id)
@@ -315,15 +336,61 @@ class RestController extends BaseController
 
         $stmt = $targetDb->prepare($sql);
         $stmt->execute(array_merge(array_values($input), [$id]));
+
+        // Webhook Trigger
+        try {
+            $sysDb = Database::getInstance()->getConnection();
+            $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $projectStmt->execute([$db_id]);
+            $projectId = $projectStmt->fetchColumn();
+
+            if ($projectId) {
+                WebhookDispatcher::dispatch($projectId, 'record.updated', [
+                    'database_id' => $db_id,
+                    'table' => $table,
+                    'id' => $id,
+                    'changes' => $input
+                ]);
+            }
+        } catch (\Exception $e) {
+        }
+
         $this->json(['success' => true]);
     }
 
-    private function handleDeleteRequest($targetDb, $table, $id)
+    private function handleDeleteRequest($targetDb, $table, $id, $db_id)
     {
         if (!$id)
             $this->json(['error' => 'ID required'], 400);
+
+        // Fetch data before delete for webhook payload (optional but good practice)
+        $stmtFetch = $targetDb->prepare("SELECT * FROM $table WHERE id = ?");
+        $stmtFetch->execute([$id]);
+        $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
+
         $stmt = $targetDb->prepare("DELETE FROM $table WHERE id = ?");
         $stmt->execute([$id]);
+
+        // Webhook Trigger
+        try {
+            if ($oldData) {
+                $sysDb = Database::getInstance()->getConnection();
+                $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+                $projectStmt->execute([$db_id]);
+                $projectId = $projectStmt->fetchColumn();
+
+                if ($projectId) {
+                    WebhookDispatcher::dispatch($projectId, 'record.deleted', [
+                        'database_id' => $db_id,
+                        'table' => $table,
+                        'id' => $id,
+                        'data' => $oldData
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
         $this->json(['success' => true]);
     }
 

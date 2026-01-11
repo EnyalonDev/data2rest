@@ -1,1 +1,1 @@
-2a3c68d - chore: sync schema and update version tracking before production deploy (2026-01-10 22:08:33 -0400)
+272699b - fix: resolve DateTime parsing error in CRUD form for European date formats (2026-01-11 00:38:24 -0400)
