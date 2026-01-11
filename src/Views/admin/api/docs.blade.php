@@ -5,25 +5,25 @@
 @section('styles')
     <style type="text/tailwindcss">
         .badge-get {
-            @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
-        }
+                    @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
+                }
 
-        .endpoint-url {
-            @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
-        }
+                .endpoint-url {
+                    @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
+                }
 
-        .input-dark {
-            @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-        }
+                .input-dark {
+                    @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+                }
 
-        .checkbox-custom {
-            @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
-        }
+                .checkbox-custom {
+                    @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
+                }
 
-        .label-mini {
-            @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
-        }
-    </style>
+                .label-mini {
+                    @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
+                }
+            </style>
 @endsection
 
 @section('content')
@@ -103,14 +103,73 @@
                                     </path>
                                 </svg>
                             </button>
-                            <a id="test-{{ $table }}" href="#" target="_blank"
-                                class="bg-white/5 hover:bg-white/10 p-2.5 rounded-xl text-p-muted hover:text-p-title transition-all"
-                                title="Launch Request">
+                            <button onclick="testEndpoint('{{ $table }}')"
+                                class="btn-primary !p-2.5 !rounded-xl flex items-center gap-2"
+                                title="{{ \App\Core\Lang::get('api_control.test_endpoint') }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
-                            </a>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- API Playground (Hidden by default) -->
+                    <div id="playground-{{ $table }}" class="hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div class="glass-card !bg-black/40 border-primary/10 overflow-hidden">
+                            <div class="flex items-center justify-between p-4 border-b border-white/5">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{{ \App\Core\Lang::get('api_control.playground_title') }}</span>
+                                    <div id="status-{{ $table }}"
+                                        class="hidden px-2 py-0.5 rounded text-[9px] font-bold uppercase"></div>
+                                    <div id="latency-{{ $table }}"
+                                        class="hidden text-[9px] font-bold text-p-muted uppercase tracking-widest"></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="copyResponse('{{ $table }}')"
+                                        class="p-1.5 hover:bg-white/5 rounded-lg text-p-muted transition-all"
+                                        title="Copy Response">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </button>
+                                    <button onclick="closePlayground('{{ $table }}')"
+                                        class="p-1.5 hover:bg-red-500/10 rounded-lg text-p-muted hover:text-red-500 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-0 grid lg:grid-cols-2">
+                                <!-- Response Body -->
+                                <div class="border-r border-white/5">
+                                    <div class="p-3 bg-white/5 flex items-center justify-between">
+                                        <span
+                                            class="text-[9px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('api_control.response_body') }}</span>
+                                    </div>
+                                    <pre id="response-{{ $table }}"
+                                        class="p-4 text-xs font-mono text-emerald-400/90 overflow-auto max-h-[400px] custom-scrollbar selection:bg-emerald-500/30">{{ \App\Core\Lang::get('api_control.waiting_response') }}</pre>
+                                </div>
+                                <!-- Headers / Info -->
+                                <div>
+                                    <div class="p-3 bg-white/5">
+                                        <span
+                                            class="text-[9px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('api_control.headers') }}</span>
+                                    </div>
+                                    <div id="headers-{{ $table }}"
+                                        class="p-4 text-[10px] font-mono text-amber-400/70 overflow-auto max-h-[400px] space-y-1">
+                                        <!-- Headers injected here -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -275,8 +334,66 @@
                 }
 
                 document.getElementById('url-' + tableName).innerText = url;
-                document.getElementById('test-' + tableName).href = url;
             });
+        }
+
+        async function testEndpoint(tableName) {
+            const url = document.getElementById('url-' + tableName).innerText;
+            const playground = document.getElementById('playground-' + tableName);
+            const responseContainer = document.getElementById('response-' + tableName);
+            const headersContainer = document.getElementById('headers-' + tableName);
+            const statusBadge = document.getElementById('status-' + tableName);
+            const latencyBadge = document.getElementById('latency-' + tableName);
+
+            playground.classList.remove('hidden');
+            responseContainer.innerText = '{{ \App\Core\Lang::get('api_control.waiting_response') }}';
+            responseContainer.className = 'p-4 text-xs font-mono text-p-muted animate-pulse';
+            headersContainer.innerHTML = '';
+            statusBadge.classList.add('hidden');
+            latencyBadge.classList.add('hidden');
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(url);
+                const endTime = performance.now();
+                const latency = Math.round(endTime - startTime);
+
+                // Status UI
+                statusBadge.innerText = `HTTP ${response.status} ${response.statusText}`;
+                statusBadge.className = `px-2 py-0.5 rounded text-[9px] font-bold uppercase ${response.ok ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`;
+                statusBadge.classList.remove('hidden');
+
+                // Latency UI
+                latencyBadge.innerText = `${latency}ms`;
+                latencyBadge.classList.remove('hidden');
+
+                // Headers UI
+                let headersHtml = '';
+                response.headers.forEach((v, k) => {
+                    headersHtml += `<div><span class="text-p-muted capitalize font-bold">${k}:</span> ${v}</div>`;
+                });
+                headersContainer.innerHTML = headersHtml;
+
+                // Body UI
+                const data = await response.json();
+                responseContainer.innerText = JSON.stringify(data, null, 4);
+                responseContainer.className = 'p-4 text-xs font-mono text-emerald-400/90 overflow-auto max-h-[400px] custom-scrollbar selection:bg-emerald-500/30';
+
+            } catch (e) {
+                const endTime = performance.now();
+                responseContainer.innerText = `Error: ${e.message}\n\nTIP: Check if your API Key is valid and the table exists.`;
+                responseContainer.className = 'p-4 text-xs font-mono text-red-400';
+            }
+        }
+
+        function closePlayground(tableName) {
+            document.getElementById('playground-' + tableName).classList.add('hidden');
+        }
+
+        function copyResponse(tableName) {
+            const text = document.getElementById('response-' + tableName).innerText;
+            navigator.clipboard.writeText(text);
         }
 
         function toggleAllFields(tableName, status) {
