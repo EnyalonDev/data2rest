@@ -336,6 +336,48 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
             die("Error creating table: " . $e->getMessage());
         }
     }
+    /**
+     * Creates a new table using raw SQL.
+     */
+    public function createTableSql()
+    {
+        $db_id = $_POST['db_id'] ?? null;
+        $sql_code = $_POST['sql_code'] ?? '';
+        Auth::requirePermission('module:databases.create_table');
+
+        if (!$db_id || empty($sql_code)) {
+            Auth::setFlashError("Faltan parámetros obligatorios.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        try {
+            $targetDb = new PDO('sqlite:' . $database['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // Execute the SQL code
+            $targetDb->exec($sql_code);
+
+            // Update DB last edit
+            $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
+
+            Auth::setFlashError("Tabla creada exitosamente mediante SQL.", 'success');
+            Logger::log('CREATE_TABLE_SQL', ['database_id' => $db_id], $db_id);
+
+            // Redirect to sync to ensure all fields are registered and audit columns injected
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $db_id);
+            exit;
+        } catch (\PDOException $e) {
+            Auth::setFlashError("Error ejecutando SQL: " . $e->getMessage());
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
+            exit;
+        }
+    }
 
     /**
      * Removes a table from the database.

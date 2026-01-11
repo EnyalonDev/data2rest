@@ -91,6 +91,7 @@ $router->add('GET', '/admin/databases/sync', 'Database\\DatabaseController@syncD
 $router->add('POST', '/admin/databases/import', 'Database\\DatabaseController@importSql');
 $router->add('GET', '/admin/databases/export', 'Database\\DatabaseController@exportSql');
 $router->add('POST', '/admin/databases/table/create', 'Database\\DatabaseController@createTable');
+$router->add('POST', '/admin/databases/table/create-sql', 'Database\\DatabaseController@createTableSql');
 $router->add('GET', '/admin/databases/table/delete', 'Database\\DatabaseController@deleteTable');
 $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@manageFields');
 $router->add('POST', '/admin/databases/fields/add', 'Database\\DatabaseController@addField');
