@@ -38,9 +38,19 @@
                 <div class="space-y-2">
                     <label class="block text-[10px] font-black text-p-muted uppercase tracking-[0.2em] ml-1">Security
                         Token</label>
-                    <div class="relative">
+                    <div class="relative group">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-p-muted text-lg">🔑</span>
-                        <input type="password" name="password" placeholder="••••••••" required class="form-input pl-12">
+                        <input type="password" name="password" id="login-password" placeholder="••••••••" required
+                            class="form-input pl-12 pr-12">
+                        <button type="button" onclick="togglePassword('login-password', this)"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-p-muted hover:text-primary transition-colors focus:outline-none">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="eye-icon">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 <button type="submit"

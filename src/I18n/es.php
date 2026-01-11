@@ -157,6 +157,7 @@ return [
                         'file' => 'Archivo / Documento',
                         'datetime' => 'Fecha y Hora',
                         'boolean' => 'Interruptor (Sí / No)',
+                        'password' => 'Campo de Contraseña (Oculto)',
                         '' => 'NEW: fields.types.',
                 ],
                 'constraints' => 'Reglas',

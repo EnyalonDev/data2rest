@@ -146,6 +146,7 @@ return [
                         'file' => 'Arquivo / Documento',
                         'datetime' => 'Data e Hora',
                         'boolean' => 'Interruptor (Sim / Não)',
+                        'password' => 'Campo de Senha (Oculto)',
                         '' => 'NEW: fields.types.',
                 ],
                 'constraints' => 'Regras',

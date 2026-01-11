@@ -146,6 +146,7 @@ return [
                         'file' => 'File / Document',
                         'datetime' => 'Date and Time',
                         'boolean' => 'Switch (Yes / No)',
+                        'password' => 'Password Field (Hidden)',
                         '' => 'NEW: fields.types.',
                 ],
                 'constraints' => 'Rules',

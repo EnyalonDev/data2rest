@@ -25,8 +25,19 @@
                     @if($user) <span
                         class="text-amber-500/50 italic">({{ \App\Core\Lang::get('users.password_hint') }})</span>
                     @endif</label>
-                <input type="password" name="password" id="password-input" {{ $user ? '' : 'required' }} class="form-input"
-                    placeholder="{{ \App\Core\Lang::get('users.password_placeholder') }}">
+                <div class="relative group">
+                    <input type="password" name="password" id="password-input" {{ $user ? '' : 'required' }}
+                        class="form-input pr-12" placeholder="{{ \App\Core\Lang::get('users.password_placeholder') }}">
+                    <button type="button" onclick="togglePassword('password-input', this)"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-p-muted hover:text-primary transition-colors focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
                 <!-- Password Strength -->
                 <div class="mt-3 flex gap-1 h-1">
                     <div id="strength-1" class="flex-1 bg-white/5 rounded-full transition-all duration-500"></div>
