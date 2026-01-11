@@ -278,6 +278,7 @@
                                                     {{ $val ? \App\Core\Lang::get('common.active') : \App\Core\Lang::get('common.offline') }}
                                                 </span>
                                             @elseif($field['view_type'] === 'datetime' && !empty($val))
+                                                @php $safeTs = strtotime(str_replace('/', '-', $val)); @endphp
                                                 <div class="flex flex-col gap-1">
                                                     <div class="flex items-center gap-2 text-p-title font-bold text-[11px]">
                                                         <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor"
@@ -286,7 +287,7 @@
                                                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                                             </path>
                                                         </svg>
-                                                        {{ date('d/m/Y', strtotime($val)) }}
+                                                        {{ $safeTs ? date('d/m/Y', $safeTs) : $val }}
                                                     </div>
                                                     <div
                                                         class="flex items-center gap-2 text-p-muted font-black text-[9px] uppercase tracking-tighter">
@@ -295,7 +296,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                         </svg>
-                                                        {{ date('H:i:s', strtotime($val)) }}
+                                                        {{ $safeTs ? date('H:i:s', $safeTs) : '' }}
                                                     </div>
                                                 </div>
                                             @else

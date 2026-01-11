@@ -204,8 +204,14 @@
                                     @php
                                     $formattedDate = '';
                                     if (!empty($val)) {
-                                        $date = new DateTime($val);
-                                        $formattedDate = $date->format('Y-m-d\TH:i');
+                                        try {
+                                            $safeDate = str_replace('/', '-', $val);
+                                            $date = new \DateTime($safeDate);
+                                            $formattedDate = $date->format('Y-m-d\TH:i');
+                                        } catch (\Exception $e) {
+                                            // Si falla el parseo, dejamos el campo vacío o intentamos mostrar el original
+                                            $formattedDate = '';
+                                        }
                                     }
                                     @endphp
                                     <input type="datetime-local" name="{{ $field['field_name'] }}"
