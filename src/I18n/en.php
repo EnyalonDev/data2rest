@@ -512,6 +512,9 @@ return [
                 'media_label' => 'Media Library',
                 'users_label' => 'Team management',
                 'system_module' => 'System Module',
+                'webhooks_label' => 'Webhooks',
+                'perm_manage_webhooks' => 'Manage Webhooks',
+                'perm_manage_backups' => 'Manage Backups',
         ],
         'projects' => [
                 'title' => 'Project Management',

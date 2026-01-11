@@ -13,6 +13,10 @@ class WebhookController extends BaseController
     public function __construct()
     {
         Auth::requireLogin();
+        // Secure the module
+        if (!Auth::isAdmin()) {
+            Auth::requirePermission('module:webhooks.manage_webhooks');
+        }
     }
 
     public function index()
