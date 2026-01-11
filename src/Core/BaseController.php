@@ -50,7 +50,11 @@ class BaseController
         $data['csrf_field'] = Csrf::field();
 
         // Add last commit message for the footer
-        $data['last_commit'] = trim(shell_exec('git log -1 --pretty=%B 2>/dev/null') ?: 'No commit found');
+        $commitInfo = trim(shell_exec('git log -1 --pretty="%h - %s (%ci)" 2>/dev/null'));
+        if (!$commitInfo && file_exists(__DIR__ . '/../../data/.commit')) {
+            $commitInfo = trim(file_get_contents(__DIR__ . '/../../data/.commit'));
+        }
+        $data['last_commit'] = $commitInfo ?: 'v1.0.0-stable';
 
         // Normalize path (convert slashes to dots for BladeOne if needed, 
         // but BladeOne accepts both. Dots are standard.)

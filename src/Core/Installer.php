@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-    private static $SCHEMA = [
+        private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

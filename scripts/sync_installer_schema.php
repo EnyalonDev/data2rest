@@ -65,6 +65,13 @@ try {
     file_put_contents($installerPath, $newContent);
     echo "Successfully updated Installer.php with current database schema.\n";
 
+    // Update .commit info for footer fallback
+    $commitInfo = trim(shell_exec('git log -1 --pretty="%h - %s (%ci)" 2>/dev/null'));
+    if ($commitInfo) {
+        file_put_contents(__DIR__ . '/../data/.commit', $commitInfo);
+        echo "Successfully updated data/.commit with current version info.\n";
+    }
+
 } catch (Exception $e) {
     die("Error: " . $e->getMessage() . "\n");
 }
