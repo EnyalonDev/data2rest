@@ -50,7 +50,14 @@ class BaseController
         $data['csrf_field'] = Csrf::field();
 
         // Add last commit message for the footer
-        $commitInfo = trim(shell_exec('git log -1 --pretty="%h - %s (%ci)" 2>/dev/null'));
+        $gitPath = '/usr/bin/git'; // Default on many systems
+        if (!file_exists($gitPath))
+            $gitPath = '/usr/local/bin/git'; // Homebrew/Common
+        if (!file_exists($gitPath))
+            $gitPath = 'git'; // Fallback to PATH
+
+        $commitInfo = trim(shell_exec("$gitPath log -1 --pretty=\"%h - %s (%ci)\" 2>/dev/null"));
+
         if (!$commitInfo && file_exists(__DIR__ . '/../../data/.commit')) {
             $commitInfo = trim(file_get_contents(__DIR__ . '/../../data/.commit'));
         }
