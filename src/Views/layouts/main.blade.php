@@ -267,6 +267,15 @@
                     </div>
                 @endif
 
+                <!-- Emoji Trigger -->
+                <button onclick="toggleEmojiPicker()" 
+                    class="p-2 text-p-muted hover:text-primary hover:bg-white/5 rounded-xl transition-all group"
+                    title="Emojis (Ctrl+E)">
+                    <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+
                 <!-- Global Search Trigger -->
                 <button onclick="openPalette()"
                     class="hidden md:flex items-center gap-3 bg-black/20 hover:bg-black/40 border border-white/5 hover:border-white/10 px-4 py-2 rounded-xl transition-all group">
@@ -549,6 +558,7 @@
         })();
     </script>
     @include('partials.command_palette')
+    @include('partials.emoji_picker')
     @include('partials.system_modal')
     @yield('scripts')
 </body>
