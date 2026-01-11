@@ -348,6 +348,7 @@ return [
                 'beautify' => 'Beautify JSON',
                 'search_tables' => 'Search table...',
                 'explore_endpoints' => 'Explore Data Endpoints',
+                'internal_session' => 'Internal Session (Dev Mode)',
         ],
         'media' => [
                 'explorer' => 'Media Library',

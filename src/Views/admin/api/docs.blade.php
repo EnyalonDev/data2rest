@@ -41,7 +41,7 @@
                 <label class="label-mini">{{ \App\Core\Lang::get('api_control.auth_integration') }}</label>
                 <div class="flex flex-wrap gap-4 items-center">
                     <select id="api-key-selector" onchange="updateAllUrls()" class="input-dark min-w-[200px] flex-1">
-                        <option value="">{{ \App\Core\Lang::get('api_control.no_api_key') }}</option>
+                        <option value="">✨ {{ \App\Core\Lang::get('api_control.internal_session') }}</option>
                         @foreach($apiKeys as $key)
                             <option value="{{ $key['key_value'] }}">
                                 {{ $key['name'] }}

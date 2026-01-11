@@ -13,8 +13,16 @@ class RestController extends BaseController
 {
     private function authenticate()
     {
+        Auth::init();
+
         $headers = function_exists('getallheaders') ? getallheaders() : [];
         $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
+
+        // Internal bypass for authenticated dashboard users
+        if (!$apiKey && Auth::check()) {
+            header('X-Data2Rest-Auth: Internal-Session');
+            return ['name' => 'Internal Console Session', 'key_value' => 'internal'];
+        }
 
         if (!$apiKey) {
             $this->json(['error' => 'API Key required (X-API-KEY header or api_key param)'], 401);
@@ -29,6 +37,7 @@ class RestController extends BaseController
             $this->json(['error' => 'Invalid or inactive API Key'], 403);
         }
 
+        header('X-Data2Rest-Auth: API-Key');
         return $keyData;
     }
 
