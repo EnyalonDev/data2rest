@@ -176,9 +176,9 @@ class BaseController
     /**
      * Calculates current storage usage and quota for the active project.
      */
-    protected function getProjectStorageInfo()
+    protected function getProjectStorageInfo($projectId = null)
     {
-        $projectId = Auth::getActiveProject();
+        $projectId = $projectId ?: Auth::getActiveProject();
         if (!$projectId)
             return null;
 
@@ -188,7 +188,7 @@ class BaseController
         $quota = $stmt->fetchColumn() ?: 300;
 
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getStoragePrefix();
+        $scopePath = ($projectId == Auth::getActiveProject()) ? $this->getStoragePrefix() : 'p' . $projectId;
         $projectPath = $uploadBase . $scopePath;
 
         $usedBytes = 0;

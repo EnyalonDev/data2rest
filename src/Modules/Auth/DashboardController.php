@@ -92,14 +92,19 @@ class DashboardController extends BaseController
         });
         $recentActivity = array_slice($recentActivity, 0, 8);
 
-        // 4. Calculate storage size (global or project scoped? for now global uploads)
-        // Note: In a true multi-tenant we'd scope this too, but uploads are currently unified.
-        $uploadDir = Config::get('upload_dir');
-        if (is_dir($uploadDir)) {
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploadDir));
-            foreach ($iterator as $file) {
-                if ($file->isFile()) {
-                    $totalStorage += $file->getSize();
+        // 4. Calculate storage size scoped to project
+        $storageInfo = $this->getProjectStorageInfo();
+        $totalStorage = $storageInfo ? $storageInfo['used_bytes'] : 0;
+
+        // If no project active, we can show total system storage as fallback for admin
+        if (!$projectId && Auth::isAdmin()) {
+            $uploadDir = Config::get('upload_dir');
+            if (is_dir($uploadDir)) {
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploadDir));
+                foreach ($iterator as $file) {
+                    if ($file->isFile()) {
+                        $totalStorage += $file->getSize();
+                    }
                 }
             }
         }

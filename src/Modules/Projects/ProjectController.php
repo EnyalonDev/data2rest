@@ -45,6 +45,11 @@ class ProjectController extends BaseController
 
         $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Add storage info to each project
+        foreach ($projects as &$project) {
+            $project['storage'] = $this->getProjectStorageInfo($project['id']);
+        }
+
         $this->view('admin/projects/index', [
             'title' => 'Project Management',
             'projects' => $projects,

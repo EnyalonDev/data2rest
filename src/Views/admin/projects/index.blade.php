@@ -97,6 +97,19 @@
                             <span
                                 class="text-emerald-500 uppercase tracking-tighter">{{ \App\Core\Lang::get('common.active') }}</span>
                         </div>
+                        @if(isset($project['storage']))
+                            <div class="pt-2">
+                                <div class="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                                    <span class="text-p-muted">{{ \App\Core\Lang::get('projects.storage_quota') }}</span>
+                                    <span class="text-p-title">{{ $project['storage']['used_mb'] }} /
+                                        {{ $project['storage']['quota_mb'] }} MB</span>
+                                </div>
+                                <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary transition-all duration-1000"
+                                        style="width: {{ $project['storage']['percent'] }}%"></div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="flex gap-2">
