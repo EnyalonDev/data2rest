@@ -13,6 +13,7 @@ Thumbs.db
 
 # If you want to keep the data directory empty in git
 !/data/.gitkeep
+/data/backups/
 
 # Uploads
 /public/uploads/*
