@@ -84,15 +84,28 @@
             // Category Header in Grid
             const header = document.createElement('div');
             header.id = 'cat-anchor-' + cat;
-            header.className = 'col-span-6 text-[9px] font-black text-p-muted uppercase tracking-widest mt-4 mb-2 border-b border-white/5 pb-1';
+            header.className = 'col-span-6 text-[9px] font-black text-p-muted uppercase tracking-widest mt-4 mb-2 border-b border-white/5 pb-1 category-header';
             header.innerText = category.label;
             grid.appendChild(header);
 
             // Emojis
             category.emojis.forEach(emoji => {
                 const btn = document.createElement('button');
-                btn.className = 'text-xl p-1 hover:bg-white/10 rounded-lg transition-all transform hover:scale-125';
+                btn.className = 'emoji-btn text-xl p-1 hover:bg-white/10 rounded-lg transition-all transform hover:scale-125';
                 btn.innerText = emoji;
+
+                // Search Keywords mapping
+                let keywords = emoji;
+                if (emoji === '🏥') keywords += ' hospital clinic medical salud';
+                if (emoji === '🏠') keywords += ' casa home house';
+                if (emoji === '🔥') keywords += ' fuego fire hot trend';
+                if (emoji === '❤️') keywords += ' amor love heart';
+                if (emoji === '🚀') keywords += ' rocket nave space fast';
+                if (emoji === '💡') keywords += ' idea light bombilla object';
+                if (emoji === '🍎') keywords += ' manzana apple fruit comida';
+                if (emoji === '✈️') keywords += ' avion plane travel viaje';
+
+                btn.setAttribute('data-keywords', keywords.toLowerCase());
                 btn.onclick = () => insertEmoji(emoji);
                 btn.onmouseenter = () => {
                     document.getElementById('emoji-preview').innerText = `Emoji: ${emoji}`;
@@ -130,19 +143,32 @@
 
     function filterEmojis(query) {
         const grid = document.getElementById('emoji-grid');
-        const btns = grid.getElementsByTagName('button');
-        const headers = grid.getElementsByTagName('div');
+        const btns = grid.getElementsByClassName('emoji-btn');
+        const headers = grid.getElementsByClassName('category-header');
+        const q = query.toLowerCase().trim();
 
-        if (!query) {
-            for (let b of btns) b.style.display = 'block';
-            for (let h of headers) h.style.display = 'block';
-            return;
+        let found = 0;
+        for (let b of btns) {
+            const keywords = b.getAttribute('data-keywords') || '';
+            if (!q || keywords.includes(q)) {
+                b.style.display = 'block';
+                found++;
+            } else {
+                b.style.display = 'none';
+            }
         }
 
-        // In a real scenario we'd need names, for now we just show all if searching
-        // but hide category headers to make it a flat list
-        for (let h of headers) h.style.display = 'none';
-        // (Simple filtering logic would go here if we had metadata)
+        // Hide headers if searching
+        for (let h of headers) {
+            h.style.display = q ? 'none' : 'block';
+        }
+
+        const preview = document.getElementById('emoji-preview');
+        if (q && found === 0) {
+            preview.innerText = "No se encontraron emojis.";
+        } else if (!q) {
+            preview.innerText = "Selecciona un emoji para insertar";
+        }
     }
 
     function insertEmoji(emoji) {
