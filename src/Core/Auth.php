@@ -146,9 +146,23 @@ class Auth
         if (isset($perms['all']) && $perms['all'] === true)
             return true;
 
-        // Check module-level permissions
+        // Check specific resource permission (e.g. module:databases.create_db)
+        // Format: module:name.action - Process this FIRST before general module check
+        if (strpos($resource, '.') !== false) {
+            [$module, $reqAction] = explode('.', $resource, 2);
+            if (strpos($module, 'module:') === 0)
+                $module = substr($module, 7);
+
+            if (!isset($perms['modules'][$module]))
+                return false;
+
+            // Strict check: the action must be explicitly in the array
+            return in_array($reqAction, $perms['modules'][$module], true);
+        }
+
+        // Check module-level permissions (e.g. module:databases)
         // Only if it doesn't contain a dot (which implies specific action notation)
-        if (strpos($resource, 'module:') === 0 && strpos($resource, '.') === false) {
+        if (strpos($resource, 'module:') === 0) {
             $module = substr($resource, 7);
             if (!isset($perms['modules'][$module]))
                 return false;
@@ -157,19 +171,8 @@ class Auth
             if ($action === null)
                 return true;
 
-            return in_array($action, $perms['modules'][$module]);
-        }
-
-        // Check specific resource permission (e.g. databases.create_table)
-        // Format: module.action
-        if (strpos($resource, '.') !== false) {
-            [$module, $reqAction] = explode('.', $resource, 2);
-            if (strpos($module, 'module:') === 0)
-                $module = substr($module, 7);
-
-            if (!isset($perms['modules'][$module]))
-                return false;
-            return in_array($reqAction, $perms['modules'][$module]);
+            // If action is provided as second parameter, check it
+            return in_array($action, $perms['modules'][$module], true);
         }
 
         return false;
