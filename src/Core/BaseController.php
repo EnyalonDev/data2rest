@@ -56,10 +56,10 @@ class BaseController
         if (!file_exists($gitPath))
             $gitPath = 'git'; // Fallback to PATH
 
-        $commitInfo = trim(shell_exec("$gitPath log -1 --pretty=\"%h - %s (%ci)\" 2>/dev/null"));
+        $commitInfo = trim((string) shell_exec("$gitPath log -1 --pretty=\"%h - %s (%ci)\" 2>/dev/null"));
 
         if (!$commitInfo && file_exists(__DIR__ . '/../../data/.commit')) {
-            $commitInfo = trim(file_get_contents(__DIR__ . '/../../data/.commit'));
+            $commitInfo = trim((string) file_get_contents(__DIR__ . '/../../data/.commit'));
         }
         $data['last_commit'] = $commitInfo ?: 'v1.0.0-stable';
 
