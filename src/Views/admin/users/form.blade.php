@@ -14,11 +14,31 @@
         {!! $csrf_field !!}
         <input type="hidden" name="id" value="{{ $user['id'] ?? '' }}">
 
-        <section class="glass-card space-y-6">
-            <div>
+        <section class="glass-card grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="md:col-span-2">
                 <label class="form-label">{{ \App\Core\Lang::get('users.username') }}</label>
                 <input type="text" name="username" value="{{ $user['username'] ?? '' }}" required class="form-input"
                     placeholder="{{ \App\Core\Lang::get('users.username_placeholder') }}">
+            </div>
+            <div>
+                <label class="form-label">{{ \App\Core\Lang::get('profile.public_name') }}</label>
+                <input type="text" name="public_name" value="{{ $user['public_name'] ?? '' }}" class="form-input"
+                    placeholder="Ej. Juan Pérez">
+            </div>
+            <div>
+                <label class="form-label">{{ \App\Core\Lang::get('profile.email') }}</label>
+                <input type="email" name="email" value="{{ $user['email'] ?? '' }}" class="form-input"
+                    placeholder="email@dominio.com">
+            </div>
+            <div>
+                <label class="form-label">{{ \App\Core\Lang::get('profile.phone') }}</label>
+                <input type="text" name="phone" value="{{ $user['phone'] ?? '' }}" class="form-input"
+                    placeholder="+34 600 000 000">
+            </div>
+            <div>
+                <label class="form-label">{{ \App\Core\Lang::get('profile.address') }}</label>
+                <input type="text" name="address" value="{{ $user['address'] ?? '' }}" class="form-input"
+                    placeholder="Calle, Ciudad, País...">
             </div>
             <div>
                 <label class="form-label">{{ \App\Core\Lang::get('users.password') }}

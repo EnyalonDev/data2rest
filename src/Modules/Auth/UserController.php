@@ -32,17 +32,31 @@ class UserController extends BaseController
 
         if (Auth::isAdmin()) {
             $groupId = $_GET['group_id'] ?? null;
+            $search = $_GET['search'] ?? null;
+
             $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
                     LEFT JOIN roles r ON u.role_id = r.id 
                     LEFT JOIN groups g ON u.group_id = g.id";
             $params = [];
+            $where = [];
 
             if ($groupId) {
-                $sql .= " WHERE u.group_id = ?";
+                $where[] = "u.group_id = ?";
                 $params[] = $groupId;
             }
-            $sql .= " ORDER BY u.id DESC";
 
+            if ($search) {
+                $where[] = "(u.username LIKE ? OR u.public_name LIKE ? OR u.email LIKE ?)";
+                $params[] = "%$search%";
+                $params[] = "%$search%";
+                $params[] = "%$search%";
+            }
+
+            if (!empty($where)) {
+                $sql .= " WHERE " . implode(" AND ", $where);
+            }
+
+            $sql .= " ORDER BY u.id DESC";
 
             // Execute safe query
             $stmt = $db->prepare($sql);
@@ -149,23 +163,28 @@ class UserController extends BaseController
         $status = isset($_POST['status']) ? 1 : 0;
         $group_id = !empty($_POST['group_id']) ? $_POST['group_id'] : null;
 
+        $public_name = $_POST['public_name'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $phone = $_POST['phone'] ?? '';
+        $address = $_POST['address'] ?? '';
+
         if ($id) {
             // Update existing user
             if (!empty($_POST['password'])) {
                 // If password is provided, re-hash and update it
                 $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-                $stmt = $db->prepare("UPDATE users SET username = ?, password = ?, role_id = ?, group_id = ?, status = ? WHERE id = ?");
-                $stmt->execute([$username, $password, $role_id, $group_id, $status, $id]);
+                $stmt = $db->prepare("UPDATE users SET username = ?, password = ?, role_id = ?, group_id = ?, status = ?, public_name = ?, email = ?, phone = ?, address = ? WHERE id = ?");
+                $stmt->execute([$username, $password, $role_id, $group_id, $status, $public_name, $email, $phone, $address, $id]);
             } else {
                 // Skip password update if field is empty
-                $stmt = $db->prepare("UPDATE users SET username = ?, role_id = ?, group_id = ?, status = ? WHERE id = ?");
-                $stmt->execute([$username, $role_id, $group_id, $status, $id]);
+                $stmt = $db->prepare("UPDATE users SET username = ?, role_id = ?, group_id = ?, status = ?, public_name = ?, email = ?, phone = ?, address = ? WHERE id = ?");
+                $stmt->execute([$username, $role_id, $group_id, $status, $public_name, $email, $phone, $address, $id]);
             }
         } else {
             // Create new user
             $password = password_hash($_POST['password'] ?? '123456', PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO users (username, password, role_id, group_id, status) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$username, $password, $role_id, $group_id, $status]);
+            $stmt = $db->prepare("INSERT INTO users (username, password, role_id, group_id, status, public_name, email, phone, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $password, $role_id, $group_id, $status, $public_name, $email, $phone, $address]);
         }
 
         $this->redirect('admin/users');

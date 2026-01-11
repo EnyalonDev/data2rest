@@ -3,30 +3,41 @@
 @section('title', \App\Core\Lang::get('users_list.title'))
 
 @section('content')
-    <header class="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+    <header class="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
             <h1 class="text-5xl font-black text-p-title italic tracking-tighter mb-2">
                 {{ \App\Core\Lang::get('users_list.title') }}
             </h1>
             <p class="text-p-muted font-medium">{{ \App\Core\Lang::get('users_list.subtitle') }}</p>
         </div>
-        <div class="flex gap-4">
+        <div class="flex flex-wrap justify-end gap-4 w-full md:w-auto">
+            <!-- Search Form -->
+            <form action="" method="GET" class="relative group min-w-[300px]">
+                <input type="text" name="search" value="{{ $_GET['search'] ?? '' }}" 
+                    placeholder="Buscar usuario, nombre o email..."
+                    class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-10 text-sm text-p-title focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none">
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-p-muted group-focus-within:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                @if(isset($_GET['search']) && !empty($_GET['search']))
+                    <a href="{{ $baseUrl }}admin/users" class="absolute right-3 top-1/2 -translate-y-1/2 text-p-muted hover:text-red-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
+                @endif
+            </form>
+
             @if(\App\Core\Auth::hasPermission('module:users.manage_roles'))
                 <a href="{{ $baseUrl }}admin/roles"
-                    class="btn-primary !bg-slate-800 !text-slate-300 !py-2">{{ \App\Core\Lang::get('users_list.access_policies') }}</a>
-            @else
-                <button onclick="showAccessDenied('{{ \App\Core\Lang::get('users_list.access_policies') }}')"
-                    class="btn-primary !bg-slate-800 !text-slate-300 !py-2 opacity-50 cursor-pointer">{{ \App\Core\Lang::get('users_list.access_policies') }}</button>
-            @endif
-
-            @if(\App\Core\Auth::hasPermission('module:users.manage_groups'))
-                <a href="{{ $baseUrl }}admin/groups"
-                    class="btn-primary !bg-slate-800 !text-slate-300 !py-2">{{ \App\Core\Lang::get('common.groups') }}</a>
+                    class="btn-primary !bg-slate-800 !text-slate-300 !py-2.5">{{ \App\Core\Lang::get('users_list.access_policies') }}</a>
             @endif
 
             @if(\App\Core\Auth::hasPermission('module:users.invite_users'))
                 <a href="{{ $baseUrl }}admin/users/new"
-                    class="btn-primary !py-2">{{ \App\Core\Lang::get('users_list.create') }}</a>
+                    class="btn-primary !py-2.5 px-6 font-black uppercase tracking-widest text-[11px]">{{ \App\Core\Lang::get('users_list.create') }}</a>
             @endif
         </div>
     </header>
@@ -50,12 +61,17 @@
                             <div class="flex items-center gap-4">
                                 <div
                                     class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-dark font-black">
-                                    {{ strtoupper(substr($u['username'], 0, 1)) }}
+                                    {{ strtoupper(substr($u['public_name'] ?: $u['username'], 0, 1)) }}
                                 </div>
                                 <div>
-                                    <p class="font-bold text-p-title">{{ $u['username'] }}</p>
-                                    <p class="text-[10px] text-p-muted uppercase font-black">
-                                        {{ \App\Core\Lang::get('users_list.node_id') }}: #{{ $u['id'] }}
+                                    <p class="font-bold text-p-title">
+                                        {{ $u['public_name'] ?: $u['username'] }}
+                                        @if($u['public_name'])
+                                            <span class="text-[9px] text-p-muted font-mono opacity-50 ml-1">(@ {{ $u['username'] }})</span>
+                                        @endif
+                                    </p>
+                                    <p class="text-[10px] text-p-muted font-medium">
+                                        {{ $u['email'] ?: \App\Core\Lang::get('users_list.node_id') . ': #' . $u['id'] }}
                                     </p>
                                 </div>
                             </div>
