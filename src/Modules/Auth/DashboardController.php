@@ -132,6 +132,7 @@ class DashboardController extends BaseController
                 'total_databases' => count($databases),
                 'total_records' => $totalRecords,
                 'storage_usage' => $this->formatBytes($totalStorage),
+                'storage_info' => $storageInfo,
                 'recent_activity' => $recentActivity
             ]
         ]);

@@ -97,7 +97,7 @@
                 class="text-[10px] font-black text-p-muted uppercase tracking-widest">{{ \App\Core\Lang::get('dashboard.stats.records') }}</span>
         </div>
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-amber-500/50 group relative">
-            @php $storage = $this->getProjectStorageInfo(); @endphp
+            @php $storage = $stats['storage_info'] ?? null; @endphp
             @if($storage)
                 <div class="absolute inset-x-0 bottom-0 h-1 bg-white/5 overflow-hidden">
                     <div class="h-full bg-amber-500 transition-all duration-1000 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
