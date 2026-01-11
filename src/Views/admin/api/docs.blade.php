@@ -5,25 +5,25 @@
 @section('styles')
     <style type="text/tailwindcss">
         .badge-get {
-                        @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
-                    }
+                            @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
+                        }
 
-                    .endpoint-url {
-                        @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
-                    }
+                        .endpoint-url {
+                            @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
+                        }
 
-                    .input-dark {
-                        @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-                    }
+                        .input-dark {
+                            @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+                        }
 
-                    .checkbox-custom {
-                        @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
-                    }
+                        .checkbox-custom {
+                            @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
+                        }
 
-                    .label-mini {
-                        @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
-                    }
-                </style>
+                        .label-mini {
+                            @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
+                        }
+                    </style>
 @endsection
 
 @section('content')
@@ -132,6 +132,16 @@
                                     </path>
                                 </svg>
                             </button>
+                            </button>
+                            <div class="flex items-center gap-2 bg-black/40 rounded-lg p-1 border border-white/5">
+                                <select id="method-{{ $table }}" onchange="toggleBodyInput('{{ $table }}')"
+                                    class="bg-transparent text-[10px] font-bold text-p-muted uppercase focus:outline-none cursor-pointer">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="DELETE">DELETE</option>
+                                </select>
+                            </div>
                             <button onclick="testEndpoint('{{ $table }}')"
                                 class="btn-primary !p-2.5 !rounded-xl flex items-center gap-2"
                                 title="{{ \App\Core\Lang::get('api_control.test_endpoint') }}">
@@ -141,6 +151,15 @@
                                 </svg>
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Request Body Input (Hidden by default) -->
+                    <div id="body-input-container-{{ $table }}" class="hidden mb-4 animate-in fade-in slide-in-from-top-2">
+                        <label class="text-[9px] font-bold text-p-muted uppercase tracking-widest mb-2 block">Request Payload
+                            (JSON)</label>
+                        <textarea id="request-body-{{ $table }}" rows="4"
+                            class="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-xs font-mono text-p-text focus:outline-none focus:border-primary/50"
+                            placeholder='{"field": "value"}'></textarea>
                     </div>
 
                     <!-- API Playground (Hidden by default) -->
@@ -409,11 +428,28 @@
 
         async function testEndpoint(tableName) {
             const url = document.getElementById('url-' + tableName).innerText;
+            const method = document.getElementById('method-' + tableName).value;
             const playground = document.getElementById('playground-' + tableName);
             const responseContainer = document.getElementById('response-' + tableName);
             const headersContainer = document.getElementById('headers-' + tableName);
             const statusBadge = document.getElementById('status-' + tableName);
             const latencyBadge = document.getElementById('latency-' + tableName);
+
+            // Get Request Body if applicable
+            let body = null;
+            if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                const rawBody = document.getElementById('request-body-' + tableName).value;
+                try {
+                    if (rawBody) {
+                        // Validate JSON
+                        JSON.parse(rawBody);
+                        body = rawBody;
+                    }
+                } catch (e) {
+                    alert('Invalid JSON in Request Payload');
+                    return;
+                }
+            }
 
             playground.classList.remove('hidden');
             responseContainer.innerText = '{{ \App\Core\Lang::get('api_control.waiting_response') }}';
@@ -425,7 +461,19 @@
             const startTime = performance.now();
 
             try {
-                const response = await fetch(url);
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                };
+
+                if (body) {
+                    options.body = body;
+                }
+
+                const response = await fetch(url, options);
                 const endTime = performance.now();
                 const latency = Math.round(endTime - startTime);
 
@@ -446,14 +494,30 @@
                 headersContainer.innerHTML = headersHtml;
 
                 // Body UI
-                const data = await response.json();
-                responseContainer.innerText = JSON.stringify(data, null, 4);
-                responseContainer.className = 'p-4 text-xs font-mono text-emerald-400/90 overflow-auto max-h-[400px] custom-scrollbar selection:bg-emerald-500/30';
+                const text = await response.text();
+                try {
+                    const data = JSON.parse(text);
+                    responseContainer.innerText = JSON.stringify(data, null, 4);
+                    responseContainer.className = 'p-4 text-xs font-mono text-emerald-400/90 overflow-auto max-h-[400px] custom-scrollbar selection:bg-emerald-500/30';
+                } catch (e) {
+                    responseContainer.innerText = text; // Fallback for non-JSON response
+                    responseContainer.className = 'p-4 text-xs font-mono text-p-text overflow-auto max-h-[400px]';
+                }
 
             } catch (e) {
                 const endTime = performance.now();
-                responseContainer.innerText = `Error: ${e.message}\n\nTIP: Check if your API Key is valid and the table exists.`;
+                responseContainer.innerText = `Error: ${e.message}\n\nTIP: Check CORS settings and valid URL.`;
                 responseContainer.className = 'p-4 text-xs font-mono text-red-400';
+            }
+        }
+
+        function toggleBodyInput(tableName) {
+            const method = document.getElementById('method-' + tableName).value;
+            const container = document.getElementById('body-input-container-' + tableName);
+            if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
             }
         }
 
