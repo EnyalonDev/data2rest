@@ -49,6 +49,9 @@ class BaseController
         $data['csrf_token'] = Csrf::getToken();
         $data['csrf_field'] = Csrf::field();
 
+        // Add last commit message for the footer
+        $data['last_commit'] = trim(shell_exec('git log -1 --pretty=%B 2>/dev/null') ?: 'No commit found');
+
         // Normalize path (convert slashes to dots for BladeOne if needed, 
         // but BladeOne accepts both. Dots are standard.)
         $path = str_replace('/', '.', $path);
