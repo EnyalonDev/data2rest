@@ -13,7 +13,14 @@ php scripts/backup.php
 ```
 *Nota: Si recibes errores de permisos, asegúrate de que el usuario que ejecuta el comando tenga permisos de escritura en la carpeta `data/backups`.*
 
-## 2. Configurar Cron Job
+
+## 2. Sincronización en la Nube (Google Drive / Apps Script)
+El script también verifica si existe una URL configurada en `system_settings` (clave `backup_cloud_url`).
+- Si existe, el script intentará subir automáticamente el archivo ZIP generado a esa URL mediante POST.
+- Esto permite tener una copia remota inmediata tras cada respaldo local.
+- *Nota: Archivos mayores a 20MB pueden ser omitidos para evitar límites de timeouts en Apps Script.*
+
+## 3. Configurar Cron Job
 Para ejecutar esto automáticamente cada 4 horas, debes añadir una tarea al Cron de tu sistema.
 
 1. Abre el editor de cron:
