@@ -391,6 +391,7 @@ return [
                 'editor_subtitle' => 'Recortar, Redimensionar e Aplicar Filtros',
                 'tools' => 'Ferramentas',
                 'crop' => 'Recortar',
+                'remove_bg' => 'Remover Fundo (IA)',
                 'filters' => 'Filtros',
                 'dimensions' => 'Dimensões',
                 'width' => 'Largura',

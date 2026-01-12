@@ -391,6 +391,7 @@ return [
                 'editor_subtitle' => 'Crop, Resize and Apply Filters',
                 'tools' => 'Tools',
                 'crop' => 'Crop',
+                'remove_bg' => 'Remove Background (AI)',
                 'filters' => 'Filters',
                 'dimensions' => 'Dimensions',
                 'width' => 'Width',
