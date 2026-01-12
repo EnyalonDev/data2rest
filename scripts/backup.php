@@ -101,6 +101,56 @@ if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) 
         }
     }
 
+    // --- Cloud Synchronization ---
+    echo "Checking cloud sync configuration...\n";
+    try {
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'backup_cloud_url'");
+        $cloudUrl = $stmt->fetchColumn();
+
+        if ($cloudUrl) {
+            echo "Cloud URL found. Uploading to Google Drive...\n";
+
+            // Limit file size for Cloud Sync (Google Apps Script usually has 50MB limits)
+            if ($finalSize > 20 * 1024 * 1024) {
+                echo "WARNING: File too large (>20MB) for standard GAS Sync. Skipping Cloud Upload.\n";
+            } else {
+                $fileContent = file_get_contents($filepath);
+                $base64Data = base64_encode($fileContent);
+
+                $payload = json_encode([
+                    'filename' => $filename,
+                    'mimeType' => 'application/zip',
+                    'data' => $base64Data
+                ]);
+
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $cloudUrl);
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 300);
+
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
+
+                if ($httpCode == 200 || $httpCode == 302) {
+                    echo "Cloud Upload Successful.\n";
+                } else {
+                    echo "Cloud Upload Failed (HTTP $httpCode): $curlError\n";
+                }
+            }
+        } else {
+            echo "No Cloud URL configured (backup_cloud_url). Skipping sync.\n";
+        }
+    } catch (Exception $e) {
+        echo "Cloud Sync Error: " . $e->getMessage() . "\n";
+    }
+
 } else {
     echo "Error: Could not create zip archive at $filepath\n";
     exit(1);
