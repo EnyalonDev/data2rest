@@ -314,6 +314,15 @@
                                     </svg>
                                     {{ \App\Core\Lang::get('media.crop') }}
                                 </button>
+                                <button onclick="removeBackground()" class="editor-tool-btn" id="tool-bg-remove">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M3 3h18v18H3zM21 9l-9 9-9-9" />
+                                        <path d="M12 3v13" />
+                                    </svg>
+                                    {{ \App\Core\Lang::get('media.remove_bg') }}
+                                </button>
                                 <button onclick="setEditorTool('filters')" class="editor-tool-btn" id="tool-filters">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -519,10 +528,12 @@
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <!-- AI Library loaded on demand -->
     <script>
         let cropper = null;
         let originalAspect = 1;
         let selectedFilter = 'none';
+        let clientEditedBlob = null; // Stores AI processed blob
 
         function openEditor() {
             if (!selectedItem || !selectedItem.is_image) return;
@@ -532,6 +543,11 @@
             img.src = selectedItem.url + '?t=' + new Date().getTime();
 
             modal.classList.remove('hidden');
+
+            // Reset State
+            clientEditedBlob = null;
+            document.querySelectorAll('.editor-tool-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tool-crop').classList.add('active');
 
             img.onload = () => {
                 originalAspect = img.naturalWidth / img.naturalHeight;
@@ -620,6 +636,79 @@
             document.getElementById('image-editor-modal').classList.add('hidden');
         }
 
+        async function removeBackground() {
+            const btn = document.getElementById('tool-bg-remove');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Thinking...';
+            btn.disabled = true;
+
+            const img = document.getElementById('editor-image-preview');
+            // Allow Cross-Origin for canvas processing if needed (though we use blob)
+            img.crossOrigin = "anonymous";
+
+            try {
+                // Dynamic Import if not loaded
+                // Dynamic Import with Version 1.7.0 (Verified)
+                if (typeof window.imglyRemoveBackground !== 'function') {
+                    btn.innerHTML = '<svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading AI v1.7...';
+
+                    try {
+                        const module = await import("https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm");
+                        // Library uses named export 'removeBackground'
+                        window.imglyRemoveBackground = module.removeBackground || module.default;
+                    } catch (importError) {
+                        console.warn("jsDelivr failed, trying unpkg...", importError);
+                        const module = await import("https://unpkg.com/@imgly/background-removal@1.7.0/dist/index.mjs");
+                        window.imglyRemoveBackground = module.removeBackground || module.default;
+                    }
+
+                    if (typeof window.imglyRemoveBackground !== 'function') {
+                        throw new Error("Could not load removeBackground function from module");
+                    }
+                }
+
+                // Config: Allow library to use default publicPath (staticimgly.com)
+                // We removed the manual CDN path because the code package does not contain the models.
+                const config = {
+                    debug: true,
+                    progress: (key, current, total) => {
+                        const percent = Math.round((current / total) * 100);
+                        if (btn) btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> AI Loading: ${percent}%`;
+                    }
+                };
+
+                const blob = await window.imglyRemoveBackground(selectedItem.url, config);
+                const url = URL.createObjectURL(blob);
+
+                // Update Global State
+                clientEditedBlob = blob;
+
+                // Update Editor
+                img.src = url;
+
+                // Force "Save as Copy" to true for safety
+                document.getElementById('save-copy').checked = true;
+
+                // Re-init cropper with new image
+                if (cropper) cropper.replace(url);
+                else initCropper();
+
+                // Visual Success
+                btn.innerHTML = '<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Done!';
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.add('active'); // Keep active state
+                }, 2000);
+
+            } catch (e) {
+                console.error("AI Error:", e);
+                alert("Error removing background: " + e.message);
+                btn.innerHTML = originalContent;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         async function saveEdit() {
             const btn = document.getElementById('btn-save-edit');
             const originalText = btn.innerHTML;
@@ -634,7 +723,14 @@
             formData.append('save_as_copy', document.getElementById('save-copy').checked);
             formData.append('width', document.getElementById('edit-width').value);
             formData.append('height', document.getElementById('edit-height').value);
+            formData.append('width', document.getElementById('edit-width').value);
+            formData.append('height', document.getElementById('edit-height').value);
             formData.append('_token', '{{ $csrf_token }}');
+
+            // Handle AI Blob
+            if (clientEditedBlob) {
+                formData.append('client_file', clientEditedBlob, 'edited.png');
+            }
 
             if (cropper) {
                 const cropData = cropper.getData(true);
@@ -750,15 +846,15 @@
 
             // Visual Loading State
             container.innerHTML = `
-                                            <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-40">
-                                                <svg class="animate-spin h-10 w-10 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                <p>{{ \App\Core\Lang::get('media.scanning') }}</p>
-                                                <p class="text-xs text-p-muted mt-2" id="debug-status">Initializing request...</p>
-                                            </div>
-                                        `;
+                                                                            <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-40">
+                                                                                <svg class="animate-spin h-10 w-10 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                                </svg>
+                                                                                <p>{{ \App\Core\Lang::get('media.scanning') }}</p>
+                                                                                <p class="text-xs text-p-muted mt-2" id="debug-status">Initializing request...</p>
+                                                                            </div>
+                                                                        `;
 
             const debugStatus = document.getElementById('debug-status');
 
@@ -808,16 +904,16 @@
             } catch (error) {
                 console.error('Error loading files:', error);
                 container.innerHTML = `
-                                                <div class="col-span-full py-10 flex flex-col items-center justify-center text-red-500">
-                                                    <svg class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    <p class="font-bold">Error Carga:</p>
-                                                    <code class="bg-black/10 p-2 rounded text-xs mt-2">${error.message}</code>
-                                                    <p class="text-xs text-p-muted mt-2">Check console for details</p>
-                                                    <button onclick="loadFiles('${path}')" class="btn-primary mt-4 btn-sm">Retry</button>
-                                                </div>
-                                            `;
+                                                                                <div class="col-span-full py-10 flex flex-col items-center justify-center text-red-500">
+                                                                                    <svg class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                    </svg>
+                                                                                    <p class="font-bold">Error Carga:</p>
+                                                                                    <code class="bg-black/10 p-2 rounded text-xs mt-2">${error.message}</code>
+                                                                                    <p class="text-xs text-p-muted mt-2">Check console for details</p>
+                                                                                    <button onclick="loadFiles('${path}')" class="btn-primary mt-4 btn-sm">Retry</button>
+                                                                                </div>
+                                                                            `;
             }
         }
 
@@ -844,13 +940,13 @@
         function renderBreadcrumbs(crumbs) {
             const bc = document.getElementById('media-breadcrumbs');
             bc.innerHTML = crumbs.map((crumb, index) => `
-                                                <div class="flex items-center gap-2">
-                                                    ${index > 0 ? '<span class="text-p-muted opacity-30">/</span>' : ''}
-                                                    <button onclick="loadFiles('${crumb.path}')" class="text-sm font-black uppercase tracking-widest ${index === crumbs.length - 1 ? 'text-primary' : 'text-p-muted hover:text-primary'}">
-                                                        ${crumb.name}
-                                                    </button>
-                                                </div>
-                                            `).join('');
+                                                                                <div class="flex items-center gap-2">
+                                                                                    ${index > 0 ? '<span class="text-p-muted opacity-30">/</span>' : ''}
+                                                                                    <button onclick="loadFiles('${crumb.path}')" class="text-sm font-black uppercase tracking-widest ${index === crumbs.length - 1 ? 'text-primary' : 'text-p-muted hover:text-primary'}">
+                                                                                        ${crumb.name}
+                                                                                    </button>
+                                                                                </div>
+                                                                            `).join('');
         }
 
         function renderItems(items) {
@@ -862,15 +958,15 @@
 
             if (filteredItems.length === 0) {
                 container.innerHTML = `
-                                                <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-50">
-                                                    <svg class="h-16 w-16 text-p-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                                                        <polyline points="13 2 13 9 20 9"></polyline>
-                                                    </svg>
-                                                    <p class="text-xl font-bold text-p-muted">{{ \App\Core\Lang::get('media.no_files') }}</p>
-                                                    <p class="text-xs text-p-muted mt-2">{{ \App\Core\Lang::get('media.drag_drop_hint') }}</p>
-                                                </div>
-                                            `;
+                                                                                <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-50">
+                                                                                    <svg class="h-16 w-16 text-p-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                                                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                                                                        <polyline points="13 2 13 9 20 9"></polyline>
+                                                                                    </svg>
+                                                                                    <p class="text-xl font-bold text-p-muted">{{ \App\Core\Lang::get('media.no_files') }}</p>
+                                                                                    <p class="text-xs text-p-muted mt-2">{{ \App\Core\Lang::get('media.drag_drop_hint') }}</p>
+                                                                                </div>
+                                                                            `;
                 if (viewMode === 'grid') {
                     container.className = "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4";
                 } else {
@@ -887,60 +983,60 @@
                     const isOrphan = orphanCache[item.url];
 
                     return `
-                                                <div onclick="toggleSelect(this, ${JSON.stringify(item).replace(/"/g, '&quot;')}, event)" 
-                                                     data-path="${item.path}"
-                                                     class="media-item ${isSelected ? 'selected' : ''} ${isBulk ? 'bulk-selected' : ''}" 
-                                                     ondblclick="${item.is_dir ? `loadFiles('${item.path}')` : ''}">
+                                                                                <div onclick="toggleSelect(this, ${JSON.stringify(item).replace(/"/g, '&quot;')}, event)" 
+                                                                                     data-path="${item.path}"
+                                                                                     class="media-item ${isSelected ? 'selected' : ''} ${isBulk ? 'bulk-selected' : ''}" 
+                                                                                     ondblclick="${item.is_dir ? `loadFiles('${item.path}')` : ''}">
 
-                                                    <div class="media-checkbox">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                    </div>
+                                                                                    <div class="media-checkbox">
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                                                    </div>
 
-                                                    ${!item.is_dir ? `<div class="orphan-indicator ${isOrphan ? '' : 'hidden'}" title="Orphan file"></div>` : ''}
+                                                                                    ${!item.is_dir ? `<div class="orphan-indicator ${isOrphan ? '' : 'hidden'}" title="Orphan file"></div>` : ''}
 
-                                                    <div class="aspect-square bg-black/5 flex items-center justify-center overflow-hidden">
-                                                        ${getFilePreview(item)}
-                                                    </div>
-                                                    <div class="p-4">
-                                                        <p class="text-sm font-bold text-p-title truncate">${item.name}</p>
-                                                        <p class="text-[10px] text-p-muted uppercase font-black tracking-widest">${item.is_dir ? 'Folder' : item.extension}</p>
-                                                    </div>
-                                                </div>`;
+                                                                                    <div class="aspect-square bg-black/5 flex items-center justify-center overflow-hidden">
+                                                                                        ${getFilePreview(item)}
+                                                                                    </div>
+                                                                                    <div class="p-4">
+                                                                                        <p class="text-sm font-bold text-p-title truncate">${item.name}</p>
+                                                                                        <p class="text-[10px] text-p-muted uppercase font-black tracking-widest">${item.is_dir ? 'Folder' : item.extension}</p>
+                                                                                    </div>
+                                                                                </div>`;
                 }).join('');
             } else {
                 container.className = "flex flex-col gap-2";
                 container.innerHTML = `
-                                                <div class="flex items-center gap-4 px-6 py-4 text-xs font-black text-p-muted uppercase tracking-widest border-b border-glass-border">
-                                                    <div class="w-10"></div>
-                                                    <div class="flex-grow">{{ \App\Core\Lang::get('media.name_header') }}</div>
-                                                    <div class="w-32">{{ \App\Core\Lang::get('media.type_header') }}</div>
-                                                    <div class="w-32">{{ \App\Core\Lang::get('media.size_header') }}</div>
-                                                    <div class="w-40">{{ \App\Core\Lang::get('media.modified_header') }}</div>
-                                                </div>
-                                                ${filteredItems.map(item => {
+                                                                                <div class="flex items-center gap-4 px-6 py-4 text-xs font-black text-p-muted uppercase tracking-widest border-b border-glass-border">
+                                                                                    <div class="w-10"></div>
+                                                                                    <div class="flex-grow">{{ \App\Core\Lang::get('media.name_header') }}</div>
+                                                                                    <div class="w-32">{{ \App\Core\Lang::get('media.type_header') }}</div>
+                                                                                    <div class="w-32">{{ \App\Core\Lang::get('media.size_header') }}</div>
+                                                                                    <div class="w-40">{{ \App\Core\Lang::get('media.modified_header') }}</div>
+                                                                                </div>
+                                                                                ${filteredItems.map(item => {
                     const isSelected = selectedItem?.path === item.path;
                     const isBulk = bulkSelected.includes(item.path);
                     const isOrphan = orphanCache[item.url];
 
                     return `
-                                                    <div onclick="toggleSelect(this, ${JSON.stringify(item).replace(/"/g, '&quot;')}, event)" 
-                                                         data-path="${item.path}"
-                                                         class="flex items-center gap-4 px-6 py-4 glass-card !p-0 !rounded-xl !bg-transparent hover:!bg-primary/5 cursor-pointer border border-transparent ${isSelected ? '!border-primary/50 !bg-primary/5' : ''} ${isBulk ? '!border-primary/50 !bg-primary/20' : ''}"
-                                                         ondblclick="${item.is_dir ? `loadFiles('${item.path}')` : ''}">
-                                                        <div class="w-10 h-10 flex items-center justify-center opacity-60 relative">
-                                                            ${getFileIcon(item, 28)}
-                                                            ${!item.is_dir ? `<div class="orphan-indicator ${isOrphan ? '' : 'hidden'} !top-0 !right-0 !w-2 !h-2"></div>` : ''}
-                                                        </div>
-                                                        <div class="flex-grow font-bold text-base truncate flex items-center gap-2">
-                                                            ${isBulk ? '<div class="w-2 h-2 rounded-full bg-primary"></div>' : ''}
-                                                            ${item.name}
-                                                        </div>
-                                                        <div class="w-32 text-xs font-black uppercase text-p-muted">${item.is_dir ? "{{ \App\Core\Lang::get('media.folder') }}" : item.extension}</div>
-                                                        <div class="w-32 text-xs font-black uppercase text-p-muted">${formatSize(item.size)}</div>
-                                                        <div class="w-40 text-xs font-black uppercase text-p-muted">${formatDate(item.mtime)}</div>
-                                                    </div>`;
+                                                                                    <div onclick="toggleSelect(this, ${JSON.stringify(item).replace(/"/g, '&quot;')}, event)" 
+                                                                                         data-path="${item.path}"
+                                                                                         class="flex items-center gap-4 px-6 py-4 glass-card !p-0 !rounded-xl !bg-transparent hover:!bg-primary/5 cursor-pointer border border-transparent ${isSelected ? '!border-primary/50 !bg-primary/5' : ''} ${isBulk ? '!border-primary/50 !bg-primary/20' : ''}"
+                                                                                         ondblclick="${item.is_dir ? `loadFiles('${item.path}')` : ''}">
+                                                                                        <div class="w-10 h-10 flex items-center justify-center opacity-60 relative">
+                                                                                            ${getFileIcon(item, 28)}
+                                                                                            ${!item.is_dir ? `<div class="orphan-indicator ${isOrphan ? '' : 'hidden'} !top-0 !right-0 !w-2 !h-2"></div>` : ''}
+                                                                                        </div>
+                                                                                        <div class="flex-grow font-bold text-base truncate flex items-center gap-2">
+                                                                                            ${isBulk ? '<div class="w-2 h-2 rounded-full bg-primary"></div>' : ''}
+                                                                                            ${item.name}
+                                                                                        </div>
+                                                                                        <div class="w-32 text-xs font-black uppercase text-p-muted">${item.is_dir ? "{{ \App\Core\Lang::get('media.folder') }}" : item.extension}</div>
+                                                                                        <div class="w-32 text-xs font-black uppercase text-p-muted">${formatSize(item.size)}</div>
+                                                                                        <div class="w-40 text-xs font-black uppercase text-p-muted">${formatDate(item.mtime)}</div>
+                                                                                    </div>`;
                 }).join('')}
-                                            `;
+                                                                            `;
             }
         }
 
@@ -1047,28 +1143,28 @@
 
             if (isInTrash) {
                 actions.innerHTML = `
-                                            <button onclick="restoreSelected()" class="p-2 bg-green-500/10 text-green-600 hover:bg-green-600 hover:text-white rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.restore_file')) !!}" >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
-                                                    </button >
-                                            <button onclick="purgeSelected()" class="p-2 bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.permanent_delete')) !!}">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                                            </button>
-                                        `;
+                                                                            <button onclick="restoreSelected()" class="p-2 bg-green-500/10 text-green-600 hover:bg-green-600 hover:text-white rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.restore_file')) !!}" >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+                                                                                    </button >
+                                                                            <button onclick="purgeSelected()" class="p-2 bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.permanent_delete')) !!}">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                                                                            </button>
+                                                                        `;
             } else {
                 actions.innerHTML = `
-                                            <button onclick="copyCurrentUrl('url')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.copy_url')) !!}" >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
-                                                    </button >
-                                                    <button onclick="copyCurrentUrl('markdown')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.copy_markdown')) !!}">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
-                                                    </button>
-                                                    <button onclick="copyCurrentUrl('html')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.copy_html')) !!}">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                                                    </button>
-                                                    <button onclick="deleteSelected()" class="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.delete_action')) !!}">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                                    </button>
-                                        `;
+                                                                            <button onclick="copyCurrentUrl('url')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.copy_url')) !!}" >
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                                                                                    </button >
+                                                                                    <button onclick="copyCurrentUrl('markdown')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.copy_markdown')) !!}">
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+                                                                                    </button>
+                                                                                    <button onclick="copyCurrentUrl('html')" class="p-2 bg-p-input hover:bg-primary/10 hover:text-primary rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.copy_html')) !!}">
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                                                                    </button>
+                                                                                    <button onclick="deleteSelected()" class="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all" title="{!! addslashes(\App\Core\Lang::get('media.delete_action')) !!}">
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                                                    </button>
+                                                                        `;
             }
 
             document.getElementById('sidebar-name').innerText = item.name;
@@ -1099,18 +1195,18 @@
 
                 if (data.usage.length === 0) {
                     usageContainer.innerHTML = `
-                                                        <div class="p-3 bg-red-400/10 text-red-500 rounded-xl border border-red-500/20">
-                                                            <p class="text-xs font-black tracking-tight leading-none mb-1">{{ \App\Core\Lang::get('media.unreferenced') }}</p>
-                                                            <p class="text-sm font-medium">{{ \App\Core\Lang::get('media.orphan_desc') }}</p>
-                                                        </div>
-                                                    `;
+                                                                                        <div class="p-3 bg-red-400/10 text-red-500 rounded-xl border border-red-500/20">
+                                                                                            <p class="text-xs font-black tracking-tight leading-none mb-1">{{ \App\Core\Lang::get('media.unreferenced') }}</p>
+                                                                                            <p class="text-sm font-medium">{{ \App\Core\Lang::get('media.orphan_desc') }}</p>
+                                                                                        </div>
+                                                                                    `;
                 } else {
                     usageContainer.innerHTML = data.usage.map(u => `
-                                                        <a href="{{ $baseUrl }}admin/crud/list?db_id=${u.db_id}&table=${u.table}" class="block p-3 bg-green-400/10 text-green-600 rounded-xl border border-green-500/20 hover:scale-[1.02] transition-transform">
-                                                            <p class="text-xs font-black tracking-tight leading-none mb-1">${u.database.toUpperCase()}</p>
-                                                            <p class="text-sm font-bold">${u.table} <span class="opacity-50 font-normal">(${u.row_ids.length} rows)</span></p>
-                                                        </a>
-                                                    `).join('');
+                                                                                        <a href="{{ $baseUrl }}admin/crud/list?db_id=${u.db_id}&table=${u.table}" class="block p-3 bg-green-400/10 text-green-600 rounded-xl border border-green-500/20 hover:scale-[1.02] transition-transform">
+                                                                                            <p class="text-xs font-black tracking-tight leading-none mb-1">${u.database.toUpperCase()}</p>
+                                                                                            <p class="text-sm font-bold">${u.table} <span class="opacity-50 font-normal">(${u.row_ids.length} rows)</span></p>
+                                                                                        </a>
+                                                                                    `).join('');
                 }
             } catch (e) {
                 usageContainer.innerHTML = '<p class="text-xs text-red-400">{{ \App\Core\Lang::get('media.error_usage') }}</p>';

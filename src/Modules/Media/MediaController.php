@@ -567,6 +567,31 @@ class MediaController extends BaseController
             $this->json(['error' => 'Invalid file path'], 403);
         }
 
+        // Handle Client-Side Edits (e.g. AI Background Removal)
+        if (isset($_FILES['client_file']) && $_FILES['client_file']['error'] === UPLOAD_ERR_OK) {
+            $pi = pathinfo($fullPath);
+            $saveExt = 'png'; // AI results are usually PNGs with transparency
+
+            if (isset($_POST['save_as_copy']) && $_POST['save_as_copy'] === 'true') {
+                $saveName = $pi['filename'] . '-ai-' . time() . '.' . $saveExt;
+                $finalPath = $pi['dirname'] . DIRECTORY_SEPARATOR . $saveName;
+            } else {
+                $saveName = $pi['filename'] . '.' . $saveExt;
+                $finalPath = $pi['dirname'] . DIRECTORY_SEPARATOR . $saveName;
+
+                // If extension changed (e.g. jpg -> png), delete original
+                if ($finalPath !== $fullPath) {
+                    unlink($fullPath);
+                }
+            }
+
+            if (move_uploaded_file($_FILES['client_file']['tmp_name'], $finalPath)) {
+                Logger::log('EDIT_IMAGE_AI', ['path' => $path]);
+                $this->json(['success' => true, 'new_name' => basename($finalPath)]);
+                return;
+            }
+        }
+
         $info = getimagesize($fullPath);
         if (!$info)
             $this->json(['error' => 'File is not a valid image'], 400);
