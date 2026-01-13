@@ -576,4 +576,114 @@ LIMIT 1");
             die("Error exporting data: " . $e->getMessage());
         }
     }
+
+    /**
+     * View history of a record
+     */
+    public function history()
+    {
+        $id = $_GET['id'] ?? null;
+        $db_id = $_GET['db_id'] ?? null;
+        $table = $_GET['table'] ?? null;
+
+        if (!$id || !$db_id || !$table) {
+            header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id=$db_id&table=$table");
+            exit;
+        }
+
+        $ctx = $this->getContext('crud_view'); // Reuse permission check
+
+        $sysDb = Database::getInstance()->getConnection();
+
+        // Fetch versions joined with users table to show who made changes
+        $sql = "SELECT v.*, u.username 
+                FROM data_versions v 
+                LEFT JOIN users u ON v.user_id = u.id 
+                WHERE v.database_id = ? AND v.table_name = ? AND v.record_id = ? 
+                ORDER BY v.created_at DESC";
+
+        $stmt = $sysDb->prepare($sql);
+        $stmt->execute([$db_id, $table, $id]);
+        $versions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $this->view('admin/crud/history', [
+            'ctx' => $ctx,
+            'title' => 'Audit Trail - Record #' . $id,
+            'id' => $id,
+            'versions' => $versions,
+            'breadcrumbs' => [
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
+                $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],
+                $ctx['table'] => "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}",
+                'History (#' . $id . ')' => null
+            ]
+        ]);
+    }
+
+    /**
+     * Restore a version
+     */
+    public function restore()
+    {
+        $version_id = $_POST['version_id'] ?? null;
+
+        if (!$version_id)
+            die("Missing version ID");
+
+        $sysDb = Database::getInstance()->getConnection();
+        $stmt = $sysDb->prepare("SELECT * FROM data_versions WHERE id = ?");
+        $stmt->execute([$version_id]);
+        $version = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$version)
+            die("Version not found");
+
+        $oldData = json_decode($version['old_data'], true);
+        if (!$oldData)
+            die("Corrupt version data");
+
+        // Context for target DB
+        $_GET['db_id'] = $version['database_id'];
+        $_GET['table'] = $version['table_name'];
+        $ctx = $this->getContext('crud_update');
+
+        try {
+            $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
+            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // Prepare update
+            $sets = [];
+            $values = [];
+
+            // Filter columns to ensure we only update columns that still exist
+            $stmtCols = $targetDb->query("PRAGMA table_info({$version['table_name']})");
+            $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+
+            foreach ($oldData as $key => $val) {
+                if ($key === 'id')
+                    continue;
+                if (!in_array($key, $validCols))
+                    continue;
+
+                $sets[] = "$key = ?";
+                $values[] = $val;
+            }
+
+            // Update
+            $sql = "UPDATE {$version['table_name']} SET " . implode(', ', $sets) . " WHERE id = ?";
+            $values[] = $version['record_id'];
+
+            $stmtUpd = $targetDb->prepare($sql);
+            $stmtUpd->execute($values);
+
+            Logger::log('RESTORE_VERSION', ['table' => $version['table_name'], 'id' => $version['record_id'], 'version_restored' => $version_id], $ctx['db_id']);
+            Auth::setFlashError('Version restored successfully', 'success');
+
+            header('Location: ' . Auth::getBaseUrl() . "admin/crud/history?db_id={$version['database_id']}&table={$version['table_name']}&id={$version['record_id']}");
+
+        } catch (\PDOException $e) {
+            die("Restore failed: " . $e->getMessage());
+        }
+    }
 }
+
