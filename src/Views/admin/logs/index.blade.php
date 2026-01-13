@@ -174,9 +174,24 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-5">
-                                    <div class="max-w-xs truncate text-[11px] text-p-muted font-medium hover:text-white transition-colors cursor-help"
-                                        title="{{ $log['details'] }}">
-                                        {{ $log['details'] }}
+                                    <div class="flex flex-col gap-2">
+                                        <div class="max-w-xs truncate text-[11px] text-p-muted font-medium hover:text-white transition-colors cursor-help"
+                                            title="{{ $log['details'] }}">
+                                            {{ $log['details'] }}
+                                        </div>
+                                        
+                                        @php
+                                            $details = json_decode($log['details'], true);
+                                            $hasHistory = in_array($log['action'], ['UPDATE_RECORD', 'DELETE_RECORD', 'RESTORE_VERSION', 'API_UPDATE', 'API_DELETE']);
+                                        @endphp
+
+                                        @if($hasHistory && isset($details['table']) && isset($details['id']))
+                                            <a href="{{ $baseUrl }}admin/crud/history?db_id={{ $log['project_id'] }}&table={{ $details['table'] }}&id={{ $details['id'] }}" 
+                                               class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase text-primary hover:text-white transition-colors group">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                View Version History
+                                            </a>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-5 whitespace-nowrap">

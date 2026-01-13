@@ -86,11 +86,35 @@ class DashboardController extends BaseController
             }
         }
 
+        // 3b. Fetch Activity from data_versions (Deletions/Updates)
+        try {
+            $stmtVers = $db->prepare("SELECT v.*, d.name as db_name FROM data_versions v 
+                                    JOIN databases d ON v.database_id = d.id 
+                                    WHERE d.project_id = ? 
+                                    ORDER BY v.created_at DESC LIMIT 10");
+            $stmtVers->execute([$projectId]);
+            $versions = $stmtVers->fetchAll();
+
+            foreach ($versions as $v) {
+                $details = json_decode($v['old_data'], true);
+                $recentActivity[] = [
+                    'table' => $v['table_name'],
+                    'db' => $v['db_name'],
+                    'db_id' => $v['database_id'],
+                    'id' => $v['record_id'],
+                    'date' => $v['created_at'],
+                    'action' => $v['action'], // DELETE or UPDATE
+                    'label' => ($v['action'] === 'DELETE' ? 'Deleted: ' : 'Updated: ') . ($details['nombre'] ?? $details['name'] ?? $details['title'] ?? '#' . $v['record_id'])
+                ];
+            }
+        } catch (\Exception $e) {
+        }
+
         // Sort activity
         usort($recentActivity, function ($a, $b) {
             return strcmp($b['date'] ?? '', $a['date'] ?? '');
         });
-        $recentActivity = array_slice($recentActivity, 0, 8);
+        $recentActivity = array_slice($recentActivity, 0, 10);
 
         // 4. Calculate storage size scoped to project
         $storageInfo = $this->getProjectStorageInfo();

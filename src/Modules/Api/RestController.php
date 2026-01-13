@@ -81,18 +81,18 @@ class RestController extends BaseController
                     break;
 
                 case 'POST':
-                    Logger::log('API_POST', "Table: $table", $database['id']);
+                    Logger::log('API_POST', ['table' => $table], $database['id']);
                     $this->handlePostRequest($targetDb, $table, $database['id']);
                     break;
 
                 case 'PUT':
                 case 'PATCH':
-                    Logger::log('API_UPDATE', "Table: $table ID: $id Method: $method", $database['id']);
+                    Logger::log('API_UPDATE', ['table' => $table, 'id' => $id, 'method' => $method], $database['id']);
                     $this->handleUpdateRequest($targetDb, $table, $id, $database['id']);
                     break;
 
                 case 'DELETE':
-                    Logger::log('API_DELETE', "Table: $table ID: $id", $database['id']);
+                    Logger::log('API_DELETE', ['table' => $table, 'id' => $id], $database['id']);
                     $this->handleDeleteRequest($targetDb, $table, $id, $database['id']);
                     break;
 

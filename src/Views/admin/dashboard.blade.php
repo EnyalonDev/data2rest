@@ -349,6 +349,26 @@
                         {{ \App\Core\Lang::get('dashboard.enter') }} <span>&rarr;</span>
                     </div>
                 </a>
+
+                <!-- Recycle Bin -->
+                <a href="{{ $baseUrl }}admin/trash"
+                    class="glass-card group hover:scale-[1.02] hover:border-red-500/50 !p-8">
+                    <div
+                        class="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 text-red-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-p-title mb-2">Recycle Bin</h3>
+                    <p class="text-xs text-p-muted mb-6 leading-relaxed">
+                        Recover records that were deleted by mistake. Supports multi-database rollback.
+                    </p>
+                    <div class="text-[10px] font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
+                        {{ \App\Core\Lang::get('dashboard.enter') }} <span>&rarr;</span>
+                    </div>
+                </a>
             </div>
         </div>
 
@@ -372,15 +392,39 @@
                     </div>
                 @else
                     @foreach($stats['recent_activity'] as $act)
-                        <div class="relative pl-6 border-l border-white/5">
-                            <div class="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-primary border-4 border-dark"></div>
+                        @php
+                            $isAudit = isset($act['action']);
+                            $dotColor = 'bg-primary';
+                            if ($isAudit && $act['action'] === 'DELETE')
+                                $dotColor = 'bg-red-500';
+                            if ($isAudit && $act['action'] === 'UPDATE')
+                                $dotColor = 'bg-amber-500';
+
+                            // If it's from audit trail, we have db_id. Otherwise we might need to find it (but for now just link if available)
+                            $historyUrl = isset($act['db_id'])
+                                ? $baseUrl . "admin/crud/history?db_id={$act['db_id']}&table={$act['table']}&id={$act['id']}"
+                                : null;
+                        @endphp
+                        <div class="relative pl-6 border-l border-white/5 group">
+                            <div
+                                class="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full {{ $dotColor }} border-4 border-dark group-hover:scale-125 transition-transform">
+                            </div>
                             <p class="text-[10px] font-black text-p-muted uppercase tracking-widest mb-1">
-                                {{ $act['date'] }}
+                                {{ date('M d, H:i', strtotime($act['date'])) }}
                             </p>
-                            <p class="text-xs font-bold text-p-title mb-1">{{ $act['label'] }}</p>
+
+                            @if($historyUrl)
+                                <a href="{{ $historyUrl }}" class="block">
+                                    <p class="text-xs font-bold text-p-title mb-1 hover:text-primary transition-colors">
+                                        {{ $act['label'] }}
+                                    </p>
+                                </a>
+                            @else
+                                <p class="text-xs font-bold text-p-title mb-1">{{ $act['label'] }}</p>
+                            @endif
+
                             <p class="text-[9px] font-black text-primary uppercase opacity-60">
-                                {{ \App\Core\Lang::get('dashboard.activity.injected') }} {{ $act['db'] }} /
-                                {{ $act['table'] }}
+                                {{ $act['db'] }} / {{ $act['table'] }}
                             </p>
                         </div>
                     @endforeach
@@ -572,52 +616,52 @@
                     };
 
                     let html = `
-                                                <!-- Time Section -->
-                                                <div class="mb-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-blue-500/5 border border-primary/20 shadow-2xl overflow-hidden relative group">
-                                                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full group-hover:bg-primary/20 transition-all duration-700"></div>
+                                                        <!-- Time Section -->
+                                                        <div class="mb-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-blue-500/5 border border-primary/20 shadow-2xl overflow-hidden relative group">
+                                                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full group-hover:bg-primary/20 transition-all duration-700"></div>
 
-                                                    <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                                                        <div class="w-32 h-32 rounded-full bg-black/40 border-4 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-inner">
-                                                            <span class="text-5xl animate-pulse">🕒</span>
-                                                        </div>
-
-                                                        <div class="flex-1 text-center md:text-left">
-                                                            <h3 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
-                                                                <span class="w-2 h-2 rounded-full bg-primary"></span>
-                                                                {!! addslashes(\App\Core\Lang::get('dashboard.server_time')) !!}
-                                                            </h3>
-                                                            <div id="server-clock" class="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-4 tabular-nums">
-                                                                ${data.server_time.split(' ')[1]}
-                                                            </div>
-                                                            <p class="text-xs text-p-muted font-bold uppercase tracking-widest opacity-60">
-                                                                ${data.server_time.split(' ')[0]} • ${data.timezone}
-                                                            </p>
-                                                        </div>
-
-                                                        <div class="w-full md:w-auto p-6 rounded-3xl bg-black/50 border border-white/5 shadow-xl">
-                                                            <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-4">{!! addslashes(\App\Core\Lang::get('dashboard.time_adjustment')) !!}</label>
-                                                            <div class="flex items-center gap-3 mb-4">
-                                                                <div class="flex-1 text-center">
-                                                                    <input type="number" id="offset-hours" value="${Math.floor(data.time_offset / 60)}" 
-                                                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
-                                                                    <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.hours')) !!}</span>
+                                                            <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                                                                <div class="w-32 h-32 rounded-full bg-black/40 border-4 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-inner">
+                                                                    <span class="text-5xl animate-pulse">🕒</span>
                                                                 </div>
-                                                                <span class="text-p-muted font-bold">:</span>
-                                                                <div class="flex-1 text-center">
-                                                                    <input type="number" id="offset-minutes" value="${Math.abs(data.time_offset % 60)}" 
-                                                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
-                                                                    <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.minutes')) !!}</span>
+
+                                                                <div class="flex-1 text-center md:text-left">
+                                                                    <h3 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                                                                        <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                                        {!! addslashes(\App\Core\Lang::get('dashboard.server_time')) !!}
+                                                                    </h3>
+                                                                    <div id="server-clock" class="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-4 tabular-nums">
+                                                                        ${data.server_time.split(' ')[1]}
+                                                                    </div>
+                                                                    <p class="text-xs text-p-muted font-bold uppercase tracking-widest opacity-60">
+                                                                        ${data.server_time.split(' ')[0]} • ${data.timezone}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div class="w-full md:w-auto p-6 rounded-3xl bg-black/50 border border-white/5 shadow-xl">
+                                                                    <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-4">{!! addslashes(\App\Core\Lang::get('dashboard.time_adjustment')) !!}</label>
+                                                                    <div class="flex items-center gap-3 mb-4">
+                                                                        <div class="flex-1 text-center">
+                                                                            <input type="number" id="offset-hours" value="${Math.floor(data.time_offset / 60)}" 
+                                                                                class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
+                                                                            <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.hours')) !!}</span>
+                                                                        </div>
+                                                                        <span class="text-p-muted font-bold">:</span>
+                                                                        <div class="flex-1 text-center">
+                                                                            <input type="number" id="offset-minutes" value="${Math.abs(data.time_offset % 60)}" 
+                                                                                class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
+                                                                            <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.minutes')) !!}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button onclick="updateTimeOffset()" class="w-full btn-primary !py-2.5 !text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20">
+                                                                        {!! addslashes(\App\Core\Lang::get('dashboard.adjust_time_btn')) !!}
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                            <button onclick="updateTimeOffset()" class="w-full btn-primary !py-2.5 !text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20">
-                                                                {!! addslashes(\App\Core\Lang::get('dashboard.adjust_time_btn')) !!}
-                                                            </button>
                                                         </div>
-                                                    </div>
-                                                </div>
 
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
-                                            `;
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+                                                    `;
 
                     for (const [key, value] of Object.entries(data)) {
                         if (['server_time', 'time_offset'].includes(key)) continue;
@@ -632,32 +676,32 @@
                         }
 
                         html += `
-                                                    <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
-                                                        <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
-                                                        <span class="text-lg font-black text-white block mb-2">${value}</span>
-                                                        ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
-                                                        ${extraWarning}
-                                                    </div>
-                                                `;
+                                                            <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+                                                                <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
+                                                                <span class="text-lg font-black text-white block mb-2">${value}</span>
+                                                                ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
+                                                                ${extraWarning}
+                                                            </div>
+                                                        `;
                     }
 
                     html += `
-                                                </div>
-                                                <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
-                                                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-                                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
-                                                        {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
-                                                    </h4>
-                                                    <p class="text-sm text-p-muted leading-relaxed mb-6">
-                                                        {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
-                                                    </p>
-                                                    <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                                        <p class="text-xs md:text-sm text-p-muted leading-relaxed">
-                                                            {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            `;
+                                                        </div>
+                                                        <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
+                                                            <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
+                                                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
+                                                                {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
+                                                            </h4>
+                                                            <p class="text-sm text-p-muted leading-relaxed mb-6">
+                                                                {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
+                                                            </p>
+                                                            <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                                                <p class="text-xs md:text-sm text-p-muted leading-relaxed">
+                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    `;
 
                     showModal({
                         title: '{!! addslashes(\App\Core\Lang::get('dashboard.server_config')) !!}',
