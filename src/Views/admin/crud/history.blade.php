@@ -8,6 +8,10 @@
     <p class="text-p-muted font-medium">
         Audit trail for <b>{{ $ctx['table'] }}</b> ID: <span class="text-primary">#{{ $id }}</span>.
     </p>
+    <p class="text-[10px] text-amber-500/80 font-black uppercase tracking-widest mt-2 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Retention Policy: Histories are automatically purged after {{ \App\Core\Config::getSetting('audit_retention_days', 30) }} days.
+    </p>
 </header>
 
 <div class="space-y-6">
@@ -69,9 +73,13 @@
                         </div>
                         <div class="text-xs font-bold text-p-title flex items-center gap-2">
                              <div class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px]">
-                                {{ substr($v['username'] ?? 'Sys', 0, 1) }}
+                                {{ substr($v['username'] ?? ($v['api_key_name'] ?? 'Sys'), 0, 1) }}
                              </div>
-                             {{ $v['username'] ?? 'System' }}
+                             @if($v['api_key_name'])
+                                 <span class="text-emerald-400">API: {{ $v['api_key_name'] }}</span>
+                             @else
+                                 {{ $v['username'] ?? 'System' }}
+                             @endif
                         </div>
                     </div>
 

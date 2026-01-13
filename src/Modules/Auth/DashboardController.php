@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
 use App\Core\BaseController;
+use App\Core\Maintenance;
 use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
@@ -15,6 +16,7 @@ class DashboardController extends BaseController
     public function index()
     {
         Auth::requireLogin();
+        Maintenance::run(); // Self-throttled cleanup procedure
 
         $db = Database::getInstance()->getConnection();
         $projectId = Auth::getActiveProject();

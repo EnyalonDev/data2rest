@@ -122,6 +122,7 @@ $router->add('GET', '/admin/crud/delete', 'Database\\CrudController@delete');
 $router->add('GET', '/admin/crud/export', 'Database\\CrudController@export');
 $router->add('GET', '/admin/crud/history', 'Database\\CrudController@history');
 $router->add('GET', '/admin/trash', 'Database\\CrudController@trash');
+$router->add('POST', '/admin/trash/empty', 'Database\\CrudController@emptyTrash');
 $router->add('POST', '/admin/crud/restore', 'Database\\CrudController@restore');
 // --- Module: Media Library ---
 $router->add('GET', '/admin/media', 'Media\\MediaController@index');
