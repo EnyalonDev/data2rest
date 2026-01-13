@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-            private static $SCHEMA = [
+    private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -209,6 +209,20 @@ class Installer
                 triggered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
                 )"
+        ],
+        'data_versions' => [
+            'sql' => "CREATE TABLE data_versions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                database_id INTEGER,
+                table_name TEXT,
+                record_id INTEGER,
+                action TEXT,
+                old_data TEXT,
+                new_data TEXT,
+                user_id INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
+            )"
         ]
     ];
 

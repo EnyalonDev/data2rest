@@ -351,6 +351,28 @@ LIMIT 1");
                     $data['fecha_edicion'] = $now;
                 }
 
+                // Data Versioning
+                $stmtFetch = $targetDb->prepare("SELECT * FROM $tableName WHERE id = ?");
+                $stmtFetch->execute([$id]);
+                $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
+
+                if ($oldData) {
+                    try {
+                        $sysDb = Database::getInstance()->getConnection();
+                        $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        $stmtLog->execute([
+                            $ctx['db_id'],
+                            $tableName,
+                            $id,
+                            'UPDATE',
+                            json_encode($oldData),
+                            json_encode($data),
+                            $_SESSION['user_id'] ?? 0
+                        ]);
+                    } catch (\Exception $e) { /* Ignore log failure */
+                    }
+                }
+
                 $sets = [];
                 $values = [];
                 foreach ($data as $key => $value) {
@@ -417,6 +439,29 @@ LIMIT 1");
                 $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
+
+                // Data Versioning
+                $stmtFetch = $targetDb->prepare("SELECT * FROM $tableName WHERE id = ?");
+                $stmtFetch->execute([$id]);
+                $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
+
+                if ($oldData) {
+                    try {
+                        $sysDb = Database::getInstance()->getConnection();
+                        $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        $stmtLog->execute([
+                            $ctx['db_id'],
+                            $tableName,
+                            $id,
+                            'DELETE',
+                            json_encode($oldData),
+                            null,
+                            $_SESSION['user_id'] ?? 0
+                        ]);
+                    } catch (\Exception $e) { /* Ignore log failure */
+                    }
+                }
+
                 $stmt = $targetDb->prepare("DELETE FROM $tableName WHERE id = ?");
                 $stmt->execute([$id]);
 
