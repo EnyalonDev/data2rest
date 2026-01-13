@@ -327,6 +327,29 @@ class RestController extends BaseController
             $input['fecha_edicion'] = Auth::getCurrentTime();
         }
 
+        if ($id) {
+            $stmtFetch = $targetDb->prepare("SELECT * FROM $table WHERE id = ?");
+            $stmtFetch->execute([$id]);
+            $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
+
+            if ($oldData) {
+                try {
+                    $sysDb = Database::getInstance()->getConnection();
+                    $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmtLog->execute([
+                        $db_id,
+                        $table,
+                        $id,
+                        'UPDATE',
+                        json_encode($oldData),
+                        json_encode($input),
+                        $_SESSION['user_id'] ?? 0 // 0 for external API if not mapped
+                    ]);
+                } catch (\Exception $e) { /* Ignore log failure */
+                }
+            }
+        }
+
         $sets = [];
         foreach ($input as $key => $val) {
             $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
@@ -367,6 +390,23 @@ class RestController extends BaseController
         $stmtFetch = $targetDb->prepare("SELECT * FROM $table WHERE id = ?");
         $stmtFetch->execute([$id]);
         $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
+
+        if ($oldData) {
+            try {
+                $sysDb = Database::getInstance()->getConnection();
+                $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmtLog->execute([
+                    $db_id,
+                    $table,
+                    $id,
+                    'DELETE',
+                    json_encode($oldData),
+                    null,
+                    $_SESSION['user_id'] ?? 0
+                ]);
+            } catch (\Exception $e) { /* Ignore log failure */
+            }
+        }
 
         $stmt = $targetDb->prepare("DELETE FROM $table WHERE id = ?");
         $stmt->execute([$id]);
