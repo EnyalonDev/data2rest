@@ -621,6 +621,46 @@ LIMIT 1");
     }
 
     /**
+     * View all deletions across the project (Recycle Bin).
+     */
+    public function trash()
+    {
+        Auth::requireLogin();
+        $db = Database::getInstance()->getConnection();
+        $projectId = Auth::getActiveProject();
+
+        if (!$projectId && !Auth::isAdmin()) {
+            Auth::setFlashError('Please select a project first.');
+            header('Location: ' . Auth::getBaseUrl() . 'admin/projects/select');
+            exit;
+        }
+
+        $sql = "SELECT v.*, d.name as db_name, u.username as actor 
+                FROM data_versions v 
+                JOIN databases d ON v.database_id = d.id 
+                LEFT JOIN users u ON v.user_id = u.id 
+                WHERE v.action = 'DELETE'";
+
+        $params = [];
+        if ($projectId) {
+            $sql .= " AND d.project_id = ?";
+            $params[] = $projectId;
+        }
+
+        $sql .= " ORDER BY v.created_at DESC LIMIT 100";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $deletions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $this->view('admin/crud/trash', [
+            'title' => 'Recycle Bin',
+            'deletions' => $deletions,
+            'breadcrumbs' => ['Recycle Bin' => null]
+        ]);
+    }
+
+    /**
      * Restore a version
      */
     public function restore()
