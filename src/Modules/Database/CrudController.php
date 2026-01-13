@@ -409,7 +409,25 @@ LIMIT 1");
                 $placeholders = array_fill(0, count($keys), '?');
                 $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $placeholders) . ")");
                 $stmt->execute(array_values($filteredData));
-                Logger::log('INSERT_RECORD', ['table' => $tableName, 'id' => $targetDb->lastInsertId()], $ctx['db_id']);
+                $newId = $targetDb->lastInsertId();
+
+                // Audit Trail: Log Insert
+                try {
+                    $sysDb = Database::getInstance()->getConnection();
+                    $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmtLog->execute([
+                        $ctx['db_id'],
+                        $tableName,
+                        $newId,
+                        'INSERT',
+                        null,
+                        json_encode($filteredData),
+                        $_SESSION['user_id'] ?? 0
+                    ]);
+                } catch (\Exception $e) { /* Ignore log failure */
+                }
+
+                Logger::log('INSERT_RECORD', ['table' => $tableName, 'id' => $newId], $ctx['db_id']);
             }
 
             // Update metadata timestamps
@@ -595,10 +613,11 @@ LIMIT 1");
 
         $sysDb = Database::getInstance()->getConnection();
 
-        // Fetch versions joined with users table to show who made changes
-        $sql = "SELECT v.*, u.username 
+        // Fetch versions joined with users and api_keys table
+        $sql = "SELECT v.*, u.username, ak.name as api_key_name 
                 FROM data_versions v 
                 LEFT JOIN users u ON v.user_id = u.id 
+                LEFT JOIN api_keys ak ON v.api_key_id = ak.id
                 WHERE v.database_id = ? AND v.table_name = ? AND v.record_id = ? 
                 ORDER BY v.created_at DESC";
 
@@ -635,10 +654,11 @@ LIMIT 1");
             exit;
         }
 
-        $sql = "SELECT v.*, d.name as db_name, u.username as actor 
+        $sql = "SELECT v.*, d.name as db_name, u.username as actor, ak.name as api_key_name 
                 FROM data_versions v 
                 JOIN databases d ON v.database_id = d.id 
                 LEFT JOIN users u ON v.user_id = u.id 
+                LEFT JOIN api_keys ak ON v.api_key_id = ak.id
                 WHERE v.action = 'DELETE'";
 
         $params = [];
@@ -658,6 +678,40 @@ LIMIT 1");
             'deletions' => $deletions,
             'breadcrumbs' => ['Recycle Bin' => null]
         ]);
+    }
+
+    /**
+     * Purge all deletions for the project.
+     */
+    public function emptyTrash()
+    {
+        Auth::requireLogin();
+        $db = Database::getInstance()->getConnection();
+        $projectId = Auth::getActiveProject();
+
+        if (!$projectId && !Auth::isAdmin()) {
+            die("Permission denied");
+        }
+
+        $sql = "DELETE FROM data_versions WHERE action = 'DELETE'";
+        $params = [];
+
+        if ($projectId) {
+            $sql = "DELETE FROM data_versions WHERE action = 'DELETE' AND database_id IN (SELECT id FROM databases WHERE project_id = ?)";
+            $params[] = $projectId;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+
+        // Optimize
+        $db->exec("VACUUM");
+
+        Logger::log('EMPTY_TRASH', ['project_id' => $projectId]);
+        Auth::setFlashError('Recycle bin emptied successfully', 'success');
+
+        header('Location: ' . Auth::getBaseUrl() . 'admin/trash');
+        exit;
     }
 
     /**
@@ -715,6 +769,21 @@ LIMIT 1");
 
             $stmtUpd = $targetDb->prepare($sql);
             $stmtUpd->execute($values);
+
+            // Audit Trail: Log the Restore event
+            try {
+                $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmtLog->execute([
+                    $version['database_id'],
+                    $version['table_name'],
+                    $version['record_id'],
+                    'RESTORE',
+                    null, // Could fetch current state before update for better accuracy, but for now simple
+                    $version['old_data'], // The data we just inserted
+                    $_SESSION['user_id'] ?? 0
+                ]);
+            } catch (\Exception $e) {
+            }
 
             Logger::log('RESTORE_VERSION', ['table' => $version['table_name'], 'id' => $version['record_id'], 'version_restored' => $version_id], $ctx['db_id']);
             Auth::setFlashError('Version restored successfully', 'success');

@@ -12,6 +12,8 @@ use PDO;
 
 class RestController extends BaseController
 {
+    private $apiKeyData;
+
     private function authenticate()
     {
         Auth::init();
@@ -44,7 +46,8 @@ class RestController extends BaseController
 
     public function handle($db_id, $table, $id = null)
     {
-        $this->authenticate();
+        $this->apiKeyData = $this->authenticate();
+
 
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
 
@@ -278,6 +281,30 @@ class RestController extends BaseController
         $stmt->execute(array_values($input));
         $newId = $targetDb->lastInsertId();
 
+        // Audit Trail: Log Insert
+        try {
+            $sysDb = Database::getInstance()->getConnection();
+            $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmtLog->execute([
+                $db_id,
+                $table,
+                $newId,
+                'INSERT',
+                null,
+                json_encode($input),
+                0, // No session user
+                $this->apiKeyData['id'] ?? null
+            ]);
+
+            // Log specifically which API Key did this in activity logs
+            Logger::log('API_INSERT', [
+                'table' => $table,
+                'id' => $newId,
+                'api_key' => $this->apiKeyData['name'] ?? 'Unknown'
+            ], $db_id);
+        } catch (\Exception $e) {
+        }
+
         // Webhook Trigger
         try {
             $sysDb = Database::getInstance()->getConnection();
@@ -335,7 +362,7 @@ class RestController extends BaseController
             if ($oldData) {
                 try {
                     $sysDb = Database::getInstance()->getConnection();
-                    $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id, api_key_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmtLog->execute([
                         $db_id,
                         $table,
@@ -343,8 +370,16 @@ class RestController extends BaseController
                         'UPDATE',
                         json_encode($oldData),
                         json_encode($input),
-                        $_SESSION['user_id'] ?? 0 // 0 for external API if not mapped
+                        0,
+                        $this->apiKeyData['id'] ?? null
                     ]);
+
+                    // Extra activity log with key attribution
+                    Logger::log('API_UPDATE_DETAILED', [
+                        'table' => $table,
+                        'id' => $id,
+                        'api_key' => $this->apiKeyData['name'] ?? 'Unknown'
+                    ], $db_id);
                 } catch (\Exception $e) { /* Ignore log failure */
                 }
             }
@@ -394,7 +429,7 @@ class RestController extends BaseController
         if ($oldData) {
             try {
                 $sysDb = Database::getInstance()->getConnection();
-                $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id, api_key_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmtLog->execute([
                     $db_id,
                     $table,
@@ -402,8 +437,16 @@ class RestController extends BaseController
                     'DELETE',
                     json_encode($oldData),
                     null,
-                    $_SESSION['user_id'] ?? 0
+                    0,
+                    $this->apiKeyData['id'] ?? null
                 ]);
+
+                // Extra activity log with key attribution
+                Logger::log('API_DELETE_DETAILED', [
+                    'table' => $table,
+                    'id' => $id,
+                    'api_key' => $this->apiKeyData['name'] ?? 'Unknown'
+                ], $db_id);
             } catch (\Exception $e) { /* Ignore log failure */
             }
         }

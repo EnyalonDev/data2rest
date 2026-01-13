@@ -13,9 +13,26 @@
         <h1 class="text-5xl font-black text-p-title mb-4 tracking-tighter uppercase italic">
             Deleted Records
         </h1>
-        <p class="text-p-muted font-medium max-w-2xl mx-auto">
-            Review and restore data that has been removed from your databases. Histories are kept for 30 days.
+        <p class="text-p-muted font-medium max-w-2xl mx-auto mb-8">
+            Review and restore data that has been removed from your databases. Histories are kept for
+            {{ \App\Core\Config::getSetting('audit_retention_days', 30) }} days.
         </p>
+
+        @if(!empty($deletions))
+            <form action="{{ $baseUrl }}admin/trash/empty" method="POST"
+                onsubmit="return confirm('CRITICAL: This will PERMANENTLY delete all records in the Recycle Bin. This action cannot be undone. Are you sure?');">
+                {!! $csrf_field !!}
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-[10px] font-black text-red-500 uppercase tracking-widest transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                        </path>
+                    </svg>
+                    Empty Recycle Bin
+                </button>
+            </form>
+        @endif
     </header>
 
     <div class="glass-card !p-0 overflow-hidden">
@@ -57,9 +74,15 @@
                             <div class="flex items-center gap-2">
                                 <div
                                     class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold">
-                                    {{ substr($v['actor'] ?? 'S', 0, 1) }}
+                                    {{ substr($v['actor'] ?? ($v['api_key_name'] ?? 'S'), 0, 1) }}
                                 </div>
-                                <span class="text-xs font-bold text-p-muted">{{ $v['actor'] ?? 'System' }}</span>
+                                <span class="text-xs font-bold text-p-muted">
+                                    @if($v['api_key_name'])
+                                        <span class="text-emerald-400">API: {{ $v['api_key_name'] }}</span>
+                                    @else
+                                        {{ $v['actor'] ?? 'System' }}
+                                    @endif
+                                </span>
                             </div>
                         </td>
                         <td class="px-6 py-5 text-right">
@@ -105,11 +128,11 @@
 
             for (const [key, val] of Object.entries(data)) {
                 html += `
-                <div class="flex flex-col border-b border-white/5 pb-2">
-                    <span class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">${key}</span>
-                    <span class="text-xs font-mono text-p-title break-all">${val !== null ? val : '<i class="opacity-30">NULL</i>'}</span>
-                </div>
-            `;
+                        <div class="flex flex-col border-b border-white/5 pb-2">
+                            <span class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">${key}</span>
+                            <span class="text-xs font-mono text-p-title break-all">${val !== null ? val : '<i class="opacity-30">NULL</i>'}</span>
+                        </div>
+                    `;
             }
             html += '</div>';
 

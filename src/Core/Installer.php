@@ -220,6 +220,7 @@ class Installer
                 old_data TEXT,
                 new_data TEXT,
                 user_id INTEGER,
+                api_key_id INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
             )"

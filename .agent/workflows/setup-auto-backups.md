@@ -43,8 +43,17 @@ El script acepta un argumento `--keep=N` para definir cuántas copias guardar. E
 0 */4 * * * /usr/bin/php /opt/homebrew/var/www/data2rest/scripts/backup.php --keep=10 >> ...
 ```
 
-## 4. Verificación
-Verifica que la tarea se haya añadido correctamente listando las tareas cron:
+## 4. Mantenimiento Automático (Retención de Datos)
+Para cumplir con la política de retención de 30 días para el historial de cambios y la papelera de reciclaje, se ha creado el script `scripts/maintenance.php`.
+
+Se recomienda programarlo una vez al día:
+```cron
+# Mantenimiento de Data2Rest (Limpieza de historial > 30 días)
+0 2 * * * /usr/bin/php /opt/homebrew/var/www/data2rest/scripts/maintenance.php >> /opt/homebrew/var/www/data2rest/data/maintenance.log 2>&1
+```
+
+## 5. Verificación
+Verifica que las tareas se hayan añadido correctamente listando las tareas cron:
 ```bash
 crontab -l
 ```

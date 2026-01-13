@@ -70,5 +70,21 @@ class Config
         self::init();
         return self::$config[$key] ?? null;
     }
+
+    /**
+     * Get a setting from the system_settings table in the database.
+     */
+    public static function getSetting($key, $default = null)
+    {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key = ?");
+            $stmt->execute([$key]);
+            $val = $stmt->fetchColumn();
+            return ($val !== false) ? $val : $default;
+        } catch (\Exception $e) {
+            return $default;
+        }
+    }
 }
 
