@@ -13,6 +13,16 @@
     </p>
 </header>
 
+@if($id)
+<div class="mb-8 flex justify-end">
+    <a href="{{ $baseUrl }}admin/crud/history?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&id={{ $id }}" 
+       class="btn-outline flex items-center gap-2 !px-4 !py-2 !text-[10px] uppercase font-black tracking-widest">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Audit History
+    </a>
+</div>
+@endif
+
 <section class="form-container">
     <form action="{{ $baseUrl }}admin/crud/save" method="POST" id="crud-form" enctype="multipart/form-data" class="w-full">
         {!! $csrf_field !!}
