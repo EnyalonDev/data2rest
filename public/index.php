@@ -45,7 +45,7 @@ try {
 $router = new Router();
 
 // Handle CORS for all API requests
-if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/api/v1/') !== false) {
+if (isset($_SERVER['REQUEST_URI']) && (strpos($_SERVER['REQUEST_URI'], '/api/v1/') !== false || strpos($_SERVER['REQUEST_URI'], '/api/system/') !== false)) {
     header("Access-Control-Allow-Origin: *");
     header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type, X-API-KEY, X-API-Key, Authorization");
@@ -99,6 +99,30 @@ $router->add('GET', '/admin/databases/fields/delete', 'Database\\DatabaseControl
 $router->add('POST', '/admin/databases/fields/update', 'Database\\DatabaseController@updateFieldConfig');
 $router->add('GET', '/admin/demo/load', 'Database\\MaintenanceController@loadDemo');
 $router->add('GET', '/admin/system/reset', 'Database\\MaintenanceController@resetSystem');
+
+// --- Module: System Database Administration (Super Admin Only) ---
+$router->add('GET', '/admin/system-database', 'SystemDatabase\\SystemDatabaseController@index');
+$router->add('GET', '/admin/system-database/tables', 'SystemDatabase\\SystemDatabaseController@tables');
+$router->add('GET', '/admin/system-database/table-details', 'SystemDatabase\\SystemDatabaseController@tableDetails');
+$router->add('GET', '/admin/system-database/query-executor', 'SystemDatabase\\SystemDatabaseController@queryExecutor');
+$router->add('POST', '/admin/system-database/execute-query', 'SystemDatabase\\SystemDatabaseController@executeQuery');
+$router->add('POST', '/admin/system-database/optimize', 'SystemDatabase\\SystemDatabaseController@optimize');
+$router->add('POST', '/admin/system-database/clean', 'SystemDatabase\\SystemDatabaseController@cleanOldData');
+
+// System Database Backups
+$router->add('GET', '/admin/system-database/backups', 'SystemDatabase\\SystemDatabaseController@backupsList');
+$router->add('POST', '/admin/system-database/backup/create', 'SystemDatabase\\SystemDatabaseController@createBackup');
+$router->add('POST', '/admin/system-database/backup/restore', 'SystemDatabase\\SystemDatabaseController@restoreBackup');
+$router->add('GET', '/admin/system-database/backup/delete', 'SystemDatabase\\SystemDatabaseController@deleteBackup');
+$router->add('GET', '/admin/system-database/backup/download', 'SystemDatabase\\SystemDatabaseController@downloadBackup');
+
+// System Database Logs
+$router->add('GET', '/admin/system-database/logs', 'SystemDatabase\\SystemDatabaseController@viewLogs');
+$router->add('GET', '/admin/system-database/logs/export', 'SystemDatabase\\SystemDatabaseController@exportLogs');
+$router->add('POST', '/admin/system-database/logs/clear', 'SystemDatabase\\SystemDatabaseController@clearLogs');
+
+// System Database API Explorer
+$router->add('GET', '/admin/system-database/api-explorer', 'SystemDatabase\\SystemDatabaseController@apiExplorer');
 
 // Table-level Import/Export
 $router->add('GET', '/admin/databases/table/export-sql', 'Database\\DatabaseController@exportTableSql');
@@ -210,6 +234,14 @@ $router->add('PATCH', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle')
 $router->add('DELETE', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 $router->add('OPTIONS', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('OPTIONS', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
+
+// --- System Database API (Super Admin Only) ---
+$router->add('GET', '/api/system/info', 'SystemDatabase\\SystemDatabaseApiController@getInfo');
+$router->add('POST', '/api/system/backup', 'SystemDatabase\\SystemDatabaseApiController@createBackup');
+$router->add('GET', '/api/system/backups', 'SystemDatabase\\SystemDatabaseApiController@listBackups');
+$router->add('POST', '/api/system/optimize', 'SystemDatabase\\SystemDatabaseApiController@optimize');
+$router->add('POST', '/api/system/query', 'SystemDatabase\\SystemDatabaseApiController@executeQuery');
+$router->add('GET', '/api/system/tables', 'SystemDatabase\\SystemDatabaseApiController@listTables');
 
 // Dispatch
 $method = $_SERVER['REQUEST_METHOD'];

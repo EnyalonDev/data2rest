@@ -87,7 +87,8 @@ class Installer
                 key_value TEXT UNIQUE,
                 name TEXT,
                 permissions TEXT,
-                status INTEGER DEFAULT 1
+                status INTEGER DEFAULT 1,
+                user_id INTEGER
                 , project_id INTEGER)"
         ],
         'api_endpoints' => [

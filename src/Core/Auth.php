@@ -143,6 +143,16 @@ class Auth
     }
 
     /**
+     * Gets the current user ID from session.
+     * 
+     * @return int|null
+     */
+    public static function getUserId()
+    {
+        return $_SESSION['user_id'] ?? null;
+    }
+
+    /**
      * Verifies if the current user has a specific permission.
      * 
      * @param string $resource The resource identifier (e.g., 'module:users' or 'db:1')
