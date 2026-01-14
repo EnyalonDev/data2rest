@@ -21,11 +21,18 @@ class ApiDocsController extends BaseController
         $db = Database::getInstance()->getConnection();
         $projectId = Auth::getActiveProject();
 
-        $sql = "SELECT * FROM api_keys WHERE status = 1 ORDER BY id DESC";
-        // TODO: Future: Scope API keys to project? For now, let's keep them global or filter if column exists.
-        // Assuming global API keys for now as per schema check.
+        $userId = $_SESSION['user_id'] ?? null;
 
-        $keys = $db->query($sql)->fetchAll();
+        if (Auth::isAdmin()) {
+            // Super Admin sees all keys
+            $sql = "SELECT * FROM api_keys WHERE status = 1 ORDER BY id DESC";
+            $keys = $db->query($sql)->fetchAll();
+        } else {
+            // Regular users only see their own keys
+            $stmt = $db->prepare("SELECT * FROM api_keys WHERE status = 1 AND user_id = ? ORDER BY id DESC");
+            $stmt->execute([$userId]);
+            $keys = $stmt->fetchAll();
+        }
 
         // Scope databases list to project
         if ($projectId) {
@@ -53,8 +60,9 @@ class ApiDocsController extends BaseController
             $name = $_POST['name'] ?? 'New Key';
             $key = bin2hex(random_bytes(32));
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, status) VALUES (?, ?, 1)");
-            $stmt->execute([$key, $name]);
+            $userId = $_SESSION['user_id'] ?? null;
+            $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, user_id, status) VALUES (?, ?, ?, 1)");
+            $stmt->execute([$key, $name, $userId]);
         }
         $this->redirect('admin/api');
     }
@@ -65,8 +73,15 @@ class ApiDocsController extends BaseController
         $id = $_GET['id'] ?? null;
         if ($id) {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("DELETE FROM api_keys WHERE id = ?");
-            $stmt->execute([$id]);
+            $userId = $_SESSION['user_id'] ?? null;
+
+            if (Auth::isAdmin()) {
+                $stmt = $db->prepare("DELETE FROM api_keys WHERE id = ?");
+                $stmt->execute([$id]);
+            } else {
+                $stmt = $db->prepare("DELETE FROM api_keys WHERE id = ? AND user_id = ?");
+                $stmt->execute([$id, $userId]);
+            }
         }
         $this->redirect('admin/api');
     }
