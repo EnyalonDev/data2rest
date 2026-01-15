@@ -203,10 +203,19 @@ Notificaciones en tiempo real a sistemas externos.
 - **Logs**: Historial completo de ejecuciones y respuestas.
 - **Integraciones**: Conecta fácilmente con Zapier, Slack, Discord o Scripts propios.
 
+### 6. [Módulo de Billing](docs/BILLING.md) (Nuevo ✨)
+Sistema completo de gestión de pagos por proyecto con facturación automática.
+- **Planes de Pago**: Mensual (12 cuotas) y Anual (1 cuota) configurables.
+- **Cuotas Automáticas**: Generación y recálculo inteligente preservando pagos.
+- **Recordatorios**: Notificaciones automáticas 5 días antes del vencimiento.
+- **Reportes Financieros**: Ingresos reales vs proyectados, tasa de cobro, calendario de cobranzas.
+- **Auditoría Completa**: Historial de cambios de plan y pagos efectuados.
+
 ---
 
 - **Webhooks**: Notificaciones en tiempo real (Ver [WEBHOOKS.md](docs/WEBHOOKS.md))
 - **Backups**: Sistema de copias de seguridad local y nube (Ver [CLOUD_BACKUPS.md](docs/CLOUD_BACKUPS.md))
+
 
 ### Archivo de Configuración
 

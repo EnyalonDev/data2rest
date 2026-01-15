@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\BaseController;
 use App\Core\PlanManager;
+use App\Modules\Billing\Services\InstallmentGenerator;
 use PDO;
 use Exception;
 
@@ -66,8 +67,9 @@ class ProjectController extends BaseController
         $id = $_GET['id'] ?? null;
         $project = null;
 
+        $db = Database::getInstance()->getConnection();
+
         if ($id) {
-            $db = Database::getInstance()->getConnection();
             $stmt = $db->prepare("SELECT * FROM projects WHERE id = ?");
             $stmt->execute([$id]);
             $project = $stmt->fetch();
@@ -84,13 +86,17 @@ class ProjectController extends BaseController
         }
 
         // Fetch all users for assignment
-        $db = Database::getInstance()->getConnection();
-        $users = $db->query("SELECT id, username FROM users ORDER BY username ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $users = $db->query("SELECT id, username, public_name, email, phone, address, tax_id FROM users ORDER BY username ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        // --- BILLING INTEGRATION ---
+        // Fetch Billing Plans
+        $billingPlans = $db->query("SELECT id, name, frequency FROM payment_plans WHERE status = 'active' ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $this->view('admin/projects/form', [
-            'title' => $id ? 'Edit Project' : 'New Project',
+            'title' => $id ? 'Editar Proyecto' : 'Nuevo Proyecto',
             'project' => $project,
             'users' => $users,
+            'billingPlans' => $billingPlans,
             'breadcrumbs' => ['Projects' => 'admin/projects', ($id ? 'Edit' : 'New') => null]
         ]);
     }
@@ -111,6 +117,7 @@ class ProjectController extends BaseController
         if (empty($name)) {
             Auth::setFlashError("Project name is required.");
             $this->redirect('admin/projects/new');
+            return;
         }
 
         $db = Database::getInstance()->getConnection();
@@ -129,11 +136,50 @@ class ProjectController extends BaseController
             $db->prepare("DELETE FROM project_users WHERE project_id = ?")->execute([$id]);
             foreach ($assignedUsers as $userId) {
                 $db->prepare("INSERT INTO project_users (project_id, user_id, permissions) VALUES (?, ?, ?)")
-                    ->execute([$id, $userId, json_encode(['all' => true])]); // Default permissions for now
+                    ->execute([$id, $userId, json_encode(['all' => true])]);
             }
 
-            // Update or initialize plan
-            PlanManager::switchPlan($id, $planType, $startDate);
+            // --- BILLING INTEGRATION ---
+            $billingUserId = $_POST['billing_user_id'] ?? null;
+            $currentPlanId = $_POST['current_plan_id'] ?? null;
+            $billingStartDate = $_POST['start_date'] ?? date('Y-m-d');
+
+            // --- SERVICES INTEGRATION ---
+            $services = $_POST['services'] ?? [];
+            $db->prepare("DELETE FROM project_services WHERE project_id = ?")->execute([$id]);
+
+            $freq = 'monthly';
+            if ($currentPlanId) {
+                $planFreqStmt = $db->prepare("SELECT frequency FROM payment_plans WHERE id = ?");
+                $planFreqStmt->execute([$currentPlanId]);
+                $freq = $planFreqStmt->fetchColumn() ?: 'monthly';
+            }
+
+            foreach ($services as $srv) {
+                $servicePeriod = $srv['billing_period'] ?? $freq;
+                $customPrice = isset($srv['custom_price']) ? (float) $srv['custom_price'] : null;
+                $stmt = $db->prepare("INSERT INTO project_services (project_id, service_id, quantity, billing_period, custom_price) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$id, $srv['service_id'], $srv['quantity'], $servicePeriod, $customPrice]);
+            }
+
+            // Update Billing fields in projects table
+            $stmt = $db->prepare("UPDATE projects SET billing_user_id = ?, start_date = ?, current_plan_id = ? WHERE id = ?");
+            $stmt->execute([$billingUserId, $billingStartDate, $currentPlanId, $id]);
+
+            // Handle Initial Generation or Recalculation of installments
+            if ($currentPlanId) {
+                $generator = new InstallmentGenerator();
+                $stmt = $db->prepare("SELECT COUNT(*) FROM installments WHERE project_id = ? AND status != 'cancelada'");
+                $stmt->execute([$id]);
+                if ($stmt->fetchColumn() == 0) {
+                    $generator->generateInstallments($id, $currentPlanId, $billingStartDate);
+                } else {
+                    $generator->recalculateInstallments($id, $currentPlanId, $billingStartDate);
+                }
+            } else {
+                // Keep Legacy Plan System for compatibility
+                PlanManager::switchPlan($id, $planType, $startDate);
+            }
 
             // Refresh session project list
             Auth::loadUserProjects();
