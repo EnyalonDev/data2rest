@@ -477,7 +477,10 @@ class Installer
             'media_trash_retention' => '30',
             'app_language' => 'es',
             'show_welcome_banner' => '1',
-            'time_offset_total' => '0'
+            'time_offset_total' => '0',
+            'media_optimize_max_dimension' => '1080',
+            'media_optimize_priority' => 'webp',
+            'media_optimize_quality' => '85'
         ];
         $stmt = $db->prepare("INSERT INTO system_settings (key, value) VALUES (?, ?)");
         foreach ($settings as $k => $v) {
@@ -513,5 +516,8 @@ class Installer
         // Final sanity check for settings
         $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_trash_retention', '30')");
         $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('time_offset_total', '0')");
+        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_optimize_max_dimension', '1080')");
+        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_optimize_priority', 'webp')");
+        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_optimize_quality', '85')");
     }
 }
