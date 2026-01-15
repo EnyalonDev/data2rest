@@ -253,13 +253,15 @@ class MediaController extends BaseController
         }
 
         $safeName = $this->sanitizeFilename($file['name']);
-
         if (file_exists($targetDir . $safeName)) {
             $info = pathinfo($safeName);
             $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
         }
 
-        if (move_uploaded_file($file['tmp_name'], $targetDir . $safeName)) {
+        $imageService = new ImageService();
+        $safeName = $imageService->process($file['tmp_name'], $targetDir, $safeName);
+
+        if (file_exists($targetDir . $safeName)) {
             $publicUrl = Auth::getFullBaseUrl() . 'uploads/' . $scopePath . '/' . ($path ? $path . '/' : '') . $safeName;
 
             $this->json([
@@ -468,10 +470,25 @@ class MediaController extends BaseController
      */
     public function updateSettings()
     {
+        Auth::requirePermission('module:media.edit_files');
         $retentionDays = $_POST['trash_retention'] ?? 30;
+        $maxDimension = $_POST['max_dimension'] ?? 1080;
+        $priority = $_POST['optimize_priority'] ?? 'webp';
+        $quality = $_POST['optimize_quality'] ?? 85;
+
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('media_trash_retention', ?)");
-        $stmt->execute([$retentionDays]);
+
+        $settings = [
+            'media_trash_retention' => $retentionDays,
+            'media_optimize_max_dimension' => $maxDimension,
+            'media_optimize_priority' => $priority,
+            'media_optimize_quality' => $quality
+        ];
+
+        foreach ($settings as $key => $value) {
+            $stmt = $db->prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)");
+            $stmt->execute([$key, $value]);
+        }
 
         $this->json(['success' => true]);
     }
@@ -764,11 +781,14 @@ class MediaController extends BaseController
     private function getMediaSettings()
     {
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT value FROM system_settings WHERE key = 'media_trash_retention'");
-        $stmt->execute();
-        $val = $stmt->fetchColumn();
+        $stmt = $db->query("SELECT key, value FROM system_settings WHERE key LIKE 'media_%'");
+        $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
         return [
-            'trash_retention' => $val ?: 30
+            'trash_retention' => $settings['media_trash_retention'] ?? 30,
+            'optimize_max_dimension' => $settings['media_optimize_max_dimension'] ?? 1080,
+            'optimize_priority' => $settings['media_optimize_priority'] ?? 'webp',
+            'optimize_quality' => $settings['media_optimize_quality'] ?? 85
         ];
     }
 
@@ -904,13 +924,15 @@ class MediaController extends BaseController
         }
 
         $safeName = $this->sanitizeFilename($file['name']);
-
         if (file_exists($absoluteDir . $safeName)) {
             $info = pathinfo($safeName);
             $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
         }
 
-        if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
+        $imageService = new ImageService();
+        $safeName = $imageService->process($file['tmp_name'], $absoluteDir, $safeName);
+
+        if (file_exists($absoluteDir . $safeName)) {
             $url = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
             $this->json([
                 'url' => $url,
