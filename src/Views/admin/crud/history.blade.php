@@ -27,8 +27,8 @@
         <div class="relative pl-8 before:absolute before:left-3 before:top-2 before:bottom-0 before:w-0.5 before:bg-white/10 space-y-8">
             @foreach($versions as $v)
                 @php
-                    $oldData = json_decode($v['old_data'], true);
-                    $newData = json_decode($v['new_data'], true);
+                    $oldData = json_decode((string)($v['old_data'] ?? '{}'), true);
+                    $newData = json_decode((string)($v['new_data'] ?? '{}'), true);
                     $diff = [];
                     
                     if ($newData) {
@@ -104,7 +104,7 @@
                         @elseif($v['action'] === 'DELETE')
                              <div class="p-4 bg-red-500/5 rounded-lg border border-red-500/10">
                                 <p class="text-xs text-red-300 mb-2 font-bold uppercase tracking-widest">Deleted Data Snapshot:</p>
-                                <pre class="text-[10px] text-p-muted font-mono overflow-auto custom-scrollbar max-h-40">{{ json_encode(json_decode($v['old_data']), JSON_PRETTY_PRINT) }}</pre>
+                                <pre class="text-[10px] text-p-muted font-mono overflow-auto custom-scrollbar max-h-40">{{ json_encode(json_decode((string)($v['old_data'] ?? '{}')), JSON_PRETTY_PRINT) }}</pre>
                              </div>
                         @endif
                     </div>

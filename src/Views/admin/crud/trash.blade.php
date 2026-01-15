@@ -50,7 +50,7 @@
             <tbody class="divide-y divide-white/5">
                 @forelse($deletions as $v)
                     @php
-                        $data = json_decode($v['old_data'], true);
+                        $data = json_decode((string) ($v['old_data'] ?? '{}'), true);
                         $label = $data['nombre'] ?? $data['name'] ?? $data['title'] ?? '#' . $v['record_id'];
                     @endphp
                     <tr class="hover:bg-white/5 transition-colors group">
@@ -128,11 +128,11 @@
 
             for (const [key, val] of Object.entries(data)) {
                 html += `
-                        <div class="flex flex-col border-b border-white/5 pb-2">
-                            <span class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">${key}</span>
-                            <span class="text-xs font-mono text-p-title break-all">${val !== null ? val : '<i class="opacity-30">NULL</i>'}</span>
-                        </div>
-                    `;
+                            <div class="flex flex-col border-b border-white/5 pb-2">
+                                <span class="text-[9px] font-black text-p-muted uppercase tracking-widest mb-1">${key}</span>
+                                <span class="text-xs font-mono text-p-title break-all">${val !== null ? val : '<i class="opacity-30">NULL</i>'}</span>
+                            </div>
+                        `;
             }
             html += '</div>';
 

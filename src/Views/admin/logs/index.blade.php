@@ -181,7 +181,7 @@
                                         </div>
                                         
                                         @php
-                                            $details = json_decode($log['details'], true);
+                                            $details = json_decode((string)($log['details'] ?? '{}'), true);
                                             $hasHistory = in_array($log['action'], ['UPDATE_RECORD', 'DELETE_RECORD', 'RESTORE_VERSION', 'API_UPDATE', 'API_DELETE']);
                                         @endphp
 
