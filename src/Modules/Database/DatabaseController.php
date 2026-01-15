@@ -58,6 +58,12 @@ class DatabaseController extends BaseController
             }
         }
 
+        // Automatic redirect if only one database exists for non-admin users
+        if (count($databases) === 1 && !Auth::isAdmin()) {
+            $dbId = $databases[0]['id'];
+            $this->redirect('admin/databases/view?id=' . $dbId);
+        }
+
         $this->view('admin/databases/index', [
             'title' => 'Databases - Architect',
             'databases' => $databases,
