@@ -242,7 +242,11 @@ class DatabaseController extends BaseController
                     $upd = $db->prepare("UPDATE databases SET path = ? WHERE id = ?");
                     $upd->execute([$database['path'], $id]);
                 } else {
-                    throw new \Exception("Database file not found at: {$database['path']} OR $localPath");
+                    // Soft fail: Remove the invalid record or warn user
+                    // For now, warn user and redirect back to list to avoid crash loop
+                    Logger::log('DB_FILE_MISSING', ['id' => $id, 'path' => $database['path']]);
+                    Auth::setFlashError("⚠️ Error Crítico: El archivo de base de datos no existe en el disco. Contacte al administrador.");
+                    $this->redirect('admin/databases');
                 }
             }
             // -----------------------------------------------------------
