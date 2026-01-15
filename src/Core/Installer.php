@@ -42,7 +42,7 @@ class Installer
                 role_id INTEGER,
                 group_id INTEGER,
                 status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP, public_name TEXT, phone TEXT, address TEXT, email TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP, public_name TEXT, phone TEXT, address TEXT, email TEXT, tax_id TEXT,
                 FOREIGN KEY (role_id) REFERENCES roles(id),
                 FOREIGN KEY (group_id) REFERENCES groups(id)
                 )"
