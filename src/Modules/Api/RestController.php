@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\BaseController;
 use App\Core\Logger;
 use App\Modules\Webhooks\WebhookDispatcher;
+use App\Modules\Media\ImageService;
 use PDO;
 
 class RestController extends BaseController
@@ -523,7 +524,10 @@ class RestController extends BaseController
                     $safeName = $fi['filename'] . '-' . substr(uniqid(), -5) . '.' . $fi['extension'];
                 }
 
-                if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
+                $imageService = new ImageService();
+                $safeName = $imageService->process($file['tmp_name'], $absoluteDir, $safeName);
+
+                if (file_exists($absoluteDir . $safeName)) {
                     $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
                 }
             }

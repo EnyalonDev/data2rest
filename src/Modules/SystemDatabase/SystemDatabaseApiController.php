@@ -67,7 +67,7 @@ class SystemDatabaseApiController extends BaseController
             $role = $stmtRole->fetch();
 
             if ($role) {
-                $permissions = json_decode($role['permissions'], true);
+                $permissions = json_decode((string) ($role['permissions'] ?? '[]'), true);
                 if (!isset($permissions['all']) || $permissions['all'] !== true) {
                     $this->json(['error' => 'Access Denied: Super Admin privileges required'], 403);
                 }

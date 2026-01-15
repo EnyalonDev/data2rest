@@ -98,7 +98,7 @@ class DashboardController extends BaseController
             $versions = $stmtVers->fetchAll();
 
             foreach ($versions as $v) {
-                $details = json_decode($v['old_data'], true);
+                $details = json_decode((string) ($v['old_data'] ?? $v['new_data'] ?? '{}'), true);
                 $recentActivity[] = [
                     'table' => $v['table_name'],
                     'db' => $v['db_name'],

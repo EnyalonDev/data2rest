@@ -7,6 +7,7 @@ use App\Core\Database;
 use App\Core\Config;
 use App\Core\BaseController;
 use App\Core\Logger;
+use App\Modules\Media\ImageService;
 use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
@@ -329,7 +330,10 @@ LIMIT 1");
                         $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
                     }
 
-                    if (move_uploaded_file($file['tmp_name'], $absoluteDir . $safeName)) {
+                    $imageService = new ImageService();
+                    $safeName = $imageService->process($file['tmp_name'], $absoluteDir, $safeName);
+
+                    if (file_exists($absoluteDir . $safeName)) {
                         $data[$field] = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
                     }
                 }
@@ -732,7 +736,7 @@ LIMIT 1");
         if (!$version)
             die("Version not found");
 
-        $oldData = json_decode($version['old_data'], true);
+        $oldData = json_decode((string) ($version['old_data'] ?? '{}'), true);
         if (!$oldData)
             die("Corrupt version data");
 
