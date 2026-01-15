@@ -130,6 +130,19 @@ class Installer
                 value TEXT
                 )"
         ],
+        'billing_services' => [
+            'sql' => "CREATE TABLE billing_services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                price_monthly REAL DEFAULT 0,
+                price_yearly REAL DEFAULT 0,
+                price_one_time REAL DEFAULT 0,
+                price REAL DEFAULT 0,
+                status TEXT DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )"
+        ],
         'projects' => [
             'sql' => "CREATE TABLE projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,8 +150,30 @@ class Installer
                 description TEXT,
                 status TEXT DEFAULT 'active',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                , storage_quota INTEGER DEFAULT 300)"
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                storage_quota INTEGER DEFAULT 300,
+                client_id INTEGER,
+                billing_user_id INTEGER,
+                start_date DATE,
+                current_plan_id INTEGER,
+                billing_status TEXT DEFAULT 'active',
+                FOREIGN KEY(client_id) REFERENCES clients(id),
+                FOREIGN KEY(billing_user_id) REFERENCES users(id),
+                FOREIGN KEY(current_plan_id) REFERENCES payment_plans(id)
+                )"
+        ],
+        'project_services' => [
+            'sql' => "CREATE TABLE project_services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                service_id INTEGER NOT NULL,
+                custom_price REAL,
+                billing_period TEXT,
+                quantity INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (service_id) REFERENCES billing_services(id)
+            )"
         ],
         'project_users' => [
             'sql' => "CREATE TABLE project_users (
@@ -224,6 +259,89 @@ class Installer
                 api_key_id INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
+            )"
+        ],
+        'clients' => [
+            'sql' => "CREATE TABLE clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT,
+                phone TEXT,
+                address TEXT,
+                tax_id TEXT,
+                status TEXT DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )"
+        ],
+        'payment_plans' => [
+            'sql' => "CREATE TABLE payment_plans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                installments INTEGER NOT NULL,
+                contract_duration_months INTEGER,
+                description TEXT,
+                status TEXT DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )"
+        ],
+        'installments' => [
+            'sql' => "CREATE TABLE installments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                plan_id INTEGER NOT NULL,
+                installment_number INTEGER NOT NULL,
+                due_date DATE NOT NULL,
+                amount REAL NOT NULL,
+                status TEXT DEFAULT 'pendiente',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY(plan_id) REFERENCES payment_plans(id)
+            )"
+        ],
+        'payments' => [
+            'sql' => "CREATE TABLE payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                installment_id INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                payment_method TEXT,
+                reference TEXT,
+                notes TEXT,
+                status TEXT DEFAULT 'approved',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(installment_id) REFERENCES installments(id) ON DELETE CASCADE
+            )"
+        ],
+        'project_plan_history' => [
+            'sql' => "CREATE TABLE project_plan_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                old_plan_id INTEGER,
+                new_plan_id INTEGER,
+                old_start_date DATE,
+                new_start_date DATE,
+                change_reason TEXT,
+                changed_by INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY(old_plan_id) REFERENCES payment_plans(id),
+                FOREIGN KEY(new_plan_id) REFERENCES payment_plans(id),
+                FOREIGN KEY(changed_by) REFERENCES users(id)
+            )"
+        ],
+        'notifications_log' => [
+            'sql' => "CREATE TABLE notifications_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                installment_id INTEGER NOT NULL,
+                notification_type TEXT NOT NULL,
+                recipient TEXT NOT NULL,
+                status TEXT DEFAULT 'sent',
+                sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                error_message TEXT,
+                FOREIGN KEY(installment_id) REFERENCES installments(id) ON DELETE CASCADE
             )"
         ]
     ];
@@ -332,15 +450,26 @@ class Installer
         $stmt->execute([$adminPermissions]);
         $adminRoleId = $db->lastInsertId();
 
-        // Standard User Role
-        $userPermissions = json_encode(['all' => false, 'modules' => [], 'databases' => []]);
-        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('User', 'Standard user access', ?)")
-            ->execute([$userPermissions]);
+        // Manager Role
+        $managerPermissions = json_encode(['all' => false, 'modules' => ['billing' => ['view', 'manage']], 'databases' => []]);
+        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Manager', 'Can manage billing and projects', ?)")
+            ->execute([$managerPermissions]);
+
+        // Client Role (ID 4)
+        $clientPermissions = json_encode(['all' => false, 'modules' => ['billing' => ['view']], 'databases' => []]);
+        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Client', 'Customer access to see their own data', ?)")
+            ->execute([$clientPermissions]);
+        $clientRoleId = $db->lastInsertId();
 
         // Initial Admin User (admin / admin123)
         $password = password_hash('admin123', PASSWORD_DEFAULT);
         $db->prepare("INSERT INTO users (username, password, role_id) VALUES ('admin', ?, ?)")
             ->execute([$password, $adminRoleId]);
+
+        // Initial Standard User (user1 / user123)
+        $userPassword = password_hash('user123', PASSWORD_DEFAULT);
+        $db->prepare("INSERT INTO users (username, password, role_id) VALUES ('user1', ?, ?)")
+            ->execute([$userPassword, $clientRoleId]);
 
         // Default Settings
         $settings = [
@@ -354,6 +483,13 @@ class Installer
         foreach ($settings as $k => $v) {
             $stmt->execute([$k, $v]);
         }
+
+        // Default Payment Plans
+        $db->prepare("INSERT INTO payment_plans (name, frequency, installments, description) VALUES (?, ?, ?, ?)")
+            ->execute(['Plan Mensual', 'monthly', 12, 'Plan de pago mensual con 12 cuotas']);
+
+        $db->prepare("INSERT INTO payment_plans (name, frequency, installments, description) VALUES (?, ?, ?, ?)")
+            ->execute(['Plan Anual', 'yearly', 1, 'Plan de pago anual con 1 cuota']);
     }
 
     /**

@@ -235,6 +235,66 @@ $router->add('DELETE', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle'
 $router->add('OPTIONS', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('OPTIONS', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 
+// --- Billing Module API ---
+// Clients
+$router->add('GET', '/api/billing/clients', 'Billing\\Controllers\\ClientController@index');
+$router->add('POST', '/api/billing/clients', 'Billing\\Controllers\\ClientController@create');
+$router->add('GET', '/api/billing/clients/{id}', 'Billing\\Controllers\\ClientController@getById');
+$router->add('PUT', '/api/billing/clients/{id}', 'Billing\\Controllers\\ClientController@update');
+$router->add('DELETE', '/api/billing/clients/{id}', 'Billing\\Controllers\\ClientController@delete');
+
+// Projects with Billing
+$router->add('POST', '/api/billing/projects', 'Billing\\Controllers\\ProjectController@create');
+$router->add('PATCH', '/api/billing/projects/{id}/change-plan', 'Billing\\Controllers\\ProjectController@changePlan');
+$router->add('PATCH', '/api/billing/projects/{id}/start-date', 'Billing\\Controllers\\ProjectController@changeStartDate');
+$router->add('GET', '/api/billing/projects/{id}/plan-history', 'Billing\\Controllers\\ProjectController@getPlanHistory');
+
+// Payment Plans
+$router->add('GET', '/api/billing/payment-plans', 'Billing\\Controllers\\PaymentPlanController@index');
+$router->add('POST', '/api/billing/payment-plans', 'Billing\\Controllers\\PaymentPlanController@create');
+$router->add('GET', '/api/billing/payment-plans/{id}', 'Billing\\Controllers\\PaymentPlanController@getById');
+$router->add('PUT', '/api/billing/payment-plans/{id}', 'Billing\\Controllers\\PaymentPlanController@update');
+
+// Installments
+$router->add('GET', '/api/billing/projects/{id}/installments', 'Billing\\Controllers\\InstallmentController@getByProject');
+$router->add('GET', '/api/billing/installments/upcoming', 'Billing\\Controllers\\InstallmentController@getUpcoming');
+$router->add('GET', '/api/billing/installments/overdue', 'Billing\\Controllers\\InstallmentController@getOverdue');
+$router->add('GET', '/api/billing/installments/{id}', 'Billing\\Controllers\\InstallmentController@getById');
+$router->add('POST', '/api/billing/installments/{id}/pay', 'Billing\\Controllers\\InstallmentController@pay');
+$router->add('POST', '/api/billing/installments/{id}/report', 'Billing\\Controllers\\InstallmentController@report');
+$router->add('POST', '/api/billing/payments/{id}/approve', 'Billing\\Controllers\\InstallmentController@approve');
+$router->add('POST', '/api/billing/payments/{id}/reject', 'Billing\\Controllers\\InstallmentController@reject');
+$router->add('GET', '/api/billing/payments/{id}', 'Billing\\Controllers\\InstallmentController@getPaymentById');
+
+// Services Catalog
+$router->add('GET', '/api/billing/services', 'Billing\\Controllers\\ServiceApiController@index');
+$router->add('POST', '/api/billing/services', 'Billing\\Controllers\\ServiceApiController@create');
+$router->add('PUT', '/api/billing/services/{id}', 'Billing\\Controllers\\ServiceApiController@update');
+$router->add('DELETE', '/api/billing/services/{id}', 'Billing\\Controllers\\ServiceApiController@delete');
+
+// Project Services
+$router->add('GET', '/api/billing/projects/{id}/services', 'Billing\\Controllers\\ProjectController@getServices');
+$router->add('POST', '/api/billing/projects/{id}/services', 'Billing\\Controllers\\ProjectController@addService');
+$router->add('DELETE', '/api/billing/projects/{id}/services/{service_id}', 'Billing\\Controllers\\ProjectController@removeService');
+
+// Reports
+$router->add('GET', '/api/billing/reports/financial-summary', 'Billing\\Controllers\\ReportController@financialSummary');
+$router->add('GET', '/api/billing/reports/income-comparison', 'Billing\\Controllers\\ReportController@incomeComparison');
+$router->add('GET', '/api/billing/reports/upcoming-installments', 'Billing\\Controllers\\ReportController@upcomingInstallments');
+$router->add('GET', '/api/billing/reports/client-summary/{id}', 'Billing\\Controllers\\ReportController@clientSummary');
+
+// --- Billing Module Web Views ---
+$router->add('GET', '/admin/billing', 'Billing\\Controllers\\BillingWebController@index');
+$router->add('GET', '/admin/billing/clients', 'Billing\\Controllers\\BillingWebController@clients');
+$router->add('GET', '/admin/billing/projects', 'Billing\\Controllers\\BillingWebController@projects');
+$router->add('GET', '/admin/billing/installments', 'Billing\\Controllers\\BillingWebController@installments');
+$router->add('GET', '/admin/billing/plans', 'Billing\\Controllers\\BillingWebController@plans');
+$router->add('GET', '/admin/billing/reports', 'Billing\\Controllers\\BillingWebController@reports');
+$router->add('GET', '/admin/billing/payments', 'Billing\\Controllers\\BillingWebController@payments');
+$router->add('GET', '/admin/billing/services', 'Billing\\Controllers\\BillingWebController@services');
+
+
+
 // --- System Database API (Super Admin Only) ---
 $router->add('GET', '/api/system/info', 'SystemDatabase\\SystemDatabaseApiController@getInfo');
 $router->add('POST', '/api/system/backup', 'SystemDatabase\\SystemDatabaseApiController@createBackup');

@@ -350,6 +350,28 @@
                     </div>
                 </a>
 
+                <!-- Billing Module -->
+                @if(\App\Core\Auth::isAdmin() || $_SESSION['role_id'] == 4)
+                    <a href="{{ $baseUrl }}admin/billing"
+                        class="glass-card group hover:scale-[1.02] hover:border-emerald-500/50 !p-8">
+                        <div
+                            class="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 text-emerald-500">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-p-title mb-2">Billing</h3>
+                        <p class="text-xs text-p-muted mb-6 leading-relaxed">
+                            {{ \App\Core\Auth::isAdmin() ? 'Gestión de pagos, cuotas y facturación por proyecto. Control financiero completo.' : 'Consulta tus cuotas, historial de pagos y reporta nuevos comprobantes.' }}
+                        </p>
+                        <div class="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                            {{ \App\Core\Lang::get('dashboard.enter') }} <span>&rarr;</span>
+                        </div>
+                    </a>
+                @endif
+
                 <!-- Recycle Bin -->
                 <a href="{{ $baseUrl }}admin/trash"
                     class="glass-card group hover:scale-[1.02] hover:border-red-500/50 !p-8">
@@ -640,52 +662,52 @@
                     };
 
                     let html = `
-                                                            <!-- Time Section -->
-                                                            <div class="mb-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-blue-500/5 border border-primary/20 shadow-2xl overflow-hidden relative group">
-                                                                <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full group-hover:bg-primary/20 transition-all duration-700"></div>
+                                                                    <!-- Time Section -->
+                                                                    <div class="mb-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-blue-500/5 border border-primary/20 shadow-2xl overflow-hidden relative group">
+                                                                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full group-hover:bg-primary/20 transition-all duration-700"></div>
 
-                                                                <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                                                                    <div class="w-32 h-32 rounded-full bg-black/40 border-4 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-inner">
-                                                                        <span class="text-5xl animate-pulse">🕒</span>
-                                                                    </div>
-
-                                                                    <div class="flex-1 text-center md:text-left">
-                                                                        <h3 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
-                                                                            <span class="w-2 h-2 rounded-full bg-primary"></span>
-                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.server_time')) !!}
-                                                                        </h3>
-                                                                        <div id="server-clock" class="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-4 tabular-nums">
-                                                                            ${data.server_time.split(' ')[1]}
-                                                                        </div>
-                                                                        <p class="text-xs text-p-muted font-bold uppercase tracking-widest opacity-60">
-                                                                            ${data.server_time.split(' ')[0]} • ${data.timezone}
-                                                                        </p>
-                                                                    </div>
-
-                                                                    <div class="w-full md:w-auto p-6 rounded-3xl bg-black/50 border border-white/5 shadow-xl">
-                                                                        <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-4">{!! addslashes(\App\Core\Lang::get('dashboard.time_adjustment')) !!}</label>
-                                                                        <div class="flex items-center gap-3 mb-4">
-                                                                            <div class="flex-1 text-center">
-                                                                                <input type="number" id="offset-hours" value="${Math.floor(data.time_offset / 60)}" 
-                                                                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
-                                                                                <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.hours')) !!}</span>
+                                                                        <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                                                                            <div class="w-32 h-32 rounded-full bg-black/40 border-4 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-inner">
+                                                                                <span class="text-5xl animate-pulse">🕒</span>
                                                                             </div>
-                                                                            <span class="text-p-muted font-bold">:</span>
-                                                                            <div class="flex-1 text-center">
-                                                                                <input type="number" id="offset-minutes" value="${Math.abs(data.time_offset % 60)}" 
-                                                                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
-                                                                                <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.minutes')) !!}</span>
+
+                                                                            <div class="flex-1 text-center md:text-left">
+                                                                                <h3 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                                                                                    <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.server_time')) !!}
+                                                                                </h3>
+                                                                                <div id="server-clock" class="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-4 tabular-nums">
+                                                                                    ${data.server_time.split(' ')[1]}
+                                                                                </div>
+                                                                                <p class="text-xs text-p-muted font-bold uppercase tracking-widest opacity-60">
+                                                                                    ${data.server_time.split(' ')[0]} • ${data.timezone}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            <div class="w-full md:w-auto p-6 rounded-3xl bg-black/50 border border-white/5 shadow-xl">
+                                                                                <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-4">{!! addslashes(\App\Core\Lang::get('dashboard.time_adjustment')) !!}</label>
+                                                                                <div class="flex items-center gap-3 mb-4">
+                                                                                    <div class="flex-1 text-center">
+                                                                                        <input type="number" id="offset-hours" value="${Math.floor(data.time_offset / 60)}" 
+                                                                                            class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
+                                                                                        <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.hours')) !!}</span>
+                                                                                    </div>
+                                                                                    <span class="text-p-muted font-bold">:</span>
+                                                                                    <div class="flex-1 text-center">
+                                                                                        <input type="number" id="offset-minutes" value="${Math.abs(data.time_offset % 60)}" 
+                                                                                            class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
+                                                                                        <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.minutes')) !!}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <button onclick="updateTimeOffset()" class="w-full btn-primary !py-2.5 !text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20">
+                                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.adjust_time_btn')) !!}
+                                                                                </button>
                                                                             </div>
                                                                         </div>
-                                                                        <button onclick="updateTimeOffset()" class="w-full btn-primary !py-2.5 !text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20">
-                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.adjust_time_btn')) !!}
-                                                                        </button>
                                                                     </div>
-                                                                </div>
-                                                            </div>
 
-                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
-                                                        `;
+                                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+                                                                `;
 
                     for (const [key, value] of Object.entries(data)) {
                         if (['server_time', 'time_offset'].includes(key)) continue;
@@ -700,32 +722,32 @@
                         }
 
                         html += `
-                                                                <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
-                                                                    <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
-                                                                    <span class="text-lg font-black text-white block mb-2">${value}</span>
-                                                                    ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
-                                                                    ${extraWarning}
-                                                                </div>
-                                                            `;
+                                                                        <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+                                                                            <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
+                                                                            <span class="text-lg font-black text-white block mb-2">${value}</span>
+                                                                            ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
+                                                                            ${extraWarning}
+                                                                        </div>
+                                                                    `;
                     }
 
                     html += `
-                                                            </div>
-                                                            <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
-                                                                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-                                                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
-                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
-                                                                </h4>
-                                                                <p class="text-sm text-p-muted leading-relaxed mb-6">
-                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
-                                                                </p>
-                                                                <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                                                    <p class="text-xs md:text-sm text-p-muted leading-relaxed">
-                                                                        {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        `;
+                                                                    </div>
+                                                                    <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
+                                                                        <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
+                                                                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
+                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
+                                                                        </h4>
+                                                                        <p class="text-sm text-p-muted leading-relaxed mb-6">
+                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
+                                                                        </p>
+                                                                        <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                                                            <p class="text-xs md:text-sm text-p-muted leading-relaxed">
+                                                                                {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                `;
 
                     showModal({
                         title: '{!! addslashes(\App\Core\Lang::get('dashboard.server_config')) !!}',
