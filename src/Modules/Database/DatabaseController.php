@@ -233,14 +233,14 @@ class DatabaseController extends BaseController
             // --- PATH SELF-HEALING (Replicated from CrudController) ---
             if (!file_exists($database['path'])) {
                 $filename = basename($database['path']);
-                // Direct file check in data dir
-                $localPath = realpath(__DIR__ . '/../../data/') . '/' . $filename;
+                // Direct file check in standard data dir using Config
+                $localPath = Config::get('db_storage_path') . $filename;
 
                 if (file_exists($localPath)) {
-                    $database['path'] = $localPath;
+                    $database['path'] = realpath($localPath);
                     // Update DB
                     $upd = $db->prepare("UPDATE databases SET path = ? WHERE id = ?");
-                    $upd->execute([$localPath, $id]);
+                    $upd->execute([$database['path'], $id]);
                 } else {
                     throw new \Exception("Database file not found at: {$database['path']} OR $localPath");
                 }
