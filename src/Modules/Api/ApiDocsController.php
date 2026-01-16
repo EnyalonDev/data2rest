@@ -8,13 +8,47 @@ use App\Core\Config;
 use App\Core\BaseController;
 use PDO;
 
+/**
+ * API Docs Controller
+ *
+ * Provides management of API keys and generation of API documentation for databases.
+ *
+ * Core Features:
+ * - List API keys and databases
+ * - Create and revoke API keys
+ * - Generate documentation for database tables and fields
+ *
+ * Security:
+ * - Requires authenticated user
+ * - Permission checks for viewing keys, creating keys, revoking keys, and viewing docs
+ *
+ * @package App\\Modules\\Api
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ApiDocsController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication.
+     *
+     * Ensures that all actions in this controller are only accessible to logged-in users.
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
     }
 
+    /**
+     * Display API keys and databases.
+     *
+     * Shows a list of active API keys and databases scoped to the current project.
+     * Admin users see all keys, regular users see only their own.
+     *
+     * @return void Renders the `admin/api/index` view with keys and databases.
+     * @example GET /admin/api
+     */
     public function index()
     {
         Auth::requirePermission('module:api.view_keys');
@@ -53,6 +87,14 @@ class ApiDocsController extends BaseController
         ]);
     }
 
+    /**
+     * Create a new API key.
+     *
+     * Generates a random 256-bit key and stores it associated with the current user.
+     *
+     * @return void Redirects back to the API management page.
+     * @example POST /admin/api/createKey
+     */
     public function createKey()
     {
         Auth::requirePermission('module:api.create_keys');
@@ -67,6 +109,14 @@ class ApiDocsController extends BaseController
         $this->redirect('admin/api');
     }
 
+    /**
+     * Delete (revoke) an API key.
+     *
+     * Removes the API key record, respecting admin rights or ownership.
+     *
+     * @return void Redirects back to the API management page.
+     * @example GET /admin/api/deleteKey?id=5
+     */
     public function deleteKey()
     {
         Auth::requirePermission('module:api.revoke_keys'); // Mapped to 'revoke_keys' in policy_architect
@@ -86,6 +136,14 @@ class ApiDocsController extends BaseController
         $this->redirect('admin/api');
     }
 
+    /**
+     * Generate API documentation for a database.
+     *
+     * Retrieves database schema and active API keys, then renders documentation view.
+     *
+     * @return void Renders the `admin/api/docs` view with schema details.
+     * @example GET /admin/api/docs?db_id=3
+     */
     public function docs()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -94,8 +152,7 @@ class ApiDocsController extends BaseController
         // Ensure user can access this DB context
         // Auth::requireDatabaseAccess is legacy/db-specific ID permission. 
         // We should just check if the DB belongs to current project, which requireDatabaseAccess does in the new Auth.php logic?
-        // Let's verify Auth.php update -> Yes, it checks module:db:id. 
-        // BUT we are moving away from db-specific permissions. 
+        // BUT we are moving away from db-specific permissions.
         // We really just need to know if the DB is in the active project.
 
         $db = Database::getInstance()->getConnection();

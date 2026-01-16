@@ -9,7 +9,24 @@ use PDO;
 
 /**
  * Log Controller
- * Handles viewing and filtering system activity logs.
+ *
+ * Provides comprehensive management and viewing of system activity logs.
+ *
+ * Core Features:
+ * - Filter logs by user, action, date range, and search term
+ * - Project-scoped visibility with admin overrides
+ * - Team/group based access control
+ * - Statistics on API calls, data changes, and top endpoints
+ * - Pagination limited to recent 200 entries
+ *
+ * Security:
+ * - Requires authenticated user (Auth::requireLogin())
+ * - Permission checks for project access and admin rights
+ * - Prevents unauthorized log exposure via team visibility rules
+ *
+ * @package App\Modules\Logs
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class LogController extends BaseController
 {
@@ -20,6 +37,20 @@ class LogController extends BaseController
 
     /**
      * Lists activity logs.
+     *
+     * Retrieves and displays activity logs with optional filtering:
+     * - User ID (`user_id`)
+     * - Action type (`action_type`)
+     * - Date range (`start_date`, `end_date`)
+     * - Full-text search (`s`)
+     *
+     * Generates additional data for the view:
+     * - Available users for filter dropdowns
+     * - Distinct action types
+     * - Statistics: API call count, data change count, top endpoints
+     *
+     * @return void Renders the `admin/logs/index` view with logs and metadata.
+     * @example GET /admin/logs?user_id=5&action_type=API_GET&start_date=2024-01-01&end_date=2024-12-31&s=login
      */
     public function index()
     {
