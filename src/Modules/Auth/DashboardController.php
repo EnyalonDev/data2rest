@@ -11,8 +11,69 @@ use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 
+
+/**
+ * Dashboard Controller
+ * 
+ * Main dashboard with comprehensive statistics, charts, and activity tracking
+ * for project-scoped data visualization.
+ * 
+ * Core Features:
+ * - Project-scoped statistics
+ * - Real-time activity tracking
+ * - Storage usage monitoring
+ * - Interactive charts (activity, storage, growth)
+ * - Recent activity feed
+ * - Database record counting
+ * - Automatic maintenance execution
+ * 
+ * Statistics Displayed:
+ * - Total databases in project
+ * - Total records across all tables
+ * - Storage usage with quota tracking
+ * - Recent activity (last 10 items)
+ * 
+ * Charts:
+ * - Activity Chart: Last 7 days of system activity
+ * - Storage Chart: Distribution by database
+ * - Growth Chart: Record creation trend (7 days)
+ * 
+ * Access Control:
+ * - Admin: View all projects or global stats
+ * - User: View only assigned project data
+ * - Automatic project selection enforcement
+ * 
+ * @package App\Modules\Auth
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class DashboardController extends BaseController
 {
+    /**
+     * Display main dashboard
+     * 
+     * Renders the main dashboard with comprehensive statistics,
+     * charts, and activity tracking for the active project.
+     * 
+     * Features:
+     * - Project-scoped data isolation
+     * - Real-time statistics calculation
+     * - Activity tracking from multiple sources
+     * - Chart data preparation (7-day trends)
+     * - Storage quota monitoring
+     * - Automatic maintenance execution
+     * 
+     * Data Sources:
+     * - Project databases (record counts)
+     * - data_versions table (audit trail)
+     * - activity_logs table (system activity)
+     * - File system (storage usage)
+     * 
+     * @return void Renders dashboard view
+     * 
+     * @example
+     * GET /admin/dashboard
+     */
     public function index()
     {
         Auth::requireLogin();
@@ -223,6 +284,15 @@ class DashboardController extends BaseController
         ]);
     }
 
+    /**
+     * Format bytes to human-readable string
+     * 
+     * Converts byte count to appropriate unit (B, KB, MB, GB, TB).
+     * 
+     * @param int $bytes Byte count
+     * @param int $precision Decimal precision
+     * @return string Formatted string (e.g., "15.5 MB")
+     */
     private function formatBytes($bytes, $precision = 2)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];

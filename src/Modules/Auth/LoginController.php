@@ -5,8 +5,42 @@ namespace App\Modules\Auth;
 use App\Core\Auth;
 use App\Core\BaseController;
 
+
+/**
+ * Login Controller
+ * 
+ * Handles user authentication including login, logout, and login form display.
+ * 
+ * Core Features:
+ * - Login form rendering
+ * - User authentication
+ * - Session management
+ * - Logout functionality
+ * - Automatic redirect for authenticated users
+ * 
+ * Security:
+ * - Password verification via Auth service
+ * - Session-based authentication
+ * - Redirect prevention for logged-in users
+ * - Error message display on failed login
+ * 
+ * @package App\Modules\Auth
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class LoginController extends BaseController
 {
+    /**
+     * Display login form
+     * 
+     * Shows the login page. If user is already authenticated,
+     * redirects to dashboard.
+     * 
+     * @return void Renders login view or redirects
+     * 
+     * @example
+     * GET /login
+     */
     public function showLoginForm()
     {
         if (Auth::check()) {
@@ -15,6 +49,18 @@ class LoginController extends BaseController
         $this->view('auth/login', ['title' => 'Login'], null);
     }
 
+    /**
+     * Process login attempt
+     * 
+     * Validates credentials and creates user session on success.
+     * Shows error message on failure.
+     * 
+     * @return void Redirects to dashboard on success, shows error on failure
+     * 
+     * @example
+     * POST /login
+     * Body: username=admin&password=secret
+     */
     public function login()
     {
         $username = $_POST['username'] ?? '';
@@ -30,6 +76,16 @@ class LoginController extends BaseController
         ], null);
     }
 
+    /**
+     * Logout user
+     * 
+     * Destroys user session and redirects to login page.
+     * 
+     * @return void Redirects to login page
+     * 
+     * @example
+     * GET /logout
+     */
     public function logout()
     {
         Auth::logout();
