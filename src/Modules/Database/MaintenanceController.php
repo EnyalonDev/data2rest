@@ -8,6 +8,25 @@ use App\Core\Config;
 use App\Core\BaseController;
 use PDO;
 
+/**
+ * Maintenance Controller
+ *
+ * Handles system maintenance tasks such as resetting the entire system and loading demo data.
+ *
+ * Core Features:
+ * - Full system reset (databases, tables, roles)
+ * - Demo data loading for enterprise demo
+ * - Internal synchronization of field configurations
+ *
+ * Security:
+ * - Requires authenticated user
+ * - Admin privileges for reset
+ * - Specific permission for demo loading
+ *
+ * @package App\\Modules\\Database
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class MaintenanceController extends BaseController
 {
     public function __construct()
@@ -15,6 +34,14 @@ class MaintenanceController extends BaseController
         Auth::requireLogin();
     }
 
+    /**
+     * Reset the entire system.
+     *
+     * Deletes all database files, clears related tables, and resets role permissions.
+     * Only accessible by admin users.
+     *
+     * @return void Redirects to admin dashboard with success flash message.
+     */
     public function resetSystem()
     {
         Auth::requireAdmin();
@@ -62,6 +89,14 @@ class MaintenanceController extends BaseController
         $this->redirect('admin/dashboard');
     }
 
+    /**
+     * Load demo data into a fresh system.
+     *
+     * Creates an enterprise demo database from a JSON configuration file.
+     * Requires the `module:databases` permission with `create` action.
+     *
+     * @return void Redirects to admin dashboard with success or error flash.
+     */
     public function loadDemo()
     {
         Auth::requirePermission('module:databases', 'create');
@@ -145,6 +180,15 @@ class MaintenanceController extends BaseController
         }
     }
 
+    /**
+     * Synchronize field configurations for a newly created demo database.
+     *
+     * Scans tables and columns, infers view types, and inserts metadata into `fields_config`.
+     *
+     * @param int $id   The system database ID.
+     * @param string $path Filesystem path to the SQLite database.
+     * @return void
+     */
     private function internalSync($id, $path)
     {
         $db = Database::getInstance()->getConnection();
