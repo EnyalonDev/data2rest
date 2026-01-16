@@ -11,10 +11,57 @@ use PDO;
 
 /**
  * Database Management Controller
- * Handles the creation, deletion, and structural management of SQLite databases, tables, and fields.
+ * 
+ * Comprehensive database administration system for SQLite databases
+ * with advanced schema management and data operations.
+ * 
+ * Core Features:
+ * - Database creation and deletion
+ * - Table structure management (CREATE, ALTER, DROP)
+ * - Field configuration and metadata
+ * - Schema synchronization
+ * - Import/Export (SQL, Excel, CSV)
+ * - Template generation for imports
+ * - Automatic audit column injection
+ * - Table visibility configuration
+ * 
+ * Schema Management:
+ * - Visual table builder
+ * - Raw SQL execution
+ * - Field type detection
+ * - Foreign key relationships
+ * - Automatic timestamp columns
+ * 
+ * Import/Export:
+ * - SQL dump generation
+ * - Excel import/export with templates
+ * - CSV import/export with UTF-8 BOM
+ * - Batch data operations
+ * 
+ * Security:
+ * - Permission-based access control
+ * - Project-scoped databases
+ * - Path traversal prevention
+ * - SQL injection protection
+ * 
+ * Data Integrity:
+ * - Automatic audit columns (fecha_de_creacion, fecha_edicion)
+ * - Schema synchronization
+ * - Metadata consistency checks
+ * - Self-healing path resolution
+ * 
+ * @package App\Modules\Database
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class DatabaseController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication
+     * 
+     * Ensures that only authenticated users can access
+     * database management functionality.
+     */
     public function __construct()
     {
         Auth::requireLogin();
