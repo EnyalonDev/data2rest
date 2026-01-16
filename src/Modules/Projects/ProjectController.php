@@ -13,18 +13,78 @@ use PDO;
 use Exception;
 
 /**
- * ProjectController
- * Manages the lifecycle of projects, user assignments, and subscription plans.
+ * Project Controller
+ * 
+ * Comprehensive project lifecycle management system with billing integration,
+ * user assignments, and service subscription handling.
+ * 
+ * Core Features:
+ * - Project CRUD operations
+ * - User assignment and permissions
+ * - Subscription plan management
+ * - Service subscription (Alta/Baja)
+ * - Task template cloning on service activation
+ * - Storage quota management
+ * - Project switching for multi-tenant access
+ * - Automated backup on deletion
+ * 
+ * Billing Integration:
+ * - Payment plan assignment
+ * - Service subscriptions with custom pricing
+ * - Installment generation and recalculation
+ * - Billing period management (monthly/yearly)
+ * - Billing user assignment
+ * 
+ * Service Management:
+ * - Alta (Subscription): Clone task templates on service add
+ * - Baja (Cancellation): Mark or delete tasks on service removal
+ * - Custom pricing per service
+ * - Quantity management
+ * 
+ * Access Control:
+ * - Admin: Full access to all projects
+ * - User: Access only to assigned projects
+ * - Project-scoped data isolation
+ * 
+ * Data Integrity:
+ * - Automatic backup on project deletion
+ * - Cascade deletion of associations
+ * - Storage quota enforcement
+ * - Session project tracking
+ * 
+ * @package App\Modules\Projects
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class ProjectController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication
+     * 
+     * Ensures that only authenticated users can access
+     * project management functionality.
+     */
     public function __construct()
     {
         Auth::requireLogin();
     }
 
     /**
-     * Lists all projects (Admin) or projects assigned to user.
+     * Display list of projects
+     * 
+     * Shows all projects with plan and storage information.
+     * Implements access control based on user role.
+     * 
+     * Features:
+     * - Admin: View all projects
+     * - User: View only assigned projects
+     * - Plan information display
+     * - Storage quota tracking
+     * 
+     * @return void Renders project list view
+     * 
+     * @example
+     * GET /admin/projects
      */
     public function index()
     {
@@ -104,7 +164,34 @@ class ProjectController extends BaseController
     }
 
     /**
-     * Saves project data.
+     * Save project data (create or update)
+     * 
+     * Comprehensive project save with billing integration, service management,
+     * and automated task template cloning.
+     * 
+     * Features:
+     * - Project creation/update
+     * - User assignment synchronization
+     * - Billing plan integration
+     * - Service subscription management (Alta/Baja)
+     * - Task template cloning on service activation
+     * - Task cancellation on service removal
+     * - Installment generation/recalculation
+     * 
+     * Service Alta (Subscription):
+     * - Clones task templates from service
+     * - Creates tasks in Backlog status
+     * - Associates tasks with project and service
+     * 
+     * Service Baja (Cancellation):
+     * - Deletes tasks in Backlog
+     * - Marks in-progress tasks as [CANCELADO]
+     * 
+     * @return void Redirects to project list on success
+     * 
+     * @example
+     * POST /admin/projects/save
+     * Body: name=Project&user_ids[]=1&services[0][service_id]=1
      */
     public function save()
     {
@@ -148,6 +235,12 @@ class ProjectController extends BaseController
 
             // --- SERVICES INTEGRATION ---
             $services = $_POST['services'] ?? [];
+
+            // Get current services before deletion for comparison
+            $oldServicesStmt = $db->prepare("SELECT service_id FROM project_services WHERE project_id = ?");
+            $oldServicesStmt->execute([$id]);
+            $oldServiceIds = $oldServicesStmt->fetchAll(PDO::FETCH_COLUMN);
+
             $db->prepare("DELETE FROM project_services WHERE project_id = ?")->execute([$id]);
 
             $freq = 'monthly';
@@ -157,11 +250,54 @@ class ProjectController extends BaseController
                 $freq = $planFreqStmt->fetchColumn() ?: 'monthly';
             }
 
+            $currentUserId = $_SESSION['user_id'] ?? 1; // Fallback to 1 if session issue
+            $backlogId = $db->query("SELECT id FROM task_statuses WHERE slug = 'backlog'")->fetchColumn() ?: 1;
+            $newServiceIds = [];
+
             foreach ($services as $srv) {
+                $serviceId = $srv['service_id'];
+                $newServiceIds[] = $serviceId;
+
                 $servicePeriod = $srv['billing_period'] ?? $freq;
                 $customPrice = isset($srv['custom_price']) ? (float) $srv['custom_price'] : null;
                 $stmt = $db->prepare("INSERT INTO project_services (project_id, service_id, quantity, billing_period, custom_price) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$id, $srv['service_id'], $srv['quantity'], $servicePeriod, $customPrice]);
+                $stmt->execute([$id, $serviceId, $srv['quantity'], $servicePeriod, $customPrice]);
+
+                // HANDLE ALTA (Subscription): New Service Added
+                if (!in_array($serviceId, $oldServiceIds)) {
+                    // Clone templates
+                    $tplStmt = $db->prepare("SELECT * FROM billing_service_templates WHERE service_id = ?");
+                    $tplStmt->execute([$serviceId]);
+                    $templates = $tplStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $taskStmt = $db->prepare("INSERT INTO tasks (project_id, title, description, priority, status_id, created_by, service_id, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    foreach ($templates as $tpl) {
+                        // Assign logic: By default unassigned or assigned to someone? Requirements don't specify assignment.
+                        $taskStmt->execute([$id, $tpl['title'], $tpl['description'], $tpl['priority'], $backlogId, $currentUserId, $serviceId, null]);
+                    }
+                }
+            }
+
+            // HANDLE BAJA (Cancellation): Service Removed
+            $removedServices = array_diff($oldServiceIds, $newServiceIds);
+            foreach ($removedServices as $rmId) {
+                // Find tasks for this project and service
+                $tasksStmt = $db->prepare("SELECT id, status_id, title FROM tasks WHERE project_id = ? AND service_id = ?");
+                $tasksStmt->execute([$id, $rmId]);
+                $associatedTasks = $tasksStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($associatedTasks as $task) {
+                    if ($task['status_id'] == $backlogId) {
+                        // Delete if in Backlog
+                        $db->prepare("DELETE FROM tasks WHERE id = ?")->execute([$task['id']]);
+                    } else {
+                        // Mark as cancelled if in progress/done
+                        if (strpos($task['title'], '[CANCELADO]') === false) {
+                            $newTitle = "[CANCELADO] " . $task['title'];
+                            $db->prepare("UPDATE tasks SET title = ? WHERE id = ?")->execute([$newTitle, $task['id']]);
+                        }
+                    }
+                }
             }
 
             // Update Billing fields in projects table
@@ -195,7 +331,20 @@ class ProjectController extends BaseController
     }
 
     /**
-     * Renders the project selection page.
+     * Display project selection page
+     * 
+     * Renders a page for users to select which project to work on.
+     * Implements access control for project visibility.
+     * 
+     * Features:
+     * - Admin: View all active projects
+     * - User: View only assigned active projects
+     * - Current project highlighting
+     * 
+     * @return void Renders project selection view
+     * 
+     * @example
+     * GET /admin/projects/select
      */
     public function select()
     {
@@ -225,7 +374,15 @@ class ProjectController extends BaseController
     }
 
     /**
-     * Switches the current active project session.
+     * Switch active project in session
+     * 
+     * Changes the current active project for the user session,
+     * affecting all project-scoped operations.
+     * 
+     * @return void Redirects to dashboard with status message
+     * 
+     * @example
+     * GET /admin/projects/switch?id=5
      */
     public function switch()
     {
@@ -259,7 +416,27 @@ class ProjectController extends BaseController
     }
 
     /**
-     * Deletes a project and its associations.
+     * Delete project with automatic backup
+     * 
+     * Deletes a project and all its associations with automatic
+     * database backup to prevent data loss.
+     * 
+     * Features:
+     * - Automatic database backup before deletion
+     * - Cascade deletion of associations
+     * - Backup naming: Project_Delete_DataBase_{Project}_{DB}_{Timestamp}
+     * - Backup location: data/backups/deleted_projects/
+     * 
+     * Deleted Associations:
+     * - Databases and field configurations
+     * - User assignments
+     * - Plans and services
+     * - Installments
+     * 
+     * @return void Redirects to project list with status message
+     * 
+     * @example
+     * GET /admin/projects/delete?id=5
      */
     public function delete()
     {
