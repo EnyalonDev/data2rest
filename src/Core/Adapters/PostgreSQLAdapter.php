@@ -439,4 +439,57 @@ class PostgreSQLAdapter extends DatabaseAdapter
             return false;
         }
     }
+
+    /**
+     * Quote a table or column name for PostgreSQL
+     * 
+     * @param string $name Name to quote
+     * @return string Quoted name
+     */
+    public function quoteName(string $name): string
+    {
+        return '"' . str_replace('"', '""', $name) . '"';
+    }
+
+    /**
+     * Create a new database
+     * 
+     * Connects to the default 'postgres' database to execute
+     * the CREATE DATABASE command.
+     * 
+     * @param string $dbName Name of the database to create
+     * @return bool True on success
+     */
+    public function createDatabase(string $dbName): bool
+    {
+        try {
+            // Connect to default 'postgres' database to create new DB
+            $host = $this->config['host'] ?? 'localhost';
+            $port = $this->config['port'] ?? 5432;
+            $user = $this->config['username'] ?? 'postgres';
+            $pass = $this->config['password'] ?? '';
+
+            $dsn = "pgsql:host={$host};port={$port};dbname=postgres";
+            $pdo = new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
+
+            // Check if exists
+            $stmt = $pdo->prepare("SELECT 1 FROM pg_database WHERE datname = ?");
+            $stmt->execute([$dbName]);
+            if ($stmt->fetchColumn()) {
+                return true; // Already exists
+            }
+
+            // Create (CREATE DATABASE cannot be prepared, and quoting needs care)
+            // We use standard identifier quoting
+            $safeName = str_replace('"', '""', $dbName);
+            $pdo->exec("CREATE DATABASE \"{$safeName}\"");
+
+            return true;
+        } catch (PDOException $e) {
+            // Log error if needed: error_log($e->getMessage());
+            return false;
+        }
+    }
 }

@@ -90,21 +90,12 @@ class SQLiteAdapter extends DatabaseAdapter
      * @param string $name
      * @return string
      */
-    protected function quoteName(string $name): string
+    public function quoteName(string $name): string
     {
         return '"' . str_replace('"', '""', $name) . '"';
     }
 
-    /**
-     * Quote a value for SQLite
-     * 
-     * @param string $value
-     * @return string
-     */
-    protected function quote(string $value): string
-    {
-        return $this->getConnection()->quote($value);
-    }
+
 
     /**
      * Get database file size in bytes
@@ -133,5 +124,65 @@ class SQLiteAdapter extends DatabaseAdapter
         } catch (PDOException $e) {
             return false;
         }
+    }
+
+    /**
+     * Create a new table with standard fields for SQLite
+     * 
+     * @param string $tableName Name of the table to create
+     * @return bool True on success
+     */
+    public function createTable(string $tableName): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("CREATE TABLE " . $this->quoteName($tableName) . " (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+        return true;
+    }
+
+    /**
+     * Delete a table from the database
+     * 
+     * @param string $tableName Name of the table to delete
+     * @return bool True on success
+     */
+    public function deleteTable(string $tableName): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("DROP TABLE IF EXISTS " . $this->quoteName($tableName));
+        return true;
+    }
+
+    /**
+     * Add a new column to an existing table
+     * 
+     * @param string $tableName Table name
+     * @param string $columnName Column name
+     * @param string $columnType Data type (e.g., 'TEXT', 'INTEGER', 'DATETIME')
+     * @return bool True on success
+     */
+    public function addColumn(string $tableName, string $columnName, string $columnType): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("ALTER TABLE " . $this->quoteName($tableName) . " ADD COLUMN " . $this->quoteName($columnName) . " $columnType");
+        return true;
+    }
+
+    /**
+     * Delete a column from a table
+     * 
+     * @param string $tableName Table name
+     * @param string $columnName Column name to delete
+     * @return bool True on success
+     */
+    public function deleteColumn(string $tableName, string $columnName): bool
+    {
+        $connection = $this->getConnection();
+        // SQLite supports DROP COLUMN in version 3.35.0+
+        $connection->exec("ALTER TABLE " . $this->quoteName($tableName) . " DROP COLUMN " . $this->quoteName($columnName));
+        return true;
     }
 }

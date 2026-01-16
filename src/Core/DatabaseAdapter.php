@@ -159,6 +159,17 @@ abstract class DatabaseAdapter
     }
 
     /**
+     * Get list of all tables in the database
+     * 
+     * @return array
+     */
+    public function getTables(): array
+    {
+        $sql = $this->getListTablesSQL();
+        return $this->getConnection()->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
      * Get database-specific SQL for listing tables
      * 
      * @return string
@@ -196,4 +207,58 @@ abstract class DatabaseAdapter
      * @return bool Success status
      */
     abstract public function optimize(): bool;
+
+    /**
+     * Create a new table with standard fields
+     * 
+     * @param string $tableName Name of the table to create
+     * @return bool True on success
+     */
+    abstract public function createTable(string $tableName): bool;
+
+    /**
+     * Delete a table from the database
+     * 
+     * @param string $tableName Name of the table to delete
+     * @return bool True on success
+     */
+    abstract public function deleteTable(string $tableName): bool;
+
+    /**
+     * Add a new column to an existing table
+     * 
+     * @param string $tableName Table name
+     * @param string $columnName Column name
+     * @param string $columnType Data type (e.g., 'TEXT', 'INTEGER', 'DATETIME')
+     * @return bool True on success
+     */
+    abstract public function addColumn(string $tableName, string $columnName, string $columnType): bool;
+
+    /**
+     * Delete a column from a table
+     * 
+     * @param string $tableName Table name
+     * @param string $columnName Column name to delete
+     * @return bool True on success
+     */
+    abstract public function deleteColumn(string $tableName, string $columnName): bool;
+
+    /**
+     * Quote a table or column name based on database type
+     * 
+     * @param string $name Name to quote
+     * @return string Quoted name
+     */
+    abstract public function quoteName(string $name): string;
+
+    /**
+     * Quote a value for use in a query
+     * 
+     * @param mixed $value Value to quote
+     * @return string Quoted value
+     */
+    public function quote($value): string
+    {
+        return $this->getConnection()->quote($value);
+    }
 }

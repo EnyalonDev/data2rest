@@ -4,6 +4,7 @@ namespace App\Modules\Auth;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\DatabaseManager;
 use App\Core\Config;
 use App\Core\BaseController;
 use App\Core\Maintenance;
@@ -85,11 +86,11 @@ class DashboardController extends BaseController
      * @example
      * GET /admin/dashboard
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         Auth::requireLogin();
@@ -135,33 +136,59 @@ class DashboardController extends BaseController
         // 3. Calculate record counts and activity (isolated to project dbs)
         foreach ($databases as $database) {
             try {
-                if (!file_exists($database['path']))
-                    continue;
-                $targetDb = new PDO('sqlite:' . $database['path']);
-                $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                // Get adapter for the specific database
+                $adapter = DatabaseManager::getAdapter($database);
 
-                $tables = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")->fetchAll(PDO::FETCH_COLUMN);
+                // Ensure connection works
+                if (!$adapter->getConnection())
+                    continue;
+
+                $tables = $adapter->getTables();
+                $quotedDbName = $database['name'];
 
                 foreach ($tables as $table) {
-                    $count = $targetDb->query("SELECT COUNT(*) FROM $table")->fetchColumn();
-                    $totalRecords += $count;
+                    // Skip internal tables if any (though getTables should handle this)
+                    if (str_starts_with($table, 'sqlite_'))
+                        continue;
+
+                    $quotedTable = $adapter->quoteName($table);
+
+                    // Count records
+                    try {
+                        $count = $adapter->getConnection()->query("SELECT COUNT(*) FROM $quotedTable")->fetchColumn();
+                        $totalRecords += $count;
+                    } catch (\Exception $e) {
+                        // Table might not exist or other error, skip
+                        continue;
+                    }
 
                     // Try to get last edits
+                    // We assume tables might have fecha_edicion or fecha_de_creacion
                     try {
-                        $lastEdits = $targetDb->query("SELECT *, '$table' as table_source, '{$database['name']}' as db_source FROM $table ORDER BY fecha_edicion DESC LIMIT 2")->fetchAll();
+                        // Determine date column for sorting if possible, default to generic or fail
+                        // We construct a query that tries to fetch standard columns
+                        // Using raw query as we need specific fields and ordering
+                        // LIMIT is standard across supported DBs
+
+                        $sql = "SELECT *, '$table' as table_source, '$quotedDbName' as db_source FROM $quotedTable ORDER BY fecha_edicion DESC LIMIT 2";
+                        $lastEdits = $adapter->getConnection()->query($sql)->fetchAll();
+
                         foreach ($lastEdits as $edit) {
                             $recentActivity[] = [
                                 'table' => $table,
                                 'db' => $database['name'],
-                                'id' => $edit['id'],
+                                'id' => $edit['id'] ?? null,
                                 'date' => $edit['fecha_edicion'] ?? $edit['fecha_de_creacion'] ?? 'Unknown',
-                                'label' => $edit['nombre'] ?? $edit['name'] ?? $edit['title'] ?? $edit['id']
+                                'label' => $edit['nombre'] ?? $edit['name'] ?? $edit['title'] ?? $edit['id'] ?? 'Unknown'
                             ];
                         }
                     } catch (\Exception $e) {
+                        // Table probably doesn't have fecha_edicion, ignore
                     }
                 }
             } catch (\Exception $e) {
+                // Database connection failed or other issue
+                continue;
             }
         }
 
@@ -234,6 +261,10 @@ class DashboardController extends BaseController
         ];
 
         // 6a. Activity (System logs - Last 7 days)
+        // Note: activity_logs is in the system DB (SQLite usually), so generic SQL is fine if system DB is SQLite.
+        // If system DB is migrated to MySQL/PgSQL, this query might need adjustment (date function), 
+        // but currently system DB is likely SQLite based on codebase context. 
+        // We will assume system DB is SQLite for now or uses compatible syntax.
         $stmt = $db->prepare("SELECT date(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= date('now', '-6 days') GROUP BY day ORDER BY day ASC");
         $stmt->execute();
         $activityDays = [];
@@ -243,15 +274,23 @@ class DashboardController extends BaseController
 
         // 6b. Storage Distribution
         foreach ($databases as $database) {
-            if (file_exists($database['path'])) {
-                $chartData['storage']['labels'][] = $database['name'];
-                $chartData['storage']['data'][] = round(filesize($database['path']) / 1024 / 1024, 2);
+            try {
+                $adapter = DatabaseManager::getAdapter($database);
+                $size = $adapter->getDatabaseSize();
+                // Only show if size > 0
+                if ($size > 0) {
+                    $chartData['storage']['labels'][] = $database['name'];
+                    $chartData['storage']['data'][] = round($size / 1024 / 1024, 2);
+                }
+            } catch (\Exception $e) {
+                // Ignore errors
             }
         }
 
         // 6c. Record Growth & Activity Fill
         $growthDays = [];
         for ($i = 6; $i >= 0; $i--) {
+            // Logic for growth dates keys
             $day = date('Y-m-d', strtotime("-$i days"));
             $chartData['activity']['labels'][] = date('D', strtotime($day));
             $chartData['activity']['data'][] = $activityDays[$day] ?? 0;
@@ -262,21 +301,45 @@ class DashboardController extends BaseController
 
         foreach ($databases as $database) {
             try {
-                if (!file_exists($database['path']))
-                    continue;
-                $targetDb = new PDO('sqlite:' . $database['path']);
-                $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $tables = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")->fetchAll(PDO::FETCH_COLUMN);
+                $adapter = DatabaseManager::getAdapter($database);
+                $type = $adapter->getType();
+                $tables = $adapter->getTables();
+
+                // Determine Date Logic based on DB Type
+                $dateColExp = "date(fecha_de_creacion)"; // Default (SQLite)
+                $whereDate = "date('now', '-6 days')";   // Default (SQLite)
+
+                if ($type === 'mysql') {
+                    $dateColExp = "DATE(fecha_de_creacion)";
+                    $whereDate = "DATE_SUB(NOW(), INTERVAL 6 DAY)";
+                } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                    $dateColExp = "fecha_de_creacion::date";
+                    $whereDate = "CURRENT_DATE - INTERVAL '6 days'";
+                }
+
                 foreach ($tables as $table) {
-                    $cols = $targetDb->query("PRAGMA table_info($table)")->fetchAll(PDO::FETCH_COLUMN, 1);
-                    if (in_array('fecha_de_creacion', $cols)) {
-                        $growthStmt = $targetDb->prepare("SELECT date(fecha_de_creacion) as day, COUNT(*) as count FROM $table WHERE fecha_de_creacion >= date('now', '-6 days') GROUP BY day");
-                        $growthStmt->execute();
+                    if (str_starts_with($table, 'sqlite_'))
+                        continue;
+
+                    try {
+                        // Check if column exists by selecting one row
+                        $adapter->getConnection()->query("SELECT fecha_de_creacion FROM " . $adapter->quoteName($table) . " LIMIT 1");
+
+                        // If success, run growth query
+                        $growthSql = "SELECT $dateColExp as day, COUNT(*) as count FROM " . $adapter->quoteName($table) . " WHERE fecha_de_creacion >= $whereDate GROUP BY day";
+
+                        $growthStmt = $adapter->getConnection()->query($growthSql);
                         while ($grow = $growthStmt->fetch(PDO::FETCH_ASSOC)) {
-                            if (isset($growthDays[$grow['day']])) {
-                                $growthDays[$grow['day']] += (int) $grow['count'];
+                            // Normalize Day format just in case
+                            // DB might return full timestamp or date string
+                            $d = substr($grow['day'], 0, 10);
+                            if (isset($growthDays[$d])) {
+                                $growthDays[$d] += (int) $grow['count'];
                             }
                         }
+
+                    } catch (\Exception $e) {
+                        // Column doesn't exist or other error
                     }
                 }
             } catch (\Exception $e) {

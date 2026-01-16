@@ -167,6 +167,10 @@
                         Test Connection
                     </button>
                     <div id="testResult" class="hidden px-4 py-2 rounded-lg text-sm font-medium"></div>
+                    <p class="text-xs text-amber-400/80 mt-2 font-medium">
+                        <span class="font-bold">Note:</span> If the database does not exist, the Connection Test will fail. 
+                        You can still proceed to "Create Database" and the system will attempt to create it automatically.
+                    </p>
                 </div>
             </div>
 
@@ -224,6 +228,10 @@
                         Test Connection
                     </button>
                     <div id="testResultPg" class="hidden px-4 py-2 rounded-lg text-sm font-medium"></div>
+                    <p class="text-xs text-amber-400/80 mt-2 font-medium">
+                        <span class="font-bold">Note:</span> If the database does not exist, the Connection Test will fail. 
+                        You can still proceed to "Create Database" and the system will attempt to create it automatically.
+                    </p>
                 </div>
             </div>
 
@@ -294,6 +302,9 @@
                 testBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Testing...';
                 testResult.className = 'hidden';
 
+                // Get CSRF token from the form
+                const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+
                 const formData = new URLSearchParams({
                     type: 'mysql',
                     host: document.getElementById('mysql_host').value,
@@ -301,7 +312,8 @@
                     database: document.getElementById('mysql_database').value,
                     username: document.getElementById('mysql_username').value,
                     password: document.getElementById('mysql_password').value,
-                    charset: document.getElementById('mysql_charset').value
+                    charset: document.getElementById('mysql_charset').value,
+                    _token: csrfToken
                 });
 
                 try {
@@ -339,6 +351,9 @@
                 testBtnPg.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Testing...';
                 testResultPg.className = 'hidden';
 
+                // Get CSRF token from the form
+                const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+
                 const formData = new URLSearchParams({
                     type: 'pgsql',
                     host: document.getElementById('pgsql_host').value,
@@ -346,7 +361,8 @@
                     database: document.getElementById('pgsql_database').value,
                     username: document.getElementById('pgsql_username').value,
                     password: document.getElementById('pgsql_password').value,
-                    schema: document.getElementById('pgsql_schema').value
+                    schema: document.getElementById('pgsql_schema').value,
+                    _token: csrfToken
                 });
 
                 try {

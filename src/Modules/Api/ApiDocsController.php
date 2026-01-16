@@ -221,7 +221,7 @@ class ApiDocsController extends BaseController
                 $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
                 foreach ($tables as $table) {
-                    $stmt = $targetDb->query("PRAGMA table_info(`$table`)");
+                    $stmt = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($table) . ")");
                     $cols = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     // Standardize structure if needed, but existing view likely expects PRAGMA format (cid, name, type, notnull, dflt_value, pk)
                     $tableDetails[$table] = $cols;
@@ -231,7 +231,7 @@ class ApiDocsController extends BaseController
                 $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
                 foreach ($tables as $table) {
-                    $stmt = $targetDb->query("SHOW COLUMNS FROM `$table`");
+                    $stmt = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($table));
                     $mysqlCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     // Convert MySQL SHOW COLUMNS format to SQLite PRAGMA-like format for view compatibility
@@ -246,6 +246,28 @@ class ApiDocsController extends BaseController
                             'notnull' => ($col['Null'] === 'NO') ? 1 : 0,
                             'dflt_value' => $col['Default'],
                             'pk' => ($col['Key'] === 'PRI') ? 1 : 0
+                        ];
+                    }
+                    $tableDetails[$table] = $cleanCols;
+                }
+            } elseif ($dbType === 'pgsql') {
+                $stmt = $targetDb->query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($tables as $table) {
+                    $stmt = $targetDb->query($adapter->getTableStructureSQL($table));
+                    $pgCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    // Convert to SQLite-like format
+                    $cleanCols = [];
+                    foreach ($pgCols as $idx => $col) {
+                        $cleanCols[] = [
+                            'cid' => $idx,
+                            'name' => $col['name'],
+                            'type' => $col['type'],
+                            'notnull' => ($col['is_nullable'] === 'NO') ? 1 : 0,
+                            'dflt_value' => $col['dflt_value'],
+                            'pk' => (isset($col['pk']) && $col['pk']) ? 1 : 0 // getTableStructureSQL might need update for PK
                         ];
                     }
                     $tableDetails[$table] = $cleanCols;
