@@ -4,10 +4,33 @@
 
 @section('content')
     <header class="mb-12">
-        <h1 class="text-5xl font-black text-p-title italic tracking-tighter uppercase">
-            {{ \App\Core\Lang::get('databases.title') }}
-        </h1>
-        <p class="text-p-muted font-medium tracking-tight">{{ \App\Core\Lang::get('databases.subtitle') }}</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-5xl font-black text-p-title italic tracking-tighter uppercase">
+                    {{ \App\Core\Lang::get('databases.title') }}
+                </h1>
+                <p class="text-p-muted font-medium tracking-tight">{{ \App\Core\Lang::get('databases.subtitle') }}</p>
+            </div>
+            @if(\App\Core\Auth::hasPermission('module:databases.create_db'))
+                <div class="flex gap-3">
+                    <a href="{{ $baseUrl }}admin/databases/connections"
+                        class="btn-primary !bg-blue-600 hover:!bg-blue-700 flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Connections
+                    </a>
+                    <a href="{{ $baseUrl }}admin/databases/create-form"
+                        class="btn-primary flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Database
+                    </a>
+                </div>
+            @endif
+        </div>
     </header>
 
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -42,15 +65,21 @@
                         class="space-y-4">
                         {!! $csrf_field !!}
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_node_name') }}</label>
-                            <input type="text" name="name" placeholder="{{ \App\Core\Lang::get('databases.import_node_placeholder') }}" required class="form-input w-full">
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_node_name') }}</label>
+                            <input type="text" name="name"
+                                placeholder="{{ \App\Core\Lang::get('databases.import_node_placeholder') }}" required
+                                class="form-input w-full">
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_file') }}</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_file') }}</label>
                             <input type="file" name="sql_file" accept=".sql" required class="form-input w-full text-xs">
                         </div>
-                        <button type="submit" class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">{{ \App\Core\Lang::get('databases.import_btn') }}</button>
-                        <p class="text-[9px] text-p-muted italic opacity-70">{{ \App\Core\Lang::get('databases.import_help') }}</p>
+                        <button type="submit"
+                            class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">{{ \App\Core\Lang::get('databases.import_btn') }}</button>
+                        <p class="text-[9px] text-p-muted italic opacity-70">{{ \App\Core\Lang::get('databases.import_help') }}
+                        </p>
                     </form>
                 </div>
             @endif
@@ -60,6 +89,30 @@
             @foreach ($databases as $db)
                 <div class="glass-card flex flex-col group overflow-hidden relative">
                     <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    <div class="absolute top-4 right-4 z-20">
+                        @php
+                            $dbType = strtolower($db['type'] ?? 'sqlite');
+                            $badgeClass = match ($dbType) {
+                                'mysql' => 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+                                'pgsql', 'postgresql' => 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+                                default => 'text-slate-500 bg-slate-500/10 border-slate-500/20'
+                            };
+                            $label = match ($dbType) {
+                                'mysql' => 'MySQL',
+                                'pgsql', 'postgresql' => 'PostgreSQL',
+                                default => 'SQLite'
+                            };
+                        @endphp
+                        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border {{ $badgeClass }}">
+                            <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                                </path>
+                            </svg>
+                            <span class="text-[9px] font-black uppercase tracking-widest">{{ $label }}</span>
+                        </div>
+                    </div>
 
                     <div class="flex items-center gap-6 relative z-10 mb-6">
                         <div
@@ -87,12 +140,14 @@
                         </a>
                         @if(\App\Core\Auth::hasPermission('module:databases.edit_db'))
                             <a href="{{ $baseUrl }}admin/databases/edit?id={{ $db['id'] }}"
-                                class="p-3 bg-p-bg dark:bg-white/5 rounded-xl text-p-muted hover:text-primary transition-all shadow-sm" title="{{ \App\Core\Lang::get('databases.config_visibility') }}">
+                                class="p-3 bg-p-bg dark:bg-white/5 rounded-xl text-p-muted hover:text-primary transition-all shadow-sm"
+                                title="{{ \App\Core\Lang::get('databases.config_visibility') }}">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                         d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
                                     </path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </a>
                         @endif

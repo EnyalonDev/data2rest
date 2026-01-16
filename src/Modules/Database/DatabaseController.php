@@ -73,11 +73,11 @@ class DatabaseController extends BaseController
      * Ensures that only authenticated users can access
      * database management functionality.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -86,11 +86,11 @@ class DatabaseController extends BaseController
     /**
      * Lists all databases registered in the system.
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         Auth::requirePermission('module:databases', 'view_tables');
@@ -145,11 +145,11 @@ class DatabaseController extends BaseController
      *
      * @return void Redirects to sync page or dies on error.
      */
-/**
- * create method
- *
- * @return void
- */
+    /**
+     * create method
+     *
+     * @return void
+     */
     public function create()
     {
         Auth::requirePermission('module:databases.create_db');
@@ -196,13 +196,229 @@ class DatabaseController extends BaseController
     }
 
     /**
+     * Show database creation form with type selector
+     * 
+     * @return void
+     */
+    public function createForm()
+    {
+        Auth::requirePermission('module:databases.create_db');
+
+        $this->view('admin/databases/create_form', [
+            'title' => 'Create Database',
+            'breadcrumbs' => [
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
+                'Create Database' => null
+            ]
+        ]);
+    }
+
+    /**
+     * Create a new database (SQLite or MySQL) with multi-database support
+     * 
+     * @return void
+     */
+    public function createMulti()
+    {
+        Auth::requirePermission('module:databases.create_db');
+
+        $name = $_POST['name'] ?? 'New Database';
+        $type = $_POST['type'] ?? 'sqlite';
+        $projectId = Auth::getActiveProject();
+
+        try {
+            $config = ['type' => $type];
+
+            if ($type === 'sqlite') {
+                // SQLite configuration
+                $sanitized = preg_replace('/[^a-zA-Z0-9]+/', '_', trim($name));
+                $sanitized = trim(strtolower($sanitized), '_');
+                $storagePath = Config::get('db_storage_path');
+
+                $filename = $sanitized . '_' . uniqid() . '.sqlite';
+                $path = $storagePath . $filename;
+
+                if (!is_dir($storagePath)) {
+                    mkdir($storagePath, 0777, true);
+                }
+
+                $config['path'] = $path;
+
+            } elseif ($type === 'mysql') {
+                // MySQL configuration
+                $config['host'] = $_POST['mysql_host'] ?? 'localhost';
+                $config['port'] = (int) ($_POST['mysql_port'] ?? 3306);
+                $config['database'] = $_POST['mysql_database'] ?? '';
+                $config['username'] = $_POST['mysql_username'] ?? 'root';
+                $config['password'] = $_POST['mysql_password'] ?? '';
+                $config['charset'] = $_POST['mysql_charset'] ?? 'utf8mb4';
+
+                if (empty($config['database'])) {
+                    Auth::setFlashError("Database name is required for MySQL");
+                    header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
+                    exit;
+                }
+            }
+
+            // Use DatabaseManager to create the database
+            $database = \App\Core\DatabaseManager::createDatabase($name, $config, $projectId);
+
+            if ($database) {
+                Logger::log('CREATE_DATABASE', [
+                    'name' => $name,
+                    'type' => $type,
+                    'id' => $database['id']
+                ], $projectId);
+
+                Auth::setFlashError("Database created successfully!", 'success');
+                header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $database['id']);
+                exit;
+            } else {
+                throw new \Exception("Failed to create database");
+            }
+
+        } catch (\Exception $e) {
+            Auth::setFlashError("Error creating database: " . $e->getMessage());
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
+            exit;
+        }
+    }
+
+    /**
+     * Test database connection (AJAX endpoint)
+     * 
+     * @return void
+     */
+    public function testConnection()
+    {
+        Auth::requirePermission('module:databases.create_db');
+        header('Content-Type: application/json');
+
+        $type = $_POST['type'] ?? 'sqlite';
+
+        try {
+            $config = ['type' => $type];
+
+            if ($type === 'mysql') {
+                $config['host'] = $_POST['host'] ?? 'localhost';
+                $config['port'] = (int) ($_POST['port'] ?? 3306);
+                $config['database'] = $_POST['database'] ?? '';
+                $config['username'] = $_POST['username'] ?? 'root';
+                $config['password'] = $_POST['password'] ?? '';
+                $config['charset'] = $_POST['charset'] ?? 'utf8mb4';
+            }
+
+            $result = \App\Core\DatabaseManager::testConnection($config);
+            echo json_encode($result);
+
+        } catch (\Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Connection Manager - View and manage database connections
+     * 
+     * @return void
+     */
+    public function connectionManager()
+    {
+        Auth::requirePermission('module:databases', 'view_tables');
+
+        $db = Database::getInstance()->getConnection();
+        $projectId = Auth::getActiveProject();
+
+        // Get all databases with their types
+        if ($projectId) {
+            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ? ORDER BY id DESC");
+            $stmt->execute([$projectId]);
+        } else if (Auth::isAdmin()) {
+            $stmt = $db->query("SELECT * FROM databases ORDER BY id DESC");
+        } else {
+            $databases = [];
+        }
+
+        $databases = $stmt->fetchAll();
+
+        // Stats
+        $stats = [
+            'total' => count($databases),
+            'connected' => 0,
+            'sqlite' => 0,
+            'mysql' => 0,
+            'total_size' => 0
+        ];
+
+        // Add connection status and size info
+        foreach ($databases as &$database) {
+            try {
+                $adapter = \App\Core\DatabaseManager::getAdapter($database);
+                $database['db_type'] = $adapter->getType();
+                $database['is_connected'] = $adapter->isConnected();
+                $database['size'] = $adapter->getDatabaseSize();
+                $database['size_formatted'] = $this->formatBytes($database['size']);
+
+                if ($database['is_connected'])
+                    $stats['connected']++;
+                if ($database['db_type'] === 'sqlite')
+                    $stats['sqlite']++;
+                if ($database['db_type'] === 'mysql')
+                    $stats['mysql']++;
+                $stats['total_size'] += $database['size'];
+
+            } catch (\Exception $e) {
+                $database['db_type'] = $database['type'] ?? 'sqlite';
+                $database['is_connected'] = false;
+                $database['size'] = 0;
+                $database['size_formatted'] = 'N/A';
+                $database['error'] = $e->getMessage();
+            }
+        }
+
+        $stats['total_size_formatted'] = $this->formatBytes($stats['total_size']);
+
+        $this->view('admin/databases/connections', [
+            'title' => 'Connection Manager',
+            'databases' => $databases,
+            'stats' => $stats,
+            'breadcrumbs' => [
+                \App\Core\Lang::get('databases.title') => 'admin/databases',
+                'Connections' => null
+            ]
+        ]);
+    }
+
+    /**
+     * Format bytes to human readable format
+     * 
+     * @param int $bytes
+     * @return string
+     */
+    private function formatBytes($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        } else {
+            return $bytes . ' bytes';
+        }
+    }
+
+    /**
      * Deletes a database entry and its physical SQLite file.
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         Auth::requirePermission('module:databases.delete_db');
@@ -230,11 +446,11 @@ class DatabaseController extends BaseController
     /**
      * Shows the configuration form for a database (visibility settings, etc).
      */
-/**
- * edit method
- *
- * @return void
- */
+    /**
+     * edit method
+     *
+     * @return void
+     */
     public function edit()
     {
         Auth::requirePermission('module:databases.edit_db');
@@ -275,11 +491,11 @@ class DatabaseController extends BaseController
     /**
      * Saves the database configuration (hidden tables).
      */
-/**
- * saveConfig method
- *
- * @return void
- */
+    /**
+     * saveConfig method
+     *
+     * @return void
+     */
     public function saveConfig()
     {
         Auth::requirePermission('module:databases.edit_db');
@@ -299,19 +515,15 @@ class DatabaseController extends BaseController
     }
 
     /**
-     * Lists all tables within a specific database.
+     * Displays all tables within a specific database.
+     * Now supports both SQLite and MySQL through DatabaseManager.
      */
-/**
- * viewTables method
- *
- * @return void
- */
     public function viewTables()
     {
-        try {
-            $id = $_GET['id'] ?? null;
-            Auth::requirePermission('module:databases.view_tables');
+        $id = $_GET['id'] ?? null;
+        Auth::requirePermission('module:databases', 'view_tables');
 
+        try {
             $db = Database::getInstance()->getConnection();
             $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
             $stmt->execute([$id]);
@@ -323,33 +535,21 @@ class DatabaseController extends BaseController
                 exit;
             }
 
-            // --- PATH SELF-HEALING (Replicated from CrudController) ---
-            if (!file_exists($database['path'])) {
-                $filename = basename($database['path']);
-                // Direct file check in standard data dir using Config
-                $localPath = Config::get('db_storage_path') . $filename;
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
 
-                if (file_exists($localPath)) {
-                    $database['path'] = realpath($localPath);
-                    // Update DB
-                    $upd = $db->prepare("UPDATE databases SET path = ? WHERE id = ?");
-                    $upd->execute([$database['path'], $id]);
-                } else {
-                    // Soft fail: Remove the invalid record or warn user
-                    // For now, warn user and redirect back to list to avoid crash loop
-                    Logger::log('DB_FILE_MISSING', ['id' => $id, 'path' => $database['path']]);
-                    Auth::setFlashError("⚠️ Error Crítico: El archivo de base de datos no existe en el disco. Contacte al administrador.");
-                    $this->redirect('admin/databases');
-                }
+            // Get table names based on database type
+            if ($dbType === 'sqlite') {
+                $stmt = $connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($dbType === 'mysql') {
+                $stmt = $connection->query("SHOW TABLES");
+                $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } else {
+                throw new \Exception("Unsupported database type: $dbType");
             }
-            // -----------------------------------------------------------
-
-            // Create connection to Target DB
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
             // Filter hidden tables for non-admins
             $config = json_decode($database['config'] ?? '{}', true);
@@ -363,7 +563,7 @@ class DatabaseController extends BaseController
                 }
 
                 try {
-                    $count = $targetDb->query("SELECT COUNT(*) FROM $tableName")->fetchColumn();
+                    $count = $connection->query("SELECT COUNT(*) FROM `$tableName`")->fetchColumn();
                 } catch (\Exception $e) {
                     $count = 0;
                 }
@@ -374,6 +574,7 @@ class DatabaseController extends BaseController
                 'title' => 'Tables - ' . ($database['name'] ?? 'DB'),
                 'tables' => $tables,
                 'database' => $database,
+                'db_type' => $dbType,
                 'hidden_tables' => $hiddenTables,
                 'breadcrumbs' => [
                     \App\Core\Lang::get('databases.title') => 'admin/databases',
@@ -382,18 +583,15 @@ class DatabaseController extends BaseController
             ]);
 
         } catch (\Exception $e) {
-            die("<h1>Fatal Error in ViewTables</h1><pre>" . $e->getMessage() . "\n" . $e->getTraceAsString() . "</pre>");
+            Auth::setFlashError("Error loading tables: " . $e->getMessage());
+            $this->redirect('admin/databases');
         }
     }
 
     /**
      * Adds a new table to a specific database.
+     * Now supports both SQLite and MySQL through DatabaseManager.
      */
-/**
- * createTable method
- *
- * @return void
- */
     public function createTable()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -409,52 +607,71 @@ class DatabaseController extends BaseController
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
-        try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $targetDb->exec("CREATE TABLE $table_name (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-                fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP
-            )");
+        if (!$database) {
+            Auth::setFlashError("Database not found.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
 
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
-is_visible, is_required) VALUES (?, ?, 'id', 'INTEGER', 'number', 0, 1, 0)");
+        try {
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            // Create table based on database type
+            if ($dbType === 'sqlite') {
+                $connection->exec("CREATE TABLE `$table_name` (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP
+                )");
+            } elseif ($dbType === 'mysql') {
+                $connection->exec("CREATE TABLE `$table_name` (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            } else {
+                throw new \Exception("Unsupported database type: $dbType");
+            }
+
+            // Register fields in metadata
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible, is_required) VALUES (?, ?, 'id', 'INTEGER', 'number', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
-is_visible, is_required) VALUES (?, ?, 'fecha_de_creacion', 'TEXT', 'text', 0, 1, 0)");
+
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible, is_required) VALUES (?, ?, 'fecha_de_creacion', 'DATETIME', 'datetime', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
-            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
-is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)");
+
+            $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'DATETIME', 'datetime', 0, 1, 0)");
             $stmt->execute([$db_id, $table_name]);
 
             // Initialize table metadata
             $stmt = $db->prepare("INSERT INTO table_metadata (db_id, table_name) VALUES (?, ?)");
             $stmt->execute([$db_id, $table_name]);
-            Logger::log('CREATE_TABLE', ['database_id' => $db_id, 'table' => $table_name], $db_id);
+
+            Logger::log('CREATE_TABLE', ['database_id' => $db_id, 'table' => $table_name, 'type' => $dbType], $db_id);
 
             // Update DB last edit
             $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
 
+            Auth::setFlashError("Table '$table_name' created successfully in $dbType database!", 'success');
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
             exit;
         } catch (\Throwable $e) {
-            Auth::setFlashError("Error creando tabla: " . $e->getMessage());
+            Auth::setFlashError("Error creating table: " . $e->getMessage());
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
             exit;
         }
     }
     /**
      * Creates a new table using raw SQL.
+     * Supports SQLite, MySQL, MariaDB, and PostgreSQL.
      */
-/**
- * createTableSql method
- *
- * @return void
- */
     public function createTableSql()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -462,34 +679,44 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         Auth::requirePermission('module:databases.create_table');
 
         if (!$db_id || empty($sql_code)) {
-            Auth::setFlashError("Faltan parámetros obligatorios.");
+            Auth::setFlashError("Missing required parameters.");
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
             exit;
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
+        if (!$database) {
+            Auth::setFlashError("Database not found.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
+
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // Execute the SQL code
-            $targetDb->exec($sql_code);
+            $connection->exec($sql_code);
 
             // Update DB last edit
             $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
 
-            Auth::setFlashError("Tabla creada exitosamente mediante SQL. Sincronizando estructura...", 'success');
-            Logger::log('CREATE_TABLE_SQL', ['database_id' => $db_id], $db_id);
+            Auth::setFlashError("Table created successfully via SQL in $dbType database. Syncing structure...", 'success');
+            Logger::log('CREATE_TABLE_SQL', ['database_id' => $db_id, 'type' => $dbType], $db_id);
 
             // Redirect to sync to ensure all fields are registered and audit columns injected
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $db_id . '&from_sql=1');
             exit;
         } catch (\Throwable $e) {
-            Auth::setFlashError("Error ejecutando SQL: " . $e->getMessage());
+            Auth::setFlashError("Error executing SQL: " . $e->getMessage());
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
             exit;
         }
@@ -497,47 +724,63 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
 
     /**
      * Removes a table from the database.
+     * Supports SQLite, MySQL, MariaDB, and PostgreSQL.
      */
-/**
- * deleteTable method
- *
- * @return void
- */
     public function deleteTable()
     {
         $db_id = $_GET['db_id'] ?? null;
         Auth::requirePermission('module:databases.drop_table');
         $table_name = preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['table'] ?? '');
 
-        if ($db_id && !empty($table_name)) {
-            $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
-            $stmt->execute([$db_id]);
-            $database = $stmt->fetch();
-
-            if ($database) {
-                try {
-                    $targetDb = new PDO('sqlite:' . $database['path']);
-                    $targetDb->exec("DROP TABLE $table_name");
-                    $stmt = $db->prepare("DELETE FROM fields_config WHERE db_id = ? AND table_name = ?");
-                    $stmt->execute([$db_id, $table_name]);
-                    Logger::log('DELETE_TABLE', ['database_id' => $db_id, 'table' => $table_name], $db_id);
-                } catch (\PDOException $e) {
-                    die("No se pudo eliminar la tabla: " . $e->getMessage());
-                }
-            }
+        if (!$db_id || empty($table_name)) {
+            Auth::setFlashError("Invalid parameters.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
         }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database) {
+            Auth::setFlashError("Database not found.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
+
+        try {
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            // DROP TABLE works the same across all database types
+            $connection->exec("DROP TABLE IF EXISTS `$table_name`");
+
+            // Delete metadata
+            $stmt = $db->prepare("DELETE FROM fields_config WHERE db_id = ? AND table_name = ?");
+            $stmt->execute([$db_id, $table_name]);
+
+            // Delete table metadata if exists
+            $stmt = $db->prepare("DELETE FROM table_metadata WHERE db_id = ? AND table_name = ?");
+            $stmt->execute([$db_id, $table_name]);
+
+            Logger::log('DELETE_TABLE', ['database_id' => $db_id, 'table' => $table_name, 'type' => $dbType], $db_id);
+
+            Auth::setFlashError("Table '$table_name' deleted successfully from $dbType database.", 'success');
+        } catch (\PDOException $e) {
+            Auth::setFlashError("Could not delete table: " . $e->getMessage());
+        }
+
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
+        exit;
     }
 
     /**
      * Displays and manages the fields (columns) of a specific table.
+     * Supports SQLite, MySQL, MariaDB, and PostgreSQL.
      */
-/**
- * manageFields method
- *
- * @return void
- */
     public function manageFields()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -549,14 +792,34 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
+        if (!$database) {
+            Auth::setFlashError("Database not found.");
+            $this->redirect('admin/databases');
+        }
+
         $stmt = $db->prepare("SELECT * FROM fields_config WHERE db_id = ? AND table_name = ? ORDER BY id ASC");
         $stmt->execute([$db_id, $table_name]);
         $configFields = $stmt->fetchAll();
 
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            $allTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            // Get table list based on database type
+            if ($dbType === 'sqlite') {
+                $stmt = $connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $allTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($dbType === 'mysql' || $dbType === 'mariadb') {
+                $stmt = $connection->query("SHOW TABLES");
+                $allTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($dbType === 'pgsql' || $dbType === 'postgresql') {
+                $stmt = $connection->query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+                $allTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } else {
+                $allTables = [];
+            }
         } catch (\PDOException $e) {
             $allTables = [];
         }
@@ -577,12 +840,8 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
 
     /**
      * Adds a new field structure to the system metadata for a table.
+     * Now supports both SQLite and MySQL through DatabaseManager.
      */
-/**
- * addField method
- *
- * @return void
- */
     public function addField()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -604,30 +863,50 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
+        if (!$database) {
+            Auth::setFlashError("Database not found.");
+            header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+            exit;
+        }
+
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $targetDb->exec("ALTER TABLE $table_name ADD COLUMN $field_name $data_type");
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            // Add column based on database type
+            if ($dbType === 'sqlite') {
+                $connection->exec("ALTER TABLE `$table_name` ADD COLUMN `$field_name` $data_type");
+            } elseif ($dbType === 'mysql') {
+                // MySQL ALTER TABLE syntax
+                $connection->exec("ALTER TABLE `$table_name` ADD COLUMN `$field_name` $data_type");
+            } else {
+                throw new \Exception("Unsupported database type: $dbType");
+            }
+
+            // Register field in metadata
             $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_required) VALUES (?, ?, ?, ?, ?, 0)");
             $stmt->execute([$db_id, $table_name, $field_name, $data_type, $view_type]);
-            Logger::log('ADD_FIELD', ['database_id' => $db_id, 'table' => $table_name, 'field' => $field_name], $db_id);
+
+            Logger::log('ADD_FIELD', ['database_id' => $db_id, 'table' => $table_name, 'field' => $field_name, 'type' => $dbType], $db_id);
+
+            Auth::setFlashError("Field '$field_name' added successfully to $dbType table!", 'success');
             header('Location: ' . Auth::getBaseUrl() . "admin/databases/fields?db_id=$db_id&table=$table_name");
         } catch (\PDOException $e) {
-            die("Error adding field: " . $e->getMessage());
+            Auth::setFlashError("Error adding field: " . $e->getMessage());
+            header('Location: ' . Auth::getBaseUrl() . "admin/databases/fields?db_id=$db_id&table=$table_name");
         }
     }
 
     /**
      * Removes a field from the table metadata and potentially the physical database.
+     * Now supports both SQLite and MySQL through DatabaseManager.
      */
-/**
- * deleteField method
- *
- * @return void
- */
     public function deleteField()
     {
         $config_id = $_GET['config_id'] ?? null;
@@ -664,18 +943,29 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
         Logger::log('DELETE_FIELD', ['database_id' => $db_id, 'table' => $table_name, 'field' => $field_name], $db_id);
 
         // Attempt to Drop Column from Structure
-        $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            // SQLite supports DROP COLUMN in newer versions, but we should wrap in try/catch just in case
-            $targetDb->exec("ALTER TABLE $table_name DROP COLUMN $field_name");
-            Auth::setFlashError("Field '$field_name' dropped successfully.", 'success');
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            // Drop column based on database type
+            if ($dbType === 'sqlite') {
+                // SQLite supports DROP COLUMN in newer versions
+                $connection->exec("ALTER TABLE `$table_name` DROP COLUMN `$field_name`");
+            } elseif ($dbType === 'mysql') {
+                // MySQL DROP COLUMN syntax
+                $connection->exec("ALTER TABLE `$table_name` DROP COLUMN `$field_name`");
+            }
+
+            Auth::setFlashError("Field '$field_name' dropped successfully from $dbType table.", 'success');
         } catch (\PDOException $e) {
             // Fallback: If drop column is not supported or fails, at least config is gone.
-            Auth::setFlashError("Field config removed, but column persisted (SQLite limitation or data conflict): " . $e->getMessage(), 'warning');
+            Auth::setFlashError("Field config removed, but column persisted (limitation or data conflict): " . $e->getMessage(), 'warning');
         }
 
         $this->redirect("admin/databases/fields?db_id=$db_id&table=$table_name");
@@ -684,11 +974,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Updates the configuration (UI type, constraints) for existing fields.
      */
-/**
- * updateFieldConfig method
- *
- * @return void
- */
+    /**
+     * updateFieldConfig method
+     *
+     * @return void
+     */
     public function updateFieldConfig()
     {
         $config_id = $_POST['config_id'] ?? null;
@@ -732,13 +1022,8 @@ WHERE id = ?");
     }
     /**
      * Synchronizes the physical database structure with the system's metadata.
-     * Handles ALTER TABLE operations, additions, and deletions.
+     * Now supports both SQLite and MySQL through DatabaseManager.
      */
-/**
- * syncDatabase method
- *
- * @return void
- */
     public function syncDatabase()
     {
         $id = $_GET['id'] ?? null;
@@ -755,50 +1040,80 @@ WHERE id = ?");
         }
 
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Use DatabaseManager to get the appropriate adapter
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $connection = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
+            // Get table names based on database type
+            if ($dbType === 'sqlite') {
+                $stmt = $connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($dbType === 'mysql') {
+                $stmt = $connection->query("SHOW TABLES");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } else {
+                throw new \Exception("Unsupported database type: $dbType");
+            }
 
             $syncedTables = 0;
             $syncedFields = 0;
 
             foreach ($tables as $table) {
-                $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-                $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                // Get columns based on database type
+                if ($dbType === 'sqlite') {
+                    $stmtCols = $connection->query("PRAGMA table_info(`$table`)");
+                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                } elseif ($dbType === 'mysql') {
+                    $stmtCols = $connection->query("SHOW COLUMNS FROM `$table`");
+                    $mysqlCols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    // Convert MySQL format to SQLite-like format for consistency
+                    $columns = [];
+                    foreach ($mysqlCols as $col) {
+                        $columns[] = [
+                            'name' => $col['Field'],
+                            'type' => $col['Type']
+                        ];
+                    }
+                }
+
                 $syncedTables++;
 
-                // --- Consistency Audit: Ensure audit columns exist ---
-                $columnNames = array_map(function ($c) {
-                    return strtolower($c['name']);
-                }, $columns);
-                $now = Auth::getCurrentTime();
-                $auditChanged = false;
+                // --- Consistency Audit: Ensure audit columns exist (SQLite only for now) ---
+                if ($dbType === 'sqlite') {
+                    $columnNames = array_map(function ($c) {
+                        return strtolower($c['name']);
+                    }, $columns);
+                    $now = Auth::getCurrentTime();
+                    $auditChanged = false;
 
-                if (!in_array('fecha_de_creacion', $columnNames)) {
-                    $targetDb->exec("ALTER TABLE $table ADD COLUMN fecha_de_creacion TEXT");
-                    $targetDb->exec("UPDATE $table SET fecha_de_creacion = '$now' WHERE fecha_de_creacion IS NULL OR fecha_de_creacion = ''");
-                    $auditChanged = true;
-                }
-                if (!in_array('fecha_edicion', $columnNames)) {
-                    $targetDb->exec("ALTER TABLE $table ADD COLUMN fecha_edicion TEXT");
-                    $targetDb->exec("UPDATE $table SET fecha_edicion = '$now' WHERE fecha_edicion IS NULL OR fecha_edicion = ''");
-                    $auditChanged = true;
-                }
+                    if (!in_array('fecha_de_creacion', $columnNames)) {
+                        $connection->exec("ALTER TABLE `$table` ADD COLUMN fecha_de_creacion TEXT");
+                        $connection->exec("UPDATE `$table` SET fecha_de_creacion = '$now' WHERE fecha_de_creacion IS NULL OR fecha_de_creacion = ''");
+                        $auditChanged = true;
+                    }
+                    if (!in_array('fecha_edicion', $columnNames)) {
+                        $connection->exec("ALTER TABLE `$table` ADD COLUMN fecha_edicion TEXT");
+                        $connection->exec("UPDATE `$table` SET fecha_edicion = '$now' WHERE fecha_edicion IS NULL OR fecha_edicion = ''");
+                        $auditChanged = true;
+                    }
 
-                // If schema changed, reload columns
-                if ($auditChanged) {
-                    $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    // If schema changed, reload columns
+                    if ($auditChanged) {
+                        $stmtCols = $connection->query("PRAGMA table_info(`$table`)");
+                        $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    }
                 }
                 // ---------------------------------------------------
 
                 foreach ($columns as $col) {
+                    $fieldName = $col['name'];
                     $stmtCheck = $db->prepare("SELECT id FROM fields_config WHERE db_id = ? AND table_name = ? AND field_name = ?");
-                    $stmtCheck->execute([$id, $table, $col['name']]);
+                    $stmtCheck->execute([$id, $table, $fieldName]);
                     if (!$stmtCheck->fetch()) {
                         $viewType = 'text';
                         $dataType = strtoupper($col['type']);
-                        $lowerName = strtolower($col['name']);
+                        $lowerName = strtolower($fieldName);
 
                         if (preg_match('/(imagen|image|foto|photo|img|avatar|logo|thumbnail|picture|gallery|galeria)/i', $lowerName)) {
                             $viewType = preg_match('/gallery|galeria/i', $lowerName) ? 'gallery' : 'image';
@@ -817,24 +1132,25 @@ WHERE id = ?");
                         }
 
                         // Protect audit fields from manual editing
-                        $isEditable = in_array($col['name'], ['id', 'fecha_de_creacion', 'fecha_edicion']) ? 0 : 1;
+                        $isEditable = in_array($fieldName, ['id', 'fecha_de_creacion', 'fecha_edicion']) ? 0 : 1;
                         $isVisible = 1;
 
-                        $stmtInsert = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable,
-is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
-                        $stmtInsert->execute([$id, $table, $col['name'], $dataType, $viewType, $isEditable, $isVisible]);
+                        $stmtInsert = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
+                        $stmtInsert->execute([$id, $table, $fieldName, $dataType, $viewType, $isEditable, $isVisible]);
                         $syncedFields++;
                     }
                 }
             }
+
             if (empty($_GET['from_sql'])) {
-                Auth::setFlashError(
-                    "Audit completed: $syncedTables tables synchronized. Missing columns 'fecha_de_creacion/edicion' were automatically injected for consistency.",
-                    'success'
-                );
+                $message = "Sync completed: $syncedTables tables synchronized, $syncedFields new fields detected.";
+                if ($dbType === 'sqlite') {
+                    $message .= " Audit columns 'fecha_de_creacion/edicion' were automatically injected where missing.";
+                }
+                Auth::setFlashError($message, 'success');
             }
         } catch (\PDOException $e) {
-            Auth::setFlashError("Audit Signal Error: " . $e->getMessage());
+            Auth::setFlashError("Sync Error: " . $e->getMessage());
         }
 
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $id);
@@ -843,11 +1159,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Creates a database from an uploaded SQL script.
      */
-/**
- * importSql method
- *
- * @return void
- */
+    /**
+     * importSql method
+     *
+     * @return void
+     */
     public function importSql()
     {
         Auth::requirePermission('module:databases.create_db');
@@ -903,11 +1219,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Exports a database as a SQL dump.
      */
-/**
- * exportSql method
- *
- * @return void
- */
+    /**
+     * exportSql method
+     *
+     * @return void
+     */
     public function exportSql()
     {
         $id = $_GET['id'] ?? null;
@@ -971,11 +1287,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Export a single table as SQL
      */
-/**
- * exportTableSql method
- *
- * @return void
- */
+    /**
+     * exportTableSql method
+     *
+     * @return void
+     */
     public function exportTableSql()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1033,11 +1349,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Export a single table as Excel
      */
-/**
- * exportTableExcel method
- *
- * @return void
- */
+    /**
+     * exportTableExcel method
+     *
+     * @return void
+     */
     public function exportTableExcel()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1093,11 +1409,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Export a single table as CSV
      */
-/**
- * exportTableCsv method
- *
- * @return void
- */
+    /**
+     * exportTableCsv method
+     *
+     * @return void
+     */
     public function exportTableCsv()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1145,11 +1461,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Generate Excel template for import
      */
-/**
- * generateExcelTemplate method
- *
- * @return void
- */
+    /**
+     * generateExcelTemplate method
+     *
+     * @return void
+     */
     public function generateExcelTemplate()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1206,11 +1522,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Generate CSV template for import
      */
-/**
- * generateCsvTemplate method
- *
- * @return void
- */
+    /**
+     * generateCsvTemplate method
+     *
+     * @return void
+     */
     public function generateCsvTemplate()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1265,11 +1581,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import SQL into a table
      */
-/**
- * importTableSql method
- *
- * @return void
- */
+    /**
+     * importTableSql method
+     *
+     * @return void
+     */
     public function importTableSql()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -1318,11 +1634,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import SQL from text input into a table
      */
-/**
- * importTableSqlText method
- *
- * @return void
- */
+    /**
+     * importTableSqlText method
+     *
+     * @return void
+     */
     public function importTableSqlText()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -1380,11 +1696,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import Excel into a table
      */
-/**
- * importTableExcel method
- *
- * @return void
- */
+    /**
+     * importTableExcel method
+     *
+     * @return void
+     */
     public function importTableExcel()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -1478,11 +1794,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import CSV into a table
      */
-/**
- * importTableCsv method
- *
- * @return void
- */
+    /**
+     * importTableCsv method
+     *
+     * @return void
+     */
     public function importTableCsv()
     {
         $db_id = $_POST['db_id'] ?? null;
