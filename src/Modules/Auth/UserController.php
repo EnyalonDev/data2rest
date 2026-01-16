@@ -9,13 +9,48 @@ use PDO;
 
 /**
  * User Management Controller
- * Handles CRUD operations for system users and their assignments to roles and groups.
+ * 
+ * Comprehensive user administration system with role-based access control
+ * and group isolation for multi-tenant environments.
+ * 
+ * Core Features:
+ * - User CRUD operations
+ * - Role and group assignment
+ * - Password management
+ * - User search and filtering
+ * - Group-based isolation for non-admins
+ * - Self-deletion prevention
+ * 
+ * Access Control:
+ * - Admin: Full access to all users
+ * - Non-Admin: Access limited to own group
+ * - Permission-based operations (view, create, edit, delete)
+ * 
+ * Security:
+ * - Password hashing with PASSWORD_DEFAULT
+ * - Permission validation on all operations
+ * - Group isolation enforcement
+ * - Self-deletion prevention
+ * 
+ * User Fields:
+ * - username (sanitized, unique)
+ * - password (hashed)
+ * - role_id (defines permissions)
+ * - group_id (multi-tenant isolation)
+ * - status (active/inactive)
+ * - public_name, email, phone, address
+ * 
+ * @package App\Modules\Auth
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class UserController extends BaseController
 {
     /**
-     * Constructor enforces access control.
-     * Requirement: 'module:users' permission with 'manage' action.
+     * Constructor - Requires user view permission
+     * 
+     * Enforces that only users with 'module:users.view_users'
+     * permission can access user management functionality.
      */
     public function __construct()
     {
@@ -24,7 +59,22 @@ class UserController extends BaseController
     }
 
     /**
-     * Displays the list of all system users.
+     * Display list of users
+     * 
+     * Shows all users with role and group information.
+     * Implements group-based isolation for non-admin users.
+     * 
+     * Features:
+     * - Admin: View all users with optional group filter
+     * - Non-Admin: View only users in same group
+     * - Search functionality (username, name, email)
+     * - Role and group information display
+     * 
+     * @return void Renders user list view
+     * 
+     * @example
+     * GET /admin/users
+     * GET /admin/users?group_id=1&search=john
      */
     public function index()
     {
@@ -99,7 +149,23 @@ class UserController extends BaseController
     }
 
     /**
-     * Displays a form to create or edit a user.
+     * Display user creation/edit form
+     * 
+     * Renders a form for creating new users or editing existing ones.
+     * Loads available roles and groups for assignment.
+     * 
+     * Features:
+     * - Create new user (requires invite_users permission)
+     * - Edit existing user (requires edit_users permission)
+     * - Role selection dropdown
+     * - Group assignment
+     * - User profile fields
+     * 
+     * @return void Renders user form view
+     * 
+     * @example
+     * GET /admin/users/form (new user)
+     * GET /admin/users/form?id=5 (edit user)
      */
     public function form()
     {
@@ -138,7 +204,24 @@ class UserController extends BaseController
     }
 
     /**
-     * Handles the saving (insert or update) of user data.
+     * Save user data (create or update)
+     * 
+     * Processes form submission to create new users or update existing ones.
+     * Handles password hashing and username sanitization.
+     * 
+     * Features:
+     * - Username sanitization (alphanumeric + underscores)
+     * - Password hashing with PASSWORD_DEFAULT
+     * - Optional password update (only if provided)
+     * - Role and group assignment
+     * - Status management (active/inactive)
+     * - Profile information (name, email, phone, address)
+     * 
+     * @return void Redirects to user list on success
+     * 
+     * @example
+     * POST /admin/users/save
+     * Body: username=john_doe&password=secret&role_id=2&group_id=1
      */
     public function save()
     {
@@ -191,8 +274,19 @@ class UserController extends BaseController
     }
 
     /**
-     * Deletes a user by ID.
-     * Prevents self-deletion.
+     * Delete a user
+     * 
+     * Removes a user from the system with self-deletion prevention.
+     * 
+     * Security:
+     * - Requires delete_users permission
+     * - Prevents users from deleting themselves
+     * - Hard delete (no soft delete)
+     * 
+     * @return void Redirects to user list
+     * 
+     * @example
+     * GET /admin/users/delete?id=5
      */
     public function delete()
     {
