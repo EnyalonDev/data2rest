@@ -5,18 +5,23 @@
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-**Data2Rest** nació de una necesidad real: acelerar el desarrollo de backends para aplicaciones web y móviles. Mi objetivo era que, al momento de diseñar la base de datos, los endpoints necesarios estuvieran listos de inmediato. De esa visión surgió este sistema sencillo y práctico, ideal para desarrolladores independientes, estudiantes y equipos pequeños que necesitan lanzar MVPs o prototipos productivos en cuestión de minutos.
+**Data2Rest** es la evolución de una idea que comenzó con un objetivo simple: **acelerar el desarrollo de backends** para aplicaciones web y móviles. Inicialmente, buscaba una herramienta que me permitiera tener endpoints listos justo al momento de diseñar la base de datos, ideal para prototipos rápidos.
 
-Con Data2Rest, el backend se adapta a tu idea y no al revés. Olvídate de buscar ejemplos genéricos de APIs que no encajan con tu proyecto; aquí tú diseñas tu estructura de datos y el sistema genera automáticamente los endpoints REST listos para consumir desde cualquier cliente.
+Sin embargo, a medida que lo usaba, me hice la pregunta: *"¿Por qué no agregarle más funcionalidades?"*.
+
+Poco a poco, Data2Rest dejó de ser una solución sencilla para convertirse en una **plataforma completa y robusta**, diseñada específicamente para **emprendedores, estudiantes, desarrolladores independientes, startups y equipos pequeños**. Lo que empezó como un generador de APIs se transformó en un sistema integral que no solo maneja datos, sino que permite **gestionar proyectos, tareas y equipos**.
+
+Hoy, Data2Rest es mucho más grande de lo que imaginé al principio. Se ha adaptado para cubrir mis propias necesidades como desarrollador: tener el control total de mis proyectos, colaborar con mi equipo y visualizar el progreso real de cada tarea. Este proyecto es el resultado de esa evolución constante y espero de todo corazón que te sirva de utilidad, apoye tus metas y te permita lanzar tus ideas al mundo en tiempo récord.
 
 ### 🎯 Objetivo del Proyecto
-Proveer una herramienta de código abierto que elimine la fricción inicial al crear backends, reduciendo errores repetitivos y permitiendo a los desarrolladores centrarse en lo que realmente importa: el diseño de sus datos y la lógica de su negocio.
+
+Proveer un ecosistema de código abierto que elimine la fricción técnica, permitiendo a los creadores centrarse en lo que realmente importa: **su producto y su negocio**.
 
 **Ideal para:**
 *   👨‍💻 **Desarrolladores Independientes**: Crea prototipos y apps completas sin escribir boilerplate.
-*   🎓 **Estudiantes**: Aprende sobre estructuras de datos y APIs viendo resultados inmediatos.
-*   🚀 **MVPs y Startups**: Valida tus ideas de negocio con un backend funcional en tiempo récord.
-*   👥 **Equipos Pequeños**: Mejora la productividad compartiendo un núcleo de datos unificado.
+*   🎓 **Estudiantes**: Aprende sobre estructuras de datos, APIs y gestión de proyectos viendo resultados inmediatos.
+*   🚀 **MVPs y Startups**: Valida tus ideas de negocio con un backend funcional y herramientas de gestión integradas.
+*   👥 **Equipos Pequeños**: Mejora la productividad con un núcleo unificado de datos y tareas.
 
 ---
 
@@ -38,12 +43,11 @@ Proveer una herramienta de código abierto que elimine la fricción inicial al c
 
 ## ✨ Características Principales
 
-### 🗄️ Gestión de Bases de Datos
-- **Creación dinámica** de bases de datos SQLite
-- **Gestión visual** de tablas y campos
-- **CRUD completo** con interfaz intuitiva
-- **Configuración de campos** con tipos de datos personalizados
-- **Gestión de archivos** y medios integrada
+### 🗄️ Gestión Multi-Base de Datos
+- **Soporte para múltiples motores**: Crea y gestiona bases de datos **SQLite, MySQL y PostgreSQL** desde la misma interfaz.
+- **Creación visual** de tablas, campos e índices.
+- **Importación/Exportación**: Carga masiva y descarga de datos en formatos **Excel y CSV**.
+- **Migraciones automáticas** y gestión de esquemas.
 
 ### 🔌 API REST Automática
 - **Generación automática** de endpoints REST para cada tabla
@@ -211,6 +215,15 @@ Sistema completo de gestión de pagos por proyecto con facturación automática.
 - **Reportes Financieros**: Ingresos reales vs proyectados, tasa de cobro, calendario de cobranzas.
 - **Auditoría Completa**: Historial de cambios de plan y pagos efectuados.
 
+### 7. [Gestión de Tareas Kanban](docs/TASKS_MODULE.md) (Nuevo ✨)
+Organiza el flujo de trabajo de tu equipo de manera visual y eficiente.
+- **Tablero Interactivo**: Drag & Drop para mover tareas entre estados (Backlog, To Do, In Progress, Review, Done).
+- **Roles y Permisos**: 
+    - *Admin/Dev/Marketing*: Gestión completa de tareas.
+    - *Cliente*: Vista restringida para aprobar entregables.
+- **Colaboración**: Asignación de responsables y seguimiento de historial.
+- **Integración**: Vinculación directa con los proyectos existentes.
+
 ---
 
 - **Webhooks**: Notificaciones en tiempo real (Ver [WEBHOOKS.md](docs/WEBHOOKS.md))
@@ -362,8 +375,8 @@ Si encuentras algún problema o tienes preguntas:
 
 ### 🎯 Prioridad Alta
 
-- [ ] **Soporte Multi-Motor de Base de Datos**
-  - Implementación de drivers para **MySQL, PostgreSQL y MariaDB**
+- [x] **Soporte Multi-Motor de Base de Datos** (Completado ✅)
+  - Implementación de drivers para **MySQL, PostgreSQL y SQLite**
   - Migración transparente entre motores
   - Soporte para bases de datos remotas
   - Panel de configuración de conexiones externas
@@ -392,7 +405,7 @@ Si encuentras algún problema o tienes preguntas:
 
 ### 🔧 Prioridad Media
 
-- [ ] **Exportación de Datos**
+- [x] **Importación/Exportación de Datos** (Completado ✅)
   - Exportar tablas a CSV/Excel
   - Exportar bases de datos completas
   - Importación masiva desde archivos
@@ -407,14 +420,18 @@ Si encuentras algún problema o tienes preguntas:
   - Eventos personalizables (create, update, delete)
   - Integración con servicios externos
 
+- [x] **Gestión de Tareas (Kanban)** (Completado ✅)
+  - Tablero visual por proyecto
+  - Roles de equipo y cliente
+
 - [ ] **Versionado de Datos**
   - Historial de cambios en registros
   - Rollback a versiones anteriores
   - Comparación de versiones
 
-- [ ] **Dashboard Mejorado**
-  - Gráficos y estadísticas
-  - Widgets personalizables
+- [x] **Dashboard Mejorado** (Completado ✅)
+  - Compatiiblidad con múltiples motores de BD
+  - Gráficos y estadísticas unificadas
   - Métricas en tiempo real
 
 ### 💡 Prioridad Baja
