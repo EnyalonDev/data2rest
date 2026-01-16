@@ -10,11 +10,27 @@ use PDO;
 /**
  * Controlador REST de Cuotas
  */
+/**
+ * InstallmentController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class InstallmentController extends BaseController
 {
     private $db;
     private $repository;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -25,6 +41,11 @@ class InstallmentController extends BaseController
      * GET /api/billing/projects/{id}/installments
      * Obtiene todas las cuotas de un proyecto
      */
+/**
+ * getByProject method
+ *
+ * @return void
+ */
     public function getByProject($projectId)
     {
         $installments = $this->repository->getByProject($projectId);
@@ -40,6 +61,11 @@ class InstallmentController extends BaseController
      * GET /api/billing/installments/upcoming
      * Obtiene cuotas próximas a vencer
      */
+/**
+ * getUpcoming method
+ *
+ * @return void
+ */
     public function getUpcoming()
     {
         $days = $_GET['days'] ?? 30;
@@ -59,6 +85,11 @@ class InstallmentController extends BaseController
      * GET /api/billing/installments/overdue
      * Obtiene cuotas vencidas
      */
+/**
+ * getOverdue method
+ *
+ * @return void
+ */
     public function getOverdue()
     {
         $limit = $_GET['limit'] ?? 100;
@@ -75,6 +106,11 @@ class InstallmentController extends BaseController
      * POST /api/billing/installments/{id}/pay
      * Registra un pago para una cuota (Directo por Admin)
      */
+/**
+ * pay method
+ *
+ * @return void
+ */
     public function pay($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -116,6 +152,11 @@ class InstallmentController extends BaseController
      * POST /api/billing/installments/{id}/report
      * Reporta un pago para una cuota (Por Cliente - Pendiente Aprobación)
      */
+/**
+ * report method
+ *
+ * @return void
+ */
     public function report($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -146,6 +187,11 @@ class InstallmentController extends BaseController
     /**
      * POST /api/billing/payments/{id}/approve
      */
+/**
+ * approve method
+ *
+ * @return void
+ */
     public function approve($id)
     {
         try {
@@ -159,6 +205,11 @@ class InstallmentController extends BaseController
     /**
      * POST /api/billing/payments/{id}/reject
      */
+/**
+ * reject method
+ *
+ * @return void
+ */
     public function reject($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -174,6 +225,11 @@ class InstallmentController extends BaseController
      * GET /api/billing/installments/{id}
      * Obtiene información detallada de una cuota
      */
+/**
+ * getById method
+ *
+ * @return void
+ */
     public function getById($id)
     {
         $installment = $this->repository->getById($id);
@@ -195,6 +251,11 @@ class InstallmentController extends BaseController
     /**
      * GET /api/billing/payments/{id}
      */
+/**
+ * getPaymentById method
+ *
+ * @return void
+ */
     public function getPaymentById($id)
     {
         $payment = $this->repository->getPaymentById($id);

@@ -9,8 +9,24 @@ use App\Core\Auth;
  * SystemController
  * Provides internal system information and settings.
  */
+/**
+ * SystemController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class SystemController extends BaseController
 {
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -19,6 +35,11 @@ class SystemController extends BaseController
     /**
      * Returns JSON with critical server configuration.
      */
+/**
+ * info method
+ *
+ * @return void
+ */
     public function info()
     {
         $db = \App\Core\Database::getInstance()->getConnection();
@@ -52,6 +73,11 @@ class SystemController extends BaseController
     /**
      * Updates the global time offset in minutes.
      */
+/**
+ * updateTimeOffset method
+ *
+ * @return void
+ */
     public function updateTimeOffset()
     {
         Auth::requireAdmin();
@@ -77,6 +103,11 @@ class SystemController extends BaseController
     /**
      * Toggles development mode in system settings.
      */
+/**
+ * toggleDevMode method
+ *
+ * @return void
+ */
     public function toggleDevMode()
     {
         Auth::requireAdmin();
@@ -96,6 +127,11 @@ class SystemController extends BaseController
     /**
      * Clears application temporary cache files.
      */
+/**
+ * clearCache method
+ *
+ * @return void
+ */
     public function clearCache()
     {
         Auth::requireAdmin();
@@ -123,6 +159,11 @@ class SystemController extends BaseController
     /**
      * Clears all active PHP sessions except the current one.
      */
+/**
+ * clearSessions method
+ *
+ * @return void
+ */
     public function clearSessions()
     {
         Auth::requireAdmin();
@@ -146,6 +187,11 @@ class SystemController extends BaseController
         echo json_encode(['success' => true, 'cleared' => $cleared]);
         exit;
     }
+/**
+ * dismissBanner method
+ *
+ * @return void
+ */
     public function dismissBanner()
     {
         Auth::requireAdmin();
@@ -162,6 +208,11 @@ class SystemController extends BaseController
     /**
      * Performs a global search across all databases and tables of the active project.
      */
+/**
+ * globalSearch method
+ *
+ * @return void
+ */
     public function globalSearch()
     {
         $query = $_POST['q'] ?? '';

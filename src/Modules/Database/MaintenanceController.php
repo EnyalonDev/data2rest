@@ -27,8 +27,24 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * MaintenanceController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class MaintenanceController extends BaseController
 {
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -42,6 +58,11 @@ class MaintenanceController extends BaseController
      *
      * @return void Redirects to admin dashboard with success flash message.
      */
+/**
+ * resetSystem method
+ *
+ * @return void
+ */
     public function resetSystem()
     {
         Auth::requireAdmin();
@@ -97,6 +118,11 @@ class MaintenanceController extends BaseController
      *
      * @return void Redirects to admin dashboard with success or error flash.
      */
+/**
+ * loadDemo method
+ *
+ * @return void
+ */
     public function loadDemo()
     {
         Auth::requirePermission('module:databases', 'create');

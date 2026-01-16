@@ -8,13 +8,58 @@ use App\Core\Auth;
 use PDO;
 
 /**
- * Controlador Web de Billing
- * Maneja las vistas administrativas del módulo
+ * Billing Web Controller
+ *
+ * Handles administrative web views for the Billing module, including dashboards,
+ * client management, project overviews, installment handling, payment plans,
+ * financial reports, and service catalog.
+ *
+ * Core Features:
+ * - Dashboard with financial summary and charts
+ * - Client list scoped to role or admin
+ * - Project list with billing details
+ * - Installment management (upcoming, overdue, paid, pending)
+ * - Payment plan overview and statistics
+ * - Financial reporting and forecasting
+ * - Payment history view
+ * - Service catalog management
+ *
+ * Security:
+ * - Requires admin privileges for most actions
+ * - Role-based access for client and installment views
+ * - Permission checks via Auth::requirePermission where applicable
+ *
+ * @package App\\Modules\\Billing\\Controllers
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
+/**
+ * BillingWebController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class BillingWebController extends BaseController
 {
     private $db;
 
+    /**
+     * Constructor
+     *
+     * Initializes the database connection for the controller.
+     *
+     * @return void
+     */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -23,6 +68,23 @@ class BillingWebController extends BaseController
     /**
      * Dashboard principal de Billing
      */
+    /**
+     * Dashboard principal de Billing
+     *
+     * Displays financial summary, upcoming and overdue installments, recent activity,
+     * and chart data for the admin dashboard.
+     *
+     * Access Control:
+     * - Only admin users may view the full dashboard.
+     * - Role ID 4 (client) is redirected to the installments view.
+     *
+     * @return void Renders the `admin.billing.index` view.
+     */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         // Verificar permisos
@@ -62,8 +124,22 @@ class BillingWebController extends BaseController
     }
 
     /**
-     * Vista de clientes (ahora unificada con usuarios)
+     * Vista de clientes (unificada con usuarios)
+     *
+     * Shows a list of users with the client role (role_id = 4) along with
+     * aggregated billing statistics such as project count, total paid, pending,
+     * and overdue amounts.
+     *
+     * Access Control:
+     * - Only admin users can access this view.
+     *
+     * @return void Renders the `admin.billing.clients` view.
      */
+/**
+ * clients method
+ *
+ * @return void
+ */
     public function clients()
     {
         if (!Auth::isAdmin()) {
@@ -74,19 +150,19 @@ class BillingWebController extends BaseController
 
         // Buscamos solo usuarios que tengan el rol de cliente (ID 4)
         $stmt = $this->db->query("
-            SELECT u.*,
-                   COALESCE(u.public_name, u.username) as name,
-                   COUNT(DISTINCT p.id) as projects_count,
-                   SUM(CASE WHEN i.status = 'pagada' THEN i.amount ELSE 0 END) as total_paid,
-                   SUM(CASE WHEN i.status = 'pendiente' THEN i.amount ELSE 0 END) as total_pending,
-                   SUM(CASE WHEN i.status = 'vencida' THEN i.amount ELSE 0 END) as total_overdue
-            FROM users u
-            LEFT JOIN projects p ON u.id = p.billing_user_id
-            LEFT JOIN installments i ON p.id = i.project_id
-            WHERE u.role_id = 4
-            GROUP BY u.id
-            ORDER BY name ASC
-        ");
+        SELECT u.*,\
+               COALESCE(u.public_name, u.username) as name,\
+               COUNT(DISTINCT p.id) as projects_count,\
+               SUM(CASE WHEN i.status = 'pagada' THEN i.amount ELSE 0 END) as total_paid,\
+               SUM(CASE WHEN i.status = 'pendiente' THEN i.amount ELSE 0 END) as total_pending,\
+               SUM(CASE WHEN i.status = 'vencida' THEN i.amount ELSE 0 END) as total_overdue\
+        FROM users u\
+        LEFT JOIN projects p ON u.id = p.billing_user_id\
+        LEFT JOIN installments i ON p.id = i.project_id\
+        WHERE u.role_id = 4\
+        GROUP BY u.id\
+        ORDER BY name ASC\
+    ");
         $clients = $stmt->fetchAll();
 
         $this->view('admin.billing.clients', [
@@ -97,7 +173,20 @@ class BillingWebController extends BaseController
 
     /**
      * Vista de proyectos con billing
+     *
+     * Displays projects that have an associated billing plan, including client
+     * information, plan details, and installment statistics.
+     *
+     * Access Control:
+     * - Only admin users may access this view.
+     *
+     * @return void Renders the `admin.billing.projects` view.
      */
+/**
+ * projects method
+ *
+ * @return void
+ */
     public function projects()
     {
         if (!Auth::isAdmin()) {
@@ -107,25 +196,25 @@ class BillingWebController extends BaseController
         }
 
         $stmt = $this->db->query("
-            SELECT p.*,
-                   COALESCE(u.public_name, u.username) as client_name,
-                   u.email as client_email,
-                   u.phone as client_phone,
-                   u.tax_id as client_tax_id,
-                   pp.name as plan_name,
-                   pp.frequency as plan_frequency,
-                   COUNT(i.id) as total_installments,
-                   SUM(CASE WHEN i.status = 'pagada' THEN 1 ELSE 0 END) as paid_installments,
-                   SUM(CASE WHEN i.status = 'pendiente' THEN 1 ELSE 0 END) as pending_installments,
-                   SUM(CASE WHEN i.status = 'vencida' THEN 1 ELSE 0 END) as overdue_installments
-            FROM projects p
-            LEFT JOIN users u ON p.billing_user_id = u.id
-            LEFT JOIN payment_plans pp ON p.current_plan_id = pp.id
-            LEFT JOIN installments i ON p.id = i.project_id
-            WHERE p.current_plan_id IS NOT NULL
-            GROUP BY p.id
-            ORDER BY p.created_at DESC
-        ");
+        SELECT p.*,\
+               COALESCE(u.public_name, u.username) as client_name,\
+               u.email as client_email,\
+               u.phone as client_phone,\
+               u.tax_id as client_tax_id,\
+               pp.name as plan_name,\
+               pp.frequency as plan_frequency,\
+               COUNT(i.id) as total_installments,\
+               SUM(CASE WHEN i.status = 'pagada' THEN 1 ELSE 0 END) as paid_installments,\
+               SUM(CASE WHEN i.status = 'pendiente' THEN 1 ELSE 0 END) as pending_installments,\
+               SUM(CASE WHEN i.status = 'vencida' THEN 1 ELSE 0 END) as overdue_installments\
+        FROM projects p\
+        LEFT JOIN users u ON p.billing_user_id = u.id\
+        LEFT JOIN payment_plans pp ON p.current_plan_id = pp.id\
+        LEFT JOIN installments i ON p.id = i.project_id\
+        WHERE p.current_plan_id IS NOT NULL\
+        GROUP BY p.id\
+        ORDER BY p.created_at DESC\
+    ");
         $projects = $stmt->fetchAll();
 
         // Obtener planes disponibles
@@ -140,7 +229,21 @@ class BillingWebController extends BaseController
 
     /**
      * Vista de cuotas
+     *
+     * Provides a filtered list of installments with optional project and status filters.
+     * Supports views for upcoming, overdue, paid, and pending installments.
+     *
+     * Access Control:
+     * - Admin users see all installments.
+     * - Role ID 4 (client) may also view installments.
+     *
+     * @return void Renders the `admin.billing.installments` view.
      */
+/**
+ * installments method
+ *
+ * @return void
+ */
     public function installments()
     {
         if (!Auth::isAdmin() && $_SESSION['role_id'] != 4) {
@@ -155,17 +258,17 @@ class BillingWebController extends BaseController
         $isAdmin = Auth::isAdmin();
 
         $sql = "
-            SELECT i.*,
-                   p.name as project_name,
-                   COALESCE(u.public_name, u.username) as client_name,
-                   pp.name as plan_name,
-                   (SELECT SUM(amount) FROM payments WHERE installment_id = i.id) as paid_amount
-            FROM installments i
-            INNER JOIN projects p ON i.project_id = p.id
-            LEFT JOIN users u ON p.billing_user_id = u.id
-            LEFT JOIN payment_plans pp ON i.plan_id = pp.id
-            WHERE 1=1
-        ";
+        SELECT i.*,
+               p.name as project_name,
+               COALESCE(u.public_name, u.username) as client_name,
+               pp.name as plan_name,
+               (SELECT SUM(amount) FROM payments WHERE installment_id = i.id) as paid_amount
+        FROM installments i
+        INNER JOIN projects p ON i.project_id = p.id
+        LEFT JOIN users u ON p.billing_user_id = u.id
+        LEFT JOIN payment_plans pp ON i.plan_id = pp.id
+        WHERE 1=1
+    ";
 
         if (!$isAdmin) {
             $sql .= " AND p.billing_user_id = " . (int) $userId;
@@ -208,7 +311,19 @@ class BillingWebController extends BaseController
 
     /**
      * Vista de planes de pago
+     *
+     * Lists all payment plans with a count of associated projects.
+     *
+     * Access Control:
+     * - Only admin users may view this page.
+     *
+     * @return void Renders the `admin.billing.plans` view.
      */
+/**
+ * plans method
+ *
+ * @return void
+ */
     public function plans()
     {
         if (!Auth::isAdmin()) {
@@ -219,13 +334,13 @@ class BillingWebController extends BaseController
 
         // Obtener todos los planes con conteo de proyectos
         $stmt = $this->db->query("
-            SELECT pp.*,
-                   COUNT(p.id) as projects_count
-            FROM payment_plans pp
-            LEFT JOIN projects p ON pp.id = p.current_plan_id
-            GROUP BY pp.id
-            ORDER BY pp.status DESC, pp.name ASC
-        ");
+        SELECT pp.*,\
+               COUNT(p.id) as projects_count\
+        FROM payment_plans pp\
+        LEFT JOIN projects p ON pp.id = p.current_plan_id\
+        GROUP BY pp.id\
+        ORDER BY pp.status DESC, pp.name ASC\
+    ");
         $plans = $stmt->fetchAll();
 
         $this->view('admin.billing.plans', [
@@ -236,7 +351,20 @@ class BillingWebController extends BaseController
 
     /**
      * Vista de reportes financieros
+     *
+     * Generates a comprehensive financial report including summary, income comparison,
+     * top clients, and forecast data.
+     *
+     * Access Control:
+     * - Only admin users may access this view.
+     *
+     * @return void Renders the `admin.billing.reports` view.
      */
+/**
+ * reports method
+ *
+ * @return void
+ */
     public function reports()
     {
         if (!Auth::isAdmin()) {
@@ -270,7 +398,21 @@ class BillingWebController extends BaseController
 
     /**
      * Vista de historial de pagos
+     *
+     * Shows payment records with related installment, project, and client information.
+     * Includes a summary of total payments, amounts, and recent activity.
+     *
+     * Access Control:
+     * - Admin users see all payments.
+     * - Role ID 4 (client) may also view their own payments.
+     *
+     * @return void Renders the `admin.billing.payments` view.
      */
+/**
+ * payments method
+ *
+ * @return void
+ */
     public function payments()
     {
         if (!Auth::isAdmin() && $_SESSION['role_id'] != 4) {
@@ -283,17 +425,17 @@ class BillingWebController extends BaseController
         $isAdmin = Auth::isAdmin();
 
         $sql = "
-            SELECT pay.*,
-                   i.installment_number,
-                   p.name as project_name,
-                   COALESCE(u.public_name, u.username) as client_name,
-                   u.id as client_id
-            FROM payments pay
-            INNER JOIN installments i ON pay.installment_id = i.id
-            INNER JOIN projects p ON i.project_id = p.id
-            LEFT JOIN users u ON p.billing_user_id = u.id
-            WHERE 1=1
-        ";
+        SELECT pay.*,\
+               i.installment_number,\
+               p.name as project_name,\
+               COALESCE(u.public_name, u.username) as client_name,\
+               u.id as client_id\
+        FROM payments pay\
+        INNER JOIN installments i ON pay.installment_id = i.id\
+        INNER JOIN projects p ON i.project_id = p.id\
+        LEFT JOIN users u ON p.billing_user_id = u.id\
+        WHERE 1=1\
+    ";
 
         if (!$isAdmin) {
             $sql .= " AND p.billing_user_id = " . (int) $userId;
@@ -305,16 +447,16 @@ class BillingWebController extends BaseController
 
         // Resumen de pagos
         $summaryStmt = $this->db->query("
-            SELECT 
-                COUNT(*) as total_payments,
-                SUM(amount) as total_received,
-                AVG(amount) as average_payment,
-                (SELECT COUNT(*) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_payments,
-                (SELECT SUM(amount) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_received,
-                (SELECT payment_date FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_date,
-                (SELECT amount FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_amount
-            FROM payments
-        ");
+        SELECT \
+            COUNT(*) as total_payments,\
+            SUM(amount) as total_received,\
+            AVG(amount) as average_payment,\
+            (SELECT COUNT(*) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_payments,\
+            (SELECT SUM(amount) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_received,\
+            (SELECT payment_date FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_date,\
+            (SELECT amount FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_amount\
+        FROM payments\
+    ");
         $summary = $summaryStmt->fetch();
 
         // Obtener clientes para filtro
@@ -551,6 +693,21 @@ class BillingWebController extends BaseController
     /**
      * Vista de catálogo de servicios
      */
+    /**
+     * Vista de catálogo de servicios
+     *
+     * Lists all active billing services for admin management.
+     *
+     * Access Control:
+     * - Only admin users may view the service catalog.
+     *
+     * @return void Renders the `admin.billing.services` view.
+     */
+/**
+ * services method
+ *
+ * @return void
+ */
     public function services()
     {
         if (!Auth::isAdmin()) {

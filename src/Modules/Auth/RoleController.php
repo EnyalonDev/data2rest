@@ -33,6 +33,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * RoleController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class RoleController extends BaseController
 {
     /**
@@ -41,6 +52,11 @@ class RoleController extends BaseController
      * Ensures that only administrators can manage roles
      * and permissions.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireAdmin();
@@ -56,6 +72,11 @@ class RoleController extends BaseController
      * @example
      * GET /admin/roles
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -86,6 +107,11 @@ class RoleController extends BaseController
      * GET /admin/roles/form (new role)
      * GET /admin/roles/form?id=2 (edit role)
      */
+/**
+ * form method
+ *
+ * @return void
+ */
     public function form()
     {
         $id = $_GET['id'] ?? null;
@@ -126,6 +152,11 @@ class RoleController extends BaseController
      * POST /admin/roles/save
      * Body: name=Editor&modules[module:databases.view_tables]=on
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST')
@@ -168,6 +199,11 @@ class RoleController extends BaseController
      * @example
      * GET /admin/roles/delete?id=3
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         $id = $_GET['id'] ?? null;

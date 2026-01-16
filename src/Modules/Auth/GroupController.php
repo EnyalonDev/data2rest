@@ -39,6 +39,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * GroupController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class GroupController extends BaseController
 {
     /**
@@ -47,6 +58,11 @@ class GroupController extends BaseController
      * Ensures that only users with appropriate permissions
      * can access group management.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requirePermission('module:users.view_users');
@@ -66,6 +82,11 @@ class GroupController extends BaseController
      * @example
      * GET /admin/groups
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -104,6 +125,11 @@ class GroupController extends BaseController
      * GET /admin/groups/form (new group)
      * GET /admin/groups/form?id=2 (edit group)
      */
+/**
+ * form method
+ *
+ * @return void
+ */
     public function form()
     {
         Auth::requirePermission('module:users.manage_groups');
@@ -145,6 +171,11 @@ class GroupController extends BaseController
      * POST /admin/groups/save
      * Body: name=Marketing&description=Team&modules[module:databases.view_tables]=on
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         Auth::requirePermission('module:users.manage_groups');
@@ -186,6 +217,11 @@ class GroupController extends BaseController
      * @example
      * GET /admin/groups/delete?id=3
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         Auth::requirePermission('module:users.manage_groups');

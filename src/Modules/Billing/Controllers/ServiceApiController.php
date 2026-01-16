@@ -21,6 +21,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * ServiceApiController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ServiceApiController extends BaseController
 {
     /**
@@ -36,6 +47,11 @@ class ServiceApiController extends BaseController
      * Establishes a PDO connection to the system database
      * for all service and template operations.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -53,6 +69,11 @@ class ServiceApiController extends BaseController
      * GET /api/billing/services
      * Response: {"success": true, "data": [{"id": 1, "name": "Service A", ...}]}
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         try {
@@ -77,6 +98,11 @@ class ServiceApiController extends BaseController
      * Body: {"name": "Web Hosting", "price_monthly": 9.99, "price_yearly": 99.99}
      * Response: {"success": true, "message": "Servicio creado exitosamente", "id": 5}
      */
+/**
+ * create method
+ *
+ * @return void
+ */
     public function create()
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -123,6 +149,11 @@ class ServiceApiController extends BaseController
      * Body: {"name": "Premium Hosting", "price_monthly": 19.99}
      * Response: {"success": true}
      */
+/**
+ * update method
+ *
+ * @return void
+ */
     public function update($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -170,6 +201,11 @@ class ServiceApiController extends BaseController
      * DELETE /api/billing/services/5
      * Response: {"success": true}
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete($id)
     {
         try {
@@ -195,6 +231,11 @@ class ServiceApiController extends BaseController
      * GET /api/billing/services/5/templates
      * Response: {"success": true, "data": [{"id": 1, "title": "Setup", ...}]}
      */
+/**
+ * getTemplates method
+ *
+ * @return void
+ */
     public function getTemplates($serviceId)
     {
         try {
@@ -221,6 +262,11 @@ class ServiceApiController extends BaseController
      * Body: {"title": "Initial Setup", "description": "Configure server", "priority": "high"}
      * Response: {"success": true}
      */
+/**
+ * addTemplate method
+ *
+ * @return void
+ */
     public function addTemplate($serviceId)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -247,6 +293,11 @@ class ServiceApiController extends BaseController
     /**
      * PUT /api/billing/services/templates/{id}
      */
+/**
+ * updateTemplate method
+ *
+ * @return void
+ */
     public function updateTemplate($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -273,6 +324,11 @@ class ServiceApiController extends BaseController
     /**
      * DELETE /api/billing/services/templates/{id}
      */
+/**
+ * deleteTemplate method
+ *
+ * @return void
+ */
     public function deleteTemplate($id)
     {
         try {
@@ -289,6 +345,11 @@ class ServiceApiController extends BaseController
     /**
      * POST /api/billing/services/{id}/templates/generate-export
      */
+/**
+ * generateExport method
+ *
+ * @return void
+ */
     public function generateExport($serviceId)
     {
         try {
@@ -346,6 +407,11 @@ class ServiceApiController extends BaseController
      * Body: {"content": "[{\"title\":\"Task 1\",\"priority\":\"high\"}]"}
      * Response: {"success": true, "count": 1}
      */
+/**
+ * importTemplates method
+ *
+ * @return void
+ */
     public function importTemplates($serviceId)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -414,6 +480,11 @@ class ServiceApiController extends BaseController
      * GET /api/billing/services/5/templates/export-data
      * Response: {"success": true, "data": [{"title": "Setup", "description": "...", "priority": "high"}]}
      */
+/**
+ * exportTemplatesData method
+ *
+ * @return void
+ */
     public function exportTemplatesData($serviceId)
     {
         try {

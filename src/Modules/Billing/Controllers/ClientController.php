@@ -9,10 +9,26 @@ use PDO;
 /**
  * Controlador REST de Clientes
  */
+/**
+ * ClientController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ClientController extends BaseController
 {
     private $db;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -22,6 +38,11 @@ class ClientController extends BaseController
      * GET /api/billing/clients
      * Lista todos los clientes
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $status = $_GET['status'] ?? 'active';
@@ -52,6 +73,11 @@ class ClientController extends BaseController
      * POST /api/billing/clients
      * Crea un nuevo cliente
      */
+/**
+ * create method
+ *
+ * @return void
+ */
     public function create()
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -90,6 +116,11 @@ class ClientController extends BaseController
      * GET /api/billing/clients/{id}
      * Obtiene información de un cliente
      */
+/**
+ * getById method
+ *
+ * @return void
+ */
     public function getById($id)
     {
         $stmt = $this->db->prepare("SELECT * FROM clients WHERE id = ?");
@@ -121,6 +152,11 @@ class ClientController extends BaseController
      * PUT /api/billing/clients/{id}
      * Actualiza un cliente
      */
+/**
+ * update method
+ *
+ * @return void
+ */
     public function update($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -170,6 +206,11 @@ class ClientController extends BaseController
      * DELETE /api/billing/clients/{id}
      * Elimina (desactiva) un cliente
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete($id)
     {
         // Verificar que no tenga proyectos activos

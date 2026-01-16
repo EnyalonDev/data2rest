@@ -28,6 +28,17 @@ use App\Core\BaseController;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * LoginController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class LoginController extends BaseController
 {
     /**
@@ -41,6 +52,11 @@ class LoginController extends BaseController
      * @example
      * GET /login
      */
+/**
+ * showLoginForm method
+ *
+ * @return void
+ */
     public function showLoginForm()
     {
         if (Auth::check()) {
@@ -61,6 +77,11 @@ class LoginController extends BaseController
      * POST /login
      * Body: username=admin&password=secret
      */
+/**
+ * login method
+ *
+ * @return void
+ */
     public function login()
     {
         $username = $_POST['username'] ?? '';
@@ -86,6 +107,11 @@ class LoginController extends BaseController
      * @example
      * GET /logout
      */
+/**
+ * logout method
+ *
+ * @return void
+ */
     public function logout()
     {
         Auth::logout();

@@ -50,6 +50,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * WebhookController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class WebhookController extends BaseController
 {
     /**
@@ -58,6 +69,11 @@ class WebhookController extends BaseController
      * Ensures that only authorized users can manage webhooks.
      * Admins have full access, others need webhook permission.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -84,6 +100,11 @@ class WebhookController extends BaseController
      * @example
      * GET /admin/webhooks
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $projectId = Auth::getActiveProject();
@@ -154,6 +175,11 @@ class WebhookController extends BaseController
      * GET /admin/webhooks/form (new webhook)
      * GET /admin/webhooks/form?id=5 (edit webhook)
      */
+/**
+ * form method
+ *
+ * @return void
+ */
     public function form()
     {
         $projectId = Auth::getActiveProject();
@@ -199,6 +225,11 @@ class WebhookController extends BaseController
      * POST /admin/webhooks/save
      * Body: name=MyWebhook&url=https://api.example.com/webhook&events[]=record.created
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         $projectId = Auth::getActiveProject();
@@ -247,6 +278,11 @@ class WebhookController extends BaseController
      * @example
      * GET /admin/webhooks/delete?id=5
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         $projectId = Auth::getActiveProject();
@@ -278,6 +314,11 @@ class WebhookController extends BaseController
      * @example
      * GET /admin/webhooks/logs?id=5
      */
+/**
+ * logs method
+ *
+ * @return void
+ */
     public function logs()
     {
         $projectId = Auth::getActiveProject();
@@ -324,6 +365,11 @@ class WebhookController extends BaseController
      * Body: id=5
      * Response: {"success": true, "message": "Test event dispatched"}
      */
+/**
+ * test method
+ *
+ * @return void
+ */
     public function test()
     {
         $projectId = Auth::getActiveProject();

@@ -28,8 +28,24 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * LogController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class LogController extends BaseController
 {
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -52,6 +68,11 @@ class LogController extends BaseController
      * @return void Renders the `admin/logs/index` view with logs and metadata.
      * @example GET /admin/logs?user_id=5&action_type=API_GET&start_date=2024-01-01&end_date=2024-12-31&s=login
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();

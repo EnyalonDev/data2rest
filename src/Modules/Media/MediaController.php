@@ -53,6 +53,17 @@ use App\Modules\Webhooks\WebhookDispatcher;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * MediaController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class MediaController extends BaseController
 {
     /**
@@ -61,6 +72,11 @@ class MediaController extends BaseController
      * Ensures that only authenticated users can access
      * media management functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -79,6 +95,11 @@ class MediaController extends BaseController
     /**
      * Renders the main media manager UI.
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         Auth::requirePermission('module:media.view_files');
@@ -109,6 +130,11 @@ class MediaController extends BaseController
      * GET /admin/media/list?db_id=1&path=images/products
      * Response: {"current_path": "...", "items": [...], "breadcrumbs": [...]}
      */
+/**
+ * list method
+ *
+ * @return void
+ */
     public function list()
     {
         Auth::requirePermission('module:media.view_files');
@@ -210,6 +236,11 @@ class MediaController extends BaseController
      * GET /admin/media/usage?url=https://example.com/uploads/image.jpg
      * Response: {"usage": [{"database": "...", "table": "...", "row_ids": [...]}]}
      */
+/**
+ * usage method
+ *
+ * @return void
+ */
     public function usage()
     {
         $fileUrl = $_GET['url'] ?? '';
@@ -312,6 +343,11 @@ class MediaController extends BaseController
      * Body: path=products&db_id=1
      * Response: {"success": true, "name": "image.jpg", "url": "..."}
      */
+/**
+ * upload method
+ *
+ * @return void
+ */
     public function upload()
     {
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -401,6 +437,11 @@ class MediaController extends BaseController
      * Body: path=images/old-photo.jpg&db_id=1
      * Response: {"success": true}
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         Auth::requirePermission('module:media.delete_files');
@@ -433,6 +474,11 @@ class MediaController extends BaseController
     /**
      * Bulk deletes multiple files/folders.
      */
+/**
+ * bulkDelete method
+ *
+ * @return void
+ */
     public function bulkDelete()
     {
         Auth::requirePermission('module:media.delete_files');
@@ -485,6 +531,11 @@ class MediaController extends BaseController
     /**
      * Bulk moves files/folders to a target directory.
      */
+/**
+ * bulkMove method
+ *
+ * @return void
+ */
     public function bulkMove()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -542,6 +593,11 @@ class MediaController extends BaseController
     /**
      * Renames or moves a file/folder.
      */
+/**
+ * rename method
+ *
+ * @return void
+ */
     public function rename()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -580,6 +636,11 @@ class MediaController extends BaseController
     /**
      * Updates media settings.
      */
+/**
+ * updateSettings method
+ *
+ * @return void
+ */
     public function updateSettings()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -608,6 +669,11 @@ class MediaController extends BaseController
     /**
      * Restores a file from the trash to its original location.
      */
+/**
+ * restore method
+ *
+ * @return void
+ */
     public function restore()
     {
         $trashPath = $_POST['trash_path'] ?? '';
@@ -651,6 +717,11 @@ class MediaController extends BaseController
     /**
      * Permanently deletes a file from the trash.
      */
+/**
+ * purge method
+ *
+ * @return void
+ */
     public function purge()
     {
         $trashPath = $_POST['trash_path'] ?? '';
@@ -677,6 +748,11 @@ class MediaController extends BaseController
     /**
      * Handles image editing operations (crop, resize, filters, optimization).
      */
+/**
+ * edit method
+ *
+ * @return void
+ */
     public function edit()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -945,6 +1021,11 @@ class MediaController extends BaseController
     /**
      * Legacy media list for compatibility with CRUD forms.
      */
+/**
+ * mediaList method
+ *
+ * @return void
+ */
     public function mediaList()
     {
         $uploadBase = Config::get('upload_dir');
@@ -1003,6 +1084,11 @@ class MediaController extends BaseController
     /**
      * Legacy media upload for compatibility with CRUD forms.
      */
+/**
+ * mediaUpload method
+ *
+ * @return void
+ */
     public function mediaUpload()
     {
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -1097,6 +1183,11 @@ class MediaController extends BaseController
     /**
      * Creates a new folder.
      */
+/**
+ * createFolder method
+ *
+ * @return void
+ */
     public function createFolder()
     {
         $name = $_POST['name'] ?? null;

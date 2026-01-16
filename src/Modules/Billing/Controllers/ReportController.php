@@ -9,10 +9,26 @@ use PDO;
 /**
  * Controlador de Reportes Financieros
  */
+/**
+ * ReportController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ReportController extends BaseController
 {
     private $db;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -22,6 +38,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/financial-summary
      * Resumen financiero general
      */
+/**
+ * financialSummary method
+ *
+ * @return void
+ */
     public function financialSummary()
     {
         // Ingresos totales (cuotas pagadas)
@@ -87,6 +108,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/income-comparison
      * Comparación de ingresos reales vs proyectados
      */
+/**
+ * incomeComparison method
+ *
+ * @return void
+ */
     public function incomeComparison()
     {
         $startDate = $_GET['start_date'] ?? date('Y-m-01'); // Primer día del mes actual
@@ -145,6 +171,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/upcoming-installments
      * Cuotas próximas a vencer (calendario de cobranzas)
      */
+/**
+ * upcomingInstallments method
+ *
+ * @return void
+ */
     public function upcomingInstallments()
     {
         $days = $_GET['days'] ?? 30;
@@ -215,6 +246,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/client-summary/{clientId}
      * Resumen financiero de un cliente específico
      */
+/**
+ * clientSummary method
+ *
+ * @return void
+ */
     public function clientSummary($clientId)
     {
         // Verificar que el cliente (usuario) existe

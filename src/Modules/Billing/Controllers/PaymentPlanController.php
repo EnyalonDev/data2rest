@@ -9,10 +9,26 @@ use PDO;
 /**
  * Controlador REST de Planes de Pago
  */
+/**
+ * PaymentPlanController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class PaymentPlanController extends BaseController
 {
     private $db;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -22,6 +38,11 @@ class PaymentPlanController extends BaseController
      * GET /api/billing/payment-plans
      * Lista todos los planes de pago activos
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $stmt = $this->db->query("
@@ -42,6 +63,11 @@ class PaymentPlanController extends BaseController
      * POST /api/billing/payment-plans
      * Crea un nuevo plan de pago
      */
+/**
+ * create method
+ *
+ * @return void
+ */
     public function create()
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -94,6 +120,11 @@ class PaymentPlanController extends BaseController
      * GET /api/billing/payment-plans/{id}
      * Obtiene información de un plan específico
      */
+/**
+ * getById method
+ *
+ * @return void
+ */
     public function getById($id)
     {
         $stmt = $this->db->prepare("SELECT * FROM payment_plans WHERE id = ?");
@@ -128,6 +159,11 @@ class PaymentPlanController extends BaseController
      * PUT /api/billing/payment-plans/{id}
      * Actualiza un plan de pago
      */
+/**
+ * update method
+ *
+ * @return void
+ */
     public function update($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);

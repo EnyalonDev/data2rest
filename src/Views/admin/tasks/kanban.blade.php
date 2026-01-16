@@ -360,6 +360,15 @@
                                     </div>
 
                                     <div class="task-actions">
+                                        @if(!$task['assigned_to'] && !$isClient)
+                                            <button class="task-action-btn" onclick="takeTask({{ $task['id'] }})"
+                                                title="Tomar Tarea (Auto-asignar)">
+                                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                                </svg>
+                                            </button>
+                                        @endif
                                         <button class="task-action-btn" onclick="viewTask({{ $task['id'] }})" title="Ver detalles">
                                             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -401,9 +410,10 @@
         <div class="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-white/10">
             <div class="modal-header">
                 <h2 class="modal-title">Nueva Tarea</h2>
-                <button class="close-modal" onclick="closeModal('newTaskModal')">&times;</button>
+                <button type="button" class="close-modal" onclick="closeTaskModal('newTaskModal')">&times;</button>
             </div>
             <form id="newTaskForm" onsubmit="createTask(event)">
+                <input type="hidden" name="_token" value="{{ $csrf_token }}">
                 <div class="form-group">
                     <label class="form-label">Título *</label>
                     <input type="text" name="title" class="form-input" required>
@@ -451,19 +461,95 @@
 
     <!-- Modal: Ver/Aprobar Tarea -->
     <div id="viewTaskModal" class="modal">
-        <div class="glass-card w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-white/10">
-            <div class="modal-header">
-                <h2 class="modal-title">Detalles de la Tarea</h2>
-                <button class="close-modal" onclick="closeModal('viewTaskModal')">&times;</button>
+        <div
+            class="glass-card w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-white/10 flex flex-col">
+            <div class="modal-header border-b border-gray-700 pb-4">
+                <h2 class="modal-title flex-1 mr-4" id="modalTaskTitle">Detalles de la Tarea</h2>
+                <div class="flex gap-2 items-center z-50">
+                    <span id="modalTaskStatus"
+                        class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-700 text-gray-300">STATUS</span>
+                    <button type="button" class="close-modal text-gray-400 hover:text-white text-3xl leading-none px-2"
+                        onclick="closeTaskModal('viewTaskModal')">&times;</button>
+                </div>
             </div>
-            <div id="taskDetails"></div>
+
+            <div class="modal-tabs flex border-b border-gray-700 mb-4 bg-black/20">
+                <button
+                    class="tab-btn active px-6 py-3 text-sm font-bold text-gray-400 hover:text-white border-b-2 border-transparent hover:border-blue-500 transition-all"
+                    onclick="switchModalTab('general')">General</button>
+                <button
+                    class="tab-btn px-6 py-3 text-sm font-bold text-gray-400 hover:text-white border-b-2 border-transparent hover:border-blue-500 transition-all"
+                    onclick="switchModalTab('comments')">Comentarios</button>
+                <button
+                    class="tab-btn px-6 py-3 text-sm font-bold text-gray-400 hover:text-white border-b-2 border-transparent hover:border-blue-500 transition-all"
+                    onclick="switchModalTab('history')">Historial</button>
+            </div>
+
+            <div id="modal-content-container" class="p-4 flex-1 overflow-y-auto">
+                <!-- Tab: General -->
+                <div id="tab-general" class="tab-content transition-opacity duration-300">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2 space-y-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Descripción</label>
+                                <div id="modalTaskDesc"
+                                    class="p-4 bg-gray-900/50 rounded-xl border border-gray-700 text-gray-300 text-sm leading-relaxed min-h-[100px] whitespace-pre-wrap">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div>
+                                <label
+                                    class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Asignado
+                                    a</label>
+                                <select id="modalTaskAssignee" onchange="updateTaskAssignment(this.value)"
+                                    class="form-select w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-sm text-white focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Sin Asignar --</option>
+                                    <!-- Options injected via JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Prioridad</label>
+                                <div id="modalTaskPriority" class="text-sm font-bold text-white capitalize">Media</div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Creado
+                                    Por</label>
+                                <div id="modalTaskCreator" class="text-sm text-gray-400">System</div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Fecha
+                                    Creación</label>
+                                <div id="modalTaskDate" class="text-sm text-gray-400"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Comments -->
+                <div id="tab-comments" class="tab-content hidden transition-opacity duration-300">
+                    <!-- Comments injected here -->
+                </div>
+
+                <!-- Tab: History -->
+                <div id="tab-history" class="tab-content hidden transition-opacity duration-300">
+                    <!-- History injected here -->
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const baseUrl = '{{ $baseUrl }}';
+        const csrfToken = '{{ $csrf_token }}';
         const canDrag = {{ $canDrag ? 'true' : 'false' }};
         const isClient = {{ $isClient ? 'true' : 'false' }};
+        // Parse users for JS
+        const projectUsers = @json($projectUsers);
+
+        let currentTaskId = null; // Store current task ID for context
 
         // Drag and Drop functionality
         let draggedElement = null;
@@ -515,6 +601,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': csrfToken
                 },
                 body: `task_id=${taskId}&status_id=${statusId}&position=${position}`
             })
@@ -544,7 +631,12 @@
             document.getElementById('newTaskModal').classList.add('active');
         }
 
-        function closeModal(modalId) {
+        function openNewTaskModal() {
+            document.getElementById('newTaskModal').classList.add('active');
+        }
+
+        // Renamed to avoid conflict with global closeModal
+        function closeTaskModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
@@ -555,6 +647,9 @@
 
             fetch(baseUrl + 'admin/tasks/create', {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
                 body: new URLSearchParams(formData)
             })
                 .then(response => response.json())
@@ -572,78 +667,216 @@
         }
 
         function viewTask(taskId) {
-            // Load task details and history
-            fetch(baseUrl + 'admin/tasks/history?id=' + taskId)
+            currentTaskId = taskId;
+            // Load task details, history and comments
+            fetch(baseUrl + 'admin/tasks/getTaskDetails?id=' + taskId)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        displayTaskDetails(taskId, data.history);
+                        displayTaskDetails(taskId, data);
+                    } else {
+                        alert("Error al cargar detalles de la tarea.");
                     }
                 });
         }
 
-        function displayTaskDetails(taskId, history) {
-            const detailsHtml = `
-                                <div class="history-section">
-                                    <h3 style="margin-bottom: 1rem;">Historial de Cambios</h3>
-                                    ${history.map(h => `
-                                        <div class="history-item">
-                                            <div class="history-header">
-                                                <span class="history-action">${h.action}</span>
-                                                <span class="history-time">${h.created_at}</span>
-                                            </div>
-                                            <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                                ${h.public_name || h.username}
-                                                ${h.old_status_name ? ' de ' + h.old_status_name : ''}
-                                                ${h.new_status_name ? ' a ' + h.new_status_name : ''}
-                                            </div>
-                                            ${h.comment ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">${h.comment}</div>` : ''}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                                ${isClient ? `
-                                    <div class="client-approval-section">
-                                        <h4 style="margin-bottom: 0.5rem; color: #166534;">Aprobar y Finalizar Tarea</h4>
-                                        <form onsubmit="submitApproval(event, ${taskId})">
-                                            <textarea name="comment" class="form-textarea" placeholder="Comentario de aprobación..." required></textarea>
-                                            <div class="approval-checkbox">
-                                                <input type="checkbox" id="approveCheck" name="approve" value="true" required>
-                                                <label for="approveCheck">Acepto los entregables y solicito cierre de tarea</label>
-                                            </div>
-                                            <button type="submit" class="btn-primary" style="margin-top: 1rem; background: #10b981;">
-                                                Aprobar y Finalizar
-                                            </button>
-                                        </form>
-                                    </div>
-                                ` : ''}
-                            `;
+        function displayTaskDetails(taskId, data) {
+            const { task, history, comments } = data;
 
-            document.getElementById('taskDetails').innerHTML = detailsHtml;
+            // --- Fill General Tab ---
+            document.getElementById('modalTaskTitle').innerText = task.title;
+            document.getElementById('modalTaskDesc').innerText = task.description || 'Sin descripción detallada.';
+            document.getElementById('modalTaskPriority').innerText = task.priority;
+            document.getElementById('modalTaskCreator').innerText = task.created_by_name || 'System'; // Assuming created_by_name is available
+            document.getElementById('modalTaskDate').innerText = task.created_at;
+
+            // Status Badge
+            const statusEl = document.getElementById('modalTaskStatus');
+            statusEl.innerText = task.status_name || "ID Estado: " + task.status_id; // Assuming status_name is available
+            statusEl.style.backgroundColor = task.status_color || '#6b7280'; // Assuming status_color is available
+
+            // Assignee Dropdown
+            const assigneeSelect = document.getElementById('modalTaskAssignee');
+            assigneeSelect.innerHTML = '<option value="">-- Sin Asignar --</option>';
+            projectUsers.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.innerText = u.public_name || u.username;
+                if (task.assigned_to == u.id) opt.selected = true;
+                assigneeSelect.appendChild(opt);
+            });
+
+            // --- Render Comments ---
+            const commentsHtml = `
+                        <div class="comments-section mb-6">
+                            <div class="comments-list space-y-4 mb-4" id="commentsList">
+                                ${comments.length > 0 ? comments.map(c => `
+                                    <div class="comment-bubble bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                                        <div class="flex justify-between items-center mb-1 text-xs text-gray-400">
+                                            <span class="font-bold text-blue-400">${c.public_name || c.username}</span>
+                                            <span>${c.created_at}</span>
+                                        </div>
+                                        <div class="text-sm text-gray-200 whitespace-pre-wrap">${c.comment}</div>
+                                    </div>
+                                `).join('') : '<p class="text-gray-500 italic text-sm text-center">No hay notas ni comentarios aún.</p>'}
+                            </div>
+                        </div>
+
+                        <div class="add-comment-section">
+                             <form onsubmit="submitComment(event)">
+                                <label class="block text-xs font-bold text-gray-400 mb-1">Agregar Nota / Comentario</label>
+                                <textarea name="comment" class="form-input w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-2" placeholder="Escribe un comentario o actualización..." rows="3" required></textarea>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg hover:shadow-blue-500/20">
+                                        Publicar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        ${isClient && task.status_id == 4 ? `
+                            <div class="client-approval-section mt-6 pt-4 border-t border-gray-700">
+                                 <h4 class="text-green-500 font-bold mb-2">Aprobación Final</h4>
+                                 <form onsubmit="submitApproval(event)">
+                                     <div class="approval-checkbox flex items-center gap-2 mb-3">
+                                        <input type="checkbox" id="approveCheck" name="approve" value="true" required class="w-4 h-4 rounded border-gray-600 text-green-600 focus:ring-green-500">
+                                        <label for="approveCheck" class="text-sm text-gray-300">Acepto los entregables y solicito finalizar la tarea.</label>
+                                    </div>
+                                    <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg hover:shadow-green-500/20">
+                                        Aprobar y Finalizar
+                                    </button>
+                                 </form>
+                            </div>
+                        ` : ''}
+                    `;
+
+            // Render History
+            const historyHtml = `
+                         <div class="history-list space-y-3">
+                            ${history.map(h => `
+                                <div class="history-item p-3 rounded-lg border border-gray-700 bg-gray-800/30">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <span class="font-bold text-xs uppercase tracking-wider text-blue-400">${h.action}</span>
+                                        <span class="text-xs text-gray-500 text-right">${h.created_at}</span>
+                                    </div>
+                                     <div class="text-xs text-gray-400">
+                                        <span class="text-gray-300 font-medium">${h.public_name || h.username}</span>
+                                        ${h.old_status_name ? ` cambió el estado de <span class="text-gray-300">${h.old_status_name}</span> a <span class="text-gray-300">${h.new_status_name}</span>` : ''}
+                                    </div>
+                                     ${h.comment ? `<div class="mt-2 text-sm text-gray-300 italic bg-gray-900/50 p-2 rounded border border-gray-700/50 border-l-2 border-l-blue-500">"${h.comment}"</div>` : ''}
+                                </div>
+                            `).join('')}
+                         </div>
+                    `;
+
+            document.getElementById('tab-comments').innerHTML = commentsHtml;
+            document.getElementById('tab-history').innerHTML = historyHtml;
+
             document.getElementById('viewTaskModal').classList.add('active');
+
+            // Default to General
+            switchModalTab('general');
         }
 
-        function submitApproval(e, taskId) {
+        function switchModalTab(tabName) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Remove active class from buttons
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active', 'text-white', 'border-blue-500');
+                el.classList.add('text-gray-400', 'border-transparent');
+            });
+
+            // Show target
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+
+            // Highlight button
+            const buttons = document.querySelectorAll('.modal-tabs button');
+            let idx = 0;
+            if (tabName === 'general') idx = 0;
+            if (tabName === 'comments') idx = 1;
+            if (tabName === 'history') idx = 2;
+
+            buttons[idx].classList.add('active', 'text-white', 'border-blue-500');
+            buttons[idx].classList.remove('text-gray-400', 'border-transparent');
+        }
+
+        function updateTaskAssignment(userId) {
+            if (!currentTaskId) return;
+
+            fetch(baseUrl + 'admin/tasks/assign', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: `task_id=${currentTaskId}&user_id=${userId}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // visual feedback?
+                    } else {
+                        alert('Error al asignar: ' + data.error);
+                    }
+                });
+        }
+
+        function submitComment(e) {
             e.preventDefault();
             const form = e.target;
             const formData = new FormData(form);
-            formData.append('task_id', taskId);
+            formData.append('task_id', currentTaskId);
 
-            fetch(baseUrl + 'admin/tasks/addComment', {
+            fetch(baseUrl + 'admin/tasks/postComment', {
                 method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
                 body: new URLSearchParams(formData)
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.moved_to_done ? 'Tarea aprobada y finalizada correctamente' : 'Comentario agregado');
-                        location.reload();
+                        // Reload details without closing modal
+                        viewTask(currentTaskId);
+                        form.reset();
                     } else {
                         alert('Error: ' + (data.error || 'Error desconocido'));
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al aprobar la tarea');
+                    alert('Error al publicar comentario');
+                });
+        }
+
+        function submitApproval(e) {
+            e.preventDefault();
+
+            // Use existing addComment for approval logic since it handles status change
+            // But we need to make sure we send 'task_id', 'comment', 'approve=true'
+            const form = e.target;
+            const body = new URLSearchParams();
+            body.append('task_id', currentTaskId);
+            body.append('approve', 'true');
+            body.append('comment', 'Aprobado por el cliente');
+
+            fetch(baseUrl + 'admin/tasks/addComment', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: body
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Tarea aprobada exitosamente.');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Error desconocido'));
+                    }
                 });
         }
 
@@ -651,11 +884,33 @@
             viewTask(taskId);
         }
 
+        function takeTask(taskId) {
+            fetch(baseUrl + 'admin/tasks/take', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: 'task_id=' + taskId
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Error al tomar tarea'));
+                    }
+                });
+        }
+
         function deleteTask(taskId) {
             if (!confirm('¿Estás seguro de eliminar esta tarea?')) return;
 
             fetch(baseUrl + 'admin/tasks/delete?id=' + taskId, {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
             })
                 .then(response => response.json())
                 .then(data => {

@@ -38,6 +38,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * ProfileController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ProfileController extends BaseController
 {
     /**
@@ -46,6 +57,11 @@ class ProfileController extends BaseController
      * Ensures that only authenticated users can access
      * profile management functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -67,6 +83,11 @@ class ProfileController extends BaseController
      * @example
      * GET /admin/profile
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -107,6 +128,11 @@ class ProfileController extends BaseController
      * POST /admin/profile/save
      * Body: public_name=John&email=john@example.com&new_password=secret
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST')

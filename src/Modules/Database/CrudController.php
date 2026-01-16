@@ -43,6 +43,17 @@ use RecursiveDirectoryIterator;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * CrudController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class CrudController extends BaseController
 {
     /**
@@ -51,6 +62,11 @@ class CrudController extends BaseController
      * Ensures that only authenticated users can access
      * any CRUD functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -207,6 +223,11 @@ LIMIT 1");
      * @example
      * GET /admin/crud/list?db_id=1&table=users&s=search_term
      */
+/**
+ * list method
+ *
+ * @return void
+ */
     public function list()
     {
         $ctx = $this->getContext('crud_view');
@@ -290,6 +311,11 @@ LIMIT 1");
      * GET /admin/crud/form?db_id=1&table=users (new record)
      * GET /admin/crud/form?db_id=1&table=users&id=5 (edit record)
      */
+/**
+ * form method
+ *
+ * @return void
+ */
     public function form()
     {
         $id = $_GET['id'] ?? null;
@@ -358,6 +384,11 @@ LIMIT 1");
      * POST /admin/crud/save
      * Body: db_id=1&table=users&field1=value1&field2=value2
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         $id = $_POST['id'] ?? null;
@@ -531,6 +562,11 @@ LIMIT 1");
      * @example
      * POST /admin/crud/delete?db_id=1&table=users&id=5
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
@@ -621,6 +657,11 @@ LIMIT 1");
      * GET /admin/crud/export?db_id=1&table=users
      * Downloads: users_2026-01-16_00-55.csv
      */
+/**
+ * export method
+ *
+ * @return void
+ */
     public function export()
     {
         $ctx = $this->getContext('crud_view');
@@ -714,6 +755,11 @@ LIMIT 1");
      * @example
      * GET /admin/crud/history?db_id=1&table=users&id=5
      */
+/**
+ * history method
+ *
+ * @return void
+ */
     public function history()
     {
         $id = $_GET['id'] ?? null;
@@ -772,6 +818,11 @@ LIMIT 1");
      * @example
      * GET /admin/trash
      */
+/**
+ * trash method
+ *
+ * @return void
+ */
     public function trash()
     {
         Auth::requireLogin();
@@ -827,6 +878,11 @@ LIMIT 1");
      * @example
      * POST /admin/trash/empty
      */
+/**
+ * emptyTrash method
+ *
+ * @return void
+ */
     public function emptyTrash()
     {
         Auth::requireLogin();
@@ -876,6 +932,11 @@ LIMIT 1");
      * POST /admin/crud/restore
      * Body: version_id=123
      */
+/**
+ * restore method
+ *
+ * @return void
+ */
     public function restore()
     {
         $version_id = $_POST['version_id'] ?? null;
