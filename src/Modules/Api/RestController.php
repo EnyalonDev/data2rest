@@ -130,11 +130,11 @@ class RestController extends BaseController
      * PUT /api/db/1/users/5 - Update user 5
      * DELETE /api/db/1/users/5 - Delete user 5
      */
-/**
- * handle method
- *
- * @return void
- */
+    /**
+     * handle method
+     *
+     * @return void
+     */
     public function handle($db_id, $table, $id = null)
     {
         $this->apiKeyData = $this->authenticate();
@@ -153,7 +153,8 @@ class RestController extends BaseController
         }
 
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $targetDb = $adapter->getConnection();
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
@@ -195,8 +196,31 @@ class RestController extends BaseController
             }
         } catch (\PDOException $e) {
             $this->json(['error' => 'Database error: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'System error: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Helper to get column names for any supported database
+     */
+    private function getDbColumns($targetDb, $table)
+    {
+        $driver = $targetDb->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $stmt = $targetDb->query("PRAGMA table_info(`$table`)");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN, 1); // name
+        } elseif ($driver === 'mysql') {
+            $stmt = $targetDb->query("SHOW COLUMNS FROM `$table`");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN, 0); // Field
+        } elseif ($driver === 'pgsql') {
+            $stmt = $targetDb->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = ?");
+            $stmt->execute([$table]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+        return [];
+    }
+
 
     private function handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id)
     {
@@ -215,8 +239,8 @@ class RestController extends BaseController
                 // Determine display field for the related table
                 $displayField = $this->getDisplayField($targetDb, $db_id, $relTable, $field['related_field']);
 
-                $joins[] = "LEFT JOIN $relTable $alias ON t.{$field['field_name']} = $alias.id";
-                $selectFields[] = "$alias.$displayField AS {$field['field_name']}_label";
+                $joins[] = "LEFT JOIN `$relTable` $alias ON t.`{$field['field_name']}` = $alias.id";
+                $selectFields[] = "$alias.`$displayField` AS `{$field['field_name']}_label`";
             }
         }
 
@@ -226,11 +250,11 @@ class RestController extends BaseController
             $selectFields = [];
             foreach ($requested as $r) {
                 // If it's a basic field, we prefix with t.
-                $selectFields[] = "t.$r";
+                $selectFields[] = "t.`$r`";
                 // Also try to find if it has a label from our joins
                 foreach ($fieldsConfig as $f) {
                     if ($f['field_name'] === $r && $f['is_foreign_key']) {
-                        $selectFields[] = "ref_$r." . $this->getDisplayField($targetDb, $db_id, $f['related_table'], $f['related_field']) . " AS {$r}_label";
+                        $selectFields[] = "ref_$r.`" . $this->getDisplayField($targetDb, $db_id, $f['related_table'], $f['related_field']) . "` AS `{$r}_label`";
                     }
                 }
             }
@@ -241,7 +265,7 @@ class RestController extends BaseController
         $sqlJoins = implode(' ', $joins);
 
         if ($id) {
-            $sql = "SELECT $sqlSelect FROM $table t $sqlJoins WHERE t.id = ?";
+            $sql = "SELECT $sqlSelect FROM `$table` t $sqlJoins WHERE t.id = ?";
             $stmt = $targetDb->prepare($sql);
             $stmt->execute([$id]);
             $result = $stmt->fetch();
@@ -259,8 +283,7 @@ class RestController extends BaseController
             $values = [];
 
             // Validate columns for filtering
-            $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-            $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+            $validCols = $this->getDbColumns($targetDb, $table);
 
             foreach ($params as $key => $val) {
                 if (is_string($val)) {
@@ -269,15 +292,15 @@ class RestController extends BaseController
 
                 if (in_array($key, $validCols)) {
                     if (strpos($val, '%') !== false) {
-                        $where[] = "t.$key LIKE ?";
+                        $where[] = "t.`$key` LIKE ?";
                     } else {
-                        $where[] = "t.$key = ?";
+                        $where[] = "t.`$key` = ?";
                     }
                     $values[] = $val;
                 }
             }
 
-            $sql = "SELECT $sqlSelect FROM $table t $sqlJoins";
+            $sql = "SELECT $sqlSelect FROM `$table` t $sqlJoins";
             if (!empty($where)) {
                 $sql .= " WHERE " . implode(' AND ', $where);
             }
@@ -290,7 +313,7 @@ class RestController extends BaseController
             $results = $stmt->fetchAll();
 
             // Metadata for response
-            $countSql = "SELECT COUNT(*) FROM $table t";
+            $countSql = "SELECT COUNT(*) FROM `$table` t";
             if (!empty($where))
                 $countSql .= " WHERE " . implode(' AND ', $where);
             $total = $targetDb->prepare($countSql);
@@ -327,11 +350,11 @@ class RestController extends BaseController
 
         // Fallback to searching in actual table schema
         try {
-            $stmt = $targetDb->query("PRAGMA table_info($tableName)");
-            $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($columns as $col) {
-                if (in_array(strtolower($col['name']), ['nombre', 'name', 'title', 'titulo', 'label'])) {
-                    return $col['name'];
+            $columns = $this->getDbColumns($targetDb, $tableName);
+            foreach ($columns as $colName) {
+                // getDbColumns returns array of names directly now
+                if (in_array(strtolower($colName), ['nombre', 'name', 'title', 'titulo', 'label'])) {
+                    return $colName;
                 }
             }
         } catch (\Exception $e) {
@@ -350,8 +373,7 @@ class RestController extends BaseController
         $input = array_merge($input, $filesData);
 
         // Filter input to only include actual table columns
-        $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-        $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+        $validCols = $this->getDbColumns($targetDb, $table);
         $input = array_intersect_key($input, array_flip($validCols));
 
         if (empty($input))
@@ -362,20 +384,20 @@ class RestController extends BaseController
         if (!isset($input['fecha_edicion']) && in_array('fecha_edicion', $validCols))
             $input['fecha_edicion'] = Auth::getCurrentTime();
 
-        $keys = array_map(function ($k) {
-            return preg_replace('/[^a-zA-Z0-9_]/', '', $k);
-        }, array_keys($input));
-        $cols = implode(', ', $keys);
+        $keys = array_keys($input);
+        // Backtick keys
+        $cols = implode(', ', array_map(function ($k) {
+            return "`$k`"; }, $keys));
         $vals = implode(', ', array_fill(0, count($keys), '?'));
 
-        $stmt = $targetDb->prepare("INSERT INTO $table ($cols) VALUES ($vals)");
+        $stmt = $targetDb->prepare("INSERT INTO `$table` ($cols) VALUES ($vals)");
         $stmt->execute(array_values($input));
         $newId = $targetDb->lastInsertId();
 
         // Audit Trail: Log Insert
         try {
             $sysDb = Database::getInstance()->getConnection();
-            $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id, api_key_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmtLog->execute([
                 $db_id,
                 $table,
@@ -431,8 +453,7 @@ class RestController extends BaseController
         $input = array_merge($input, $filesData);
 
         // Filter input to only include actual table columns
-        $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-        $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+        $validCols = $this->getDbColumns($targetDb, $table);
         $input = array_intersect_key($input, array_flip($validCols));
 
         // id should not be updated manually
@@ -446,7 +467,7 @@ class RestController extends BaseController
         }
 
         if ($id) {
-            $stmtFetch = $targetDb->prepare("SELECT * FROM $table WHERE id = ?");
+            $stmtFetch = $targetDb->prepare("SELECT * FROM `$table` WHERE id = ?");
             $stmtFetch->execute([$id]);
             $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -479,9 +500,9 @@ class RestController extends BaseController
         $sets = [];
         foreach ($input as $key => $val) {
             $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
-            $sets[] = "$safeKey = ?";
+            $sets[] = "`$safeKey` = ?";
         }
-        $sql = "UPDATE $table SET " . implode(', ', $sets) . " WHERE id = ?";
+        $sql = "UPDATE `$table` SET " . implode(', ', $sets) . " WHERE id = ?";
 
         $stmt = $targetDb->prepare($sql);
         $stmt->execute(array_merge(array_values($input), [$id]));
@@ -513,7 +534,7 @@ class RestController extends BaseController
             $this->json(['error' => 'ID required'], 400);
 
         // Fetch data before delete for webhook payload (optional but good practice)
-        $stmtFetch = $targetDb->prepare("SELECT * FROM $table WHERE id = ?");
+        $stmtFetch = $targetDb->prepare("SELECT * FROM `$table` WHERE id = ?");
         $stmtFetch->execute([$id]);
         $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -542,7 +563,7 @@ class RestController extends BaseController
             }
         }
 
-        $stmt = $targetDb->prepare("DELETE FROM $table WHERE id = ?");
+        $stmt = $targetDb->prepare("DELETE FROM `$table` WHERE id = ?");
         $stmt->execute([$id]);
 
         // Webhook Trigger

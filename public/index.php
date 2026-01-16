@@ -97,6 +97,13 @@ $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@man
 $router->add('POST', '/admin/databases/fields/add', 'Database\\DatabaseController@addField');
 $router->add('GET', '/admin/databases/fields/delete', 'Database\\DatabaseController@deleteField');
 $router->add('POST', '/admin/databases/fields/update', 'Database\\DatabaseController@updateFieldConfig');
+
+// Multi-Database Support Routes
+$router->add('GET', '/admin/databases/create-form', 'Database\\DatabaseController@createForm');
+$router->add('POST', '/admin/databases/create-multi', 'Database\\DatabaseController@createMulti');
+$router->add('POST', '/admin/databases/test-connection', 'Database\\DatabaseController@testConnection');
+$router->add('GET', '/admin/databases/connections', 'Database\\DatabaseController@connectionManager');
+
 $router->add('GET', '/admin/demo/load', 'Database\\MaintenanceController@loadDemo');
 $router->add('GET', '/admin/system/reset', 'Database\\MaintenanceController@resetSystem');
 

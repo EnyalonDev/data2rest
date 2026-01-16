@@ -62,11 +62,11 @@ class CrudController extends BaseController
      * Ensures that only authenticated users can access
      * any CRUD functionality.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -147,9 +147,22 @@ class CrudController extends BaseController
         // Fallback: If no fields are configured, show all columns from target table
         if (empty($fields)) {
             try {
-                $targetDb = new PDO('sqlite:' . $database['path']);
-                $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-                $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                $adapter = \App\Core\DatabaseManager::getAdapter($database);
+                $targetDb = $adapter->getConnection();
+                $dbType = $adapter->getType();
+                $columns = [];
+
+                if ($dbType === 'sqlite') {
+                    $stmtCols = $targetDb->query("PRAGMA table_info(`$table`)");
+                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                } elseif ($dbType === 'mysql') {
+                    $stmtCols = $targetDb->query("SHOW COLUMNS FROM `$table`");
+                    $mysqlCols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($mysqlCols as $mCol) {
+                        $columns[] = ['name' => $mCol['Field'], 'type' => $mCol['Type']];
+                    }
+                }
+
                 foreach ($columns as $col) {
                     $fields[] = [
                         'field_name' => $col['name'],
@@ -162,6 +175,7 @@ class CrudController extends BaseController
                     ];
                 }
             } catch (\Exception $e) {
+                // Ignore errors in fallback
             }
         }
 
@@ -196,8 +210,30 @@ LIMIT 1");
             return $found;
 
         try {
-            $stmt = $targetDb->query("PRAGMA table_info($tableName)");
-            $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Need to know DB type to query correctly. 
+            // Since we receive $targetDb connection but not type/adapter, we assume simple query compatibility or inspect object if possible.
+            // BUT, passing just connection is risky if query syntax differs.
+            // Ideally, refactor to pass adapter or know type.
+            // For now, try standardized query logic or try/catch both.
+            // Better yet, let's assume getDisplayField is called inside context where we know type?
+            // Actually, showing columns is different per DB.
+
+            // Hack: Try SHOW COLUMNS (MySQL) first, if fails try PRAGMA (SQLite)
+            // Or better: Checking attributes (driver name)
+            $driver = $targetDb->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+            $columns = [];
+            if ($driver === 'sqlite') {
+                $stmt = $targetDb->query("PRAGMA table_info(`$tableName`)");
+                $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } elseif ($driver === 'mysql') {
+                $stmt = $targetDb->query("SHOW COLUMNS FROM `$tableName`");
+                $mysqlCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($mysqlCols as $mCol) {
+                    $columns[] = ['name' => $mCol['Field']];
+                }
+            }
+
             foreach ($columns as $col) {
                 if (in_array(strtolower($col['name']), ['nombre', 'name', 'title', 'titulo', 'label'])) {
                     return $col['name'];
@@ -223,19 +259,19 @@ LIMIT 1");
      * @example
      * GET /admin/crud/list?db_id=1&table=users&s=search_term
      */
-/**
- * list method
- *
- * @return void
- */
+    /**
+     * list method
+     *
+     * @return void
+     */
     public function list()
     {
         $ctx = $this->getContext('crud_view');
-        $targetPath = $ctx['database']['path'];
         $search = $_GET['s'] ?? '';
 
         try {
-            $targetDb = new PDO('sqlite:' . $targetPath);
+            $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
+            $targetDb = $adapter->getConnection();
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
@@ -255,7 +291,7 @@ LIMIT 1");
 
             $whereSql = !empty($whereClauses) ? "WHERE " . implode(" OR ", $whereClauses) : "";
 
-            $sql = "SELECT * FROM $tableName $whereSql ORDER BY id DESC";
+            $sql = "SELECT * FROM `$tableName` $whereSql ORDER BY id DESC";
             $stmt = $targetDb->prepare($sql);
             $stmt->execute($params);
             $records = $stmt->fetchAll();
@@ -266,7 +302,7 @@ LIMIT 1");
                     $relatedDisplay = $this->getDisplayField($targetDb, $ctx['db_id'], $relatedTable, $field['related_field']);
 
                     try {
-                        $stmtRel = $targetDb->query("SELECT id, $relatedDisplay as display FROM $relatedTable");
+                        $stmtRel = $targetDb->query("SELECT id, $relatedDisplay as display FROM `$relatedTable`");
                         $relMap = $stmtRel->fetchAll(PDO::FETCH_KEY_PAIR);
 
                         foreach ($records as &$row) {
@@ -279,7 +315,7 @@ LIMIT 1");
                     }
                 }
             }
-        } catch (\PDOException $e) {
+        } catch (\Exception $e) {
             die("Error accessing data: " . $e->getMessage());
         }
 
@@ -311,11 +347,11 @@ LIMIT 1");
      * GET /admin/crud/form?db_id=1&table=users (new record)
      * GET /admin/crud/form?db_id=1&table=users&id=5 (edit record)
      */
-/**
- * form method
- *
- * @return void
- */
+    /**
+     * form method
+     *
+     * @return void
+     */
     public function form()
     {
         $id = $_GET['id'] ?? null;
@@ -324,13 +360,14 @@ LIMIT 1");
         $foreignOptions = [];
 
         try {
-            $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
+            $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
+            $targetDb = $adapter->getConnection();
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
             if ($id) {
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
-                $stmt = $targetDb->prepare("SELECT * FROM $tableName WHERE id = ?");
+                $stmt = $targetDb->prepare("SELECT * FROM `$tableName` WHERE id = ?");
                 $stmt->execute([$id]);
                 $record = $stmt->fetch();
             }
@@ -340,14 +377,14 @@ LIMIT 1");
                     $table = $field['related_table'];
                     $display = $this->getDisplayField($targetDb, $ctx['db_id'], $table, $field['related_field']);
                     try {
-                        $stmtRel = $targetDb->query("SELECT id, $display as label FROM $table ORDER BY $display ASC");
+                        $stmtRel = $targetDb->query("SELECT id, $display as label FROM `$table` ORDER BY `$display` ASC");
                         $foreignOptions[$field['field_name']] = $stmtRel->fetchAll();
                     } catch (\PDOException $e) {
                         $foreignOptions[$field['field_name']] = [];
                     }
                 }
             }
-        } catch (\PDOException $e) {
+        } catch (\Exception $e) {
             die("Error fetching form data: " . $e->getMessage());
         }
 
@@ -384,11 +421,11 @@ LIMIT 1");
      * POST /admin/crud/save
      * Body: db_id=1&table=users&field1=value1&field2=value2
      */
-/**
- * save method
- *
- * @return void
- */
+    /**
+     * save method
+     *
+     * @return void
+     */
     public function save()
     {
         $id = $_POST['id'] ?? null;
@@ -442,14 +479,23 @@ LIMIT 1");
         }
 
         try {
-            $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
+            $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
+            $targetDb = $adapter->getConnection();
+            $dbType = $adapter->getType();
+
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $now = Auth::getCurrentTime();
             $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
 
             // Fetch target table info to check if timestamp columns exist
-            $stmtCols = $targetDb->query("PRAGMA table_info($tableName)");
-            $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+            $columns = [];
+            if ($dbType === 'sqlite') {
+                $stmtCols = $targetDb->query("PRAGMA table_info(`$tableName`)");
+                $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1); // 1 is 'name'
+            } elseif ($dbType === 'mysql') {
+                $stmtCols = $targetDb->query("SHOW COLUMNS FROM `$tableName`");
+                $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 0); // 0 is 'Field'
+            }
 
             if ($id) {
                 if (in_array('fecha_edicion', $columns)) {
@@ -457,7 +503,7 @@ LIMIT 1");
                 }
 
                 // Data Versioning
-                $stmtFetch = $targetDb->prepare("SELECT * FROM $tableName WHERE id = ?");
+                $stmtFetch = $targetDb->prepare("SELECT * FROM `$tableName` WHERE id = ?");
                 $stmtFetch->execute([$id]);
                 $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -486,11 +532,11 @@ LIMIT 1");
                     if ($safeKey === 'id' || !in_array($safeKey, $columns))
                         continue;
 
-                    $sets[] = "$safeKey = ?";
+                    $sets[] = "`$safeKey` = ?";
                     $values[] = $value;
                 }
                 $values[] = $id;
-                $stmt = $targetDb->prepare("UPDATE $tableName SET " . implode(', ', $sets) . " WHERE id = ?");
+                $stmt = $targetDb->prepare("UPDATE `$tableName` SET " . implode(', ', $sets) . " WHERE id = ?");
                 $stmt->execute($values);
                 Logger::log('UPDATE_RECORD', ['table' => $tableName, 'id' => $id, 'fields' => array_keys($data)], $ctx['db_id']);
             } else {
@@ -511,8 +557,13 @@ LIMIT 1");
                 }
 
                 $keys = array_keys($filteredData);
+                // Backtick keys
+                $tickedKeys = array_map(function ($k) {
+                    return "`$k`";
+                }, $keys);
+
                 $placeholders = array_fill(0, count($keys), '?');
-                $stmt = $targetDb->prepare("INSERT INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $placeholders) . ")");
+                $stmt = $targetDb->prepare("INSERT INTO `$tableName` (" . implode(', ', $tickedKeys) . ") VALUES (" . implode(', ', $placeholders) . ")");
                 $stmt->execute(array_values($filteredData));
                 $newId = $targetDb->lastInsertId();
 
@@ -539,7 +590,7 @@ LIMIT 1");
             $this->updateMetadata($ctx['db_id'], $ctx['table']);
 
             header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
-        } catch (\PDOException $e) {
+        } catch (\Exception $e) {
             die("Error saving data: " . $e->getMessage());
         }
     }
@@ -562,11 +613,11 @@ LIMIT 1");
      * @example
      * POST /admin/crud/delete?db_id=1&table=users&id=5
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
@@ -578,13 +629,14 @@ LIMIT 1");
         $ctx = $this->getContext('crud_delete');
         if ($id) {
             try {
-                $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
+                $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
+                $targetDb = $adapter->getConnection();
                 $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
 
                 // Data Versioning
-                $stmtFetch = $targetDb->prepare("SELECT * FROM $tableName WHERE id = ?");
+                $stmtFetch = $targetDb->prepare("SELECT * FROM `$tableName` WHERE id = ?");
                 $stmtFetch->execute([$id]);
                 $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -605,7 +657,7 @@ LIMIT 1");
                     }
                 }
 
-                $stmt = $targetDb->prepare("DELETE FROM $tableName WHERE id = ?");
+                $stmt = $targetDb->prepare("DELETE FROM `$tableName` WHERE id = ?");
                 $stmt->execute([$id]);
 
                 Auth::setFlashError("Registro eliminado exitosamente.", 'success');
@@ -613,7 +665,7 @@ LIMIT 1");
 
                 // Update metadata timestamps
                 $this->updateMetadata($ctx['db_id'], $ctx['table']);
-            } catch (\PDOException $e) {
+            } catch (\Exception $e) {
                 Auth::setFlashError("Error eliminando registro: " . $e->getMessage(), 'error');
             }
         }
@@ -657,23 +709,23 @@ LIMIT 1");
      * GET /admin/crud/export?db_id=1&table=users
      * Downloads: users_2026-01-16_00-55.csv
      */
-/**
- * export method
- *
- * @return void
- */
+    /**
+     * export method
+     *
+     * @return void
+     */
     public function export()
     {
         $ctx = $this->getContext('crud_view');
-        $targetPath = $ctx['database']['path'];
 
         try {
-            $targetDb = new PDO('sqlite:' . $targetPath);
+            $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
+            $targetDb = $adapter->getConnection();
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
             $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
-            $stmt = $targetDb->query("SELECT * FROM $tableName ORDER BY id DESC");
+            $stmt = $targetDb->query("SELECT * FROM `$tableName` ORDER BY id DESC");
             $records = $stmt->fetchAll();
 
             // Resolve foreign keys for the export as well
@@ -755,11 +807,11 @@ LIMIT 1");
      * @example
      * GET /admin/crud/history?db_id=1&table=users&id=5
      */
-/**
- * history method
- *
- * @return void
- */
+    /**
+     * history method
+     *
+     * @return void
+     */
     public function history()
     {
         $id = $_GET['id'] ?? null;
@@ -818,11 +870,11 @@ LIMIT 1");
      * @example
      * GET /admin/trash
      */
-/**
- * trash method
- *
- * @return void
- */
+    /**
+     * trash method
+     *
+     * @return void
+     */
     public function trash()
     {
         Auth::requireLogin();
@@ -878,11 +930,11 @@ LIMIT 1");
      * @example
      * POST /admin/trash/empty
      */
-/**
- * emptyTrash method
- *
- * @return void
- */
+    /**
+     * emptyTrash method
+     *
+     * @return void
+     */
     public function emptyTrash()
     {
         Auth::requireLogin();
@@ -932,11 +984,11 @@ LIMIT 1");
      * POST /admin/crud/restore
      * Body: version_id=123
      */
-/**
- * restore method
- *
- * @return void
- */
+    /**
+     * restore method
+     *
+     * @return void
+     */
     public function restore()
     {
         $version_id = $_POST['version_id'] ?? null;

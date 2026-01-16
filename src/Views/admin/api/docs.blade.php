@@ -5,32 +5,56 @@
 @section('styles')
     <style type="text/tailwindcss">
         .badge-get {
-                            @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
-                        }
+                                @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase;
+                            }
 
-                        .endpoint-url {
-                            @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
-                        }
+                            .endpoint-url {
+                                @apply bg-black/40 px-4 py-3 rounded-xl text-xs font-mono text-primary border border-white/5 flex items-center justify-between gap-4 overflow-hidden;
+                            }
 
-                        .input-dark {
-                            @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-                        }
+                            .input-dark {
+                                @apply bg-black/40 border border-glass-border rounded-lg px-3 py-2 text-xs text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+                            }
 
-                        .checkbox-custom {
-                            @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
-                        }
+                            .checkbox-custom {
+                                @apply w-4 h-4 rounded border-glass-border bg-black/40 text-primary focus:ring-primary/20 cursor-pointer;
+                            }
 
-                        .label-mini {
-                            @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
-                        }
-                    </style>
+                            .label-mini {
+                                @apply block text-[10px] font-black text-p-muted uppercase tracking-widest mb-2 px-1;
+                            }
+                        </style>
 @endsection
 
 @section('content')
     <header class="mb-12">
-        <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">
-            {{ \App\Core\Lang::get('api_control.doc_constructor') }}
-        </h1>
+        <div class="flex items-center gap-4 mb-2">
+            <h1 class="text-4xl font-black text-p-title italic tracking-tighter">
+                {{ \App\Core\Lang::get('api_control.doc_constructor') }} <span class="text-primary">:
+                    {{ $database['name'] }}</span>
+            </h1>
+            @php
+                $dbType = strtolower($database['type'] ?? 'sqlite');
+                $badgeClass = match ($dbType) {
+                    'mysql' => 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+                    'pgsql', 'postgresql' => 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+                    default => 'text-slate-500 bg-slate-500/10 border-slate-500/20'
+                };
+                $label = match ($dbType) {
+                    'mysql' => 'MySQL',
+                    'pgsql', 'postgresql' => 'PG',
+                    default => 'SQLite'
+                };
+            @endphp
+            <div class="px-3 py-1 rounded-lg border {{ $badgeClass }} flex items-center gap-2">
+                <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                    </path>
+                </svg>
+                <span class="text-[10px] font-black uppercase tracking-widest">{{ $label }}</span>
+            </div>
+        </div>
         <p class="text-p-muted font-medium italic">{{ \App\Core\Lang::get('api_control.doc_subtitle') }}</p>
     </header>
 

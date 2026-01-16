@@ -46,11 +46,11 @@ class ApiDocsController extends BaseController
      *
      * @return void
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -65,11 +65,11 @@ class ApiDocsController extends BaseController
      * @return void Renders the `admin/api/index` view with keys and databases.
      * @example GET /admin/api
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         Auth::requirePermission('module:api.view_keys');
@@ -116,11 +116,11 @@ class ApiDocsController extends BaseController
      * @return void Redirects back to the API management page.
      * @example POST /admin/api/createKey
      */
-/**
- * createKey method
- *
- * @return void
- */
+    /**
+     * createKey method
+     *
+     * @return void
+     */
     public function createKey()
     {
         Auth::requirePermission('module:api.create_keys');
@@ -143,11 +143,11 @@ class ApiDocsController extends BaseController
      * @return void Redirects back to the API management page.
      * @example GET /admin/api/deleteKey?id=5
      */
-/**
- * deleteKey method
- *
- * @return void
- */
+    /**
+     * deleteKey method
+     *
+     * @return void
+     */
     public function deleteKey()
     {
         Auth::requirePermission('module:api.revoke_keys'); // Mapped to 'revoke_keys' in policy_architect
@@ -175,11 +175,11 @@ class ApiDocsController extends BaseController
      * @return void Renders the `admin/api/docs` view with schema details.
      * @example GET /admin/api/docs?db_id=3
      */
-/**
- * docs method
- *
- * @return void
- */
+    /**
+     * docs method
+     *
+     * @return void
+     */
     public function docs()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -209,14 +209,70 @@ class ApiDocsController extends BaseController
         $apiKeys = $db->query("SELECT name, key_value FROM api_keys WHERE status = 1 ORDER BY name ASC")->fetchAll();
 
         try {
-            $targetDb = new PDO('sqlite:' . $database['path']);
-            $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $targetDb = $adapter->getConnection();
+            $dbType = $adapter->getType();
 
+            $tables = [];
             $tableDetails = [];
-            foreach ($tables as $table) {
-                $stmt = $targetDb->query("PRAGMA table_info($table)");
-                $tableDetails[$table] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($dbType === 'sqlite') {
+                $stmt = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($tables as $table) {
+                    $stmt = $targetDb->query("PRAGMA table_info(`$table`)");
+                    $cols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    // Standardize structure if needed, but existing view likely expects PRAGMA format (cid, name, type, notnull, dflt_value, pk)
+                    $tableDetails[$table] = $cols;
+                }
+            } elseif ($dbType === 'mysql') {
+                $stmt = $targetDb->query("SHOW TABLES");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($tables as $table) {
+                    $stmt = $targetDb->query("SHOW COLUMNS FROM `$table`");
+                    $mysqlCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    // Convert MySQL SHOW COLUMNS format to SQLite PRAGMA-like format for view compatibility
+                    // MySQL: Field, Type, Null, Key, Default, Extra
+                    // SQLite: cid, name, type, notnull, dflt_value, pk
+                    $cleanCols = [];
+                    foreach ($mysqlCols as $idx => $col) {
+                        $cleanCols[] = [
+                            'cid' => $idx,
+                            'name' => $col['Field'],
+                            'type' => $col['Type'],
+                            'notnull' => ($col['Null'] === 'NO') ? 1 : 0,
+                            'dflt_value' => $col['Default'],
+                            'pk' => ($col['Key'] === 'PRI') ? 1 : 0
+                        ];
+                    }
+                    $tableDetails[$table] = $cleanCols;
+                }
+            } elseif ($dbType === 'pgsql' || $dbType === 'postgresql') {
+                $stmt = $targetDb->query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                // Basic PostgreSQL support for now
+                foreach ($tables as $table) {
+                    $stmt = $targetDb->prepare("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = ?");
+                    $stmt->execute([$table]);
+                    $pgCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $cleanCols = [];
+                    foreach ($pgCols as $idx => $col) {
+                        $cleanCols[] = [
+                            'cid' => $idx,
+                            'name' => $col['column_name'],
+                            'type' => $col['data_type'],
+                            'notnull' => ($col['is_nullable'] === 'NO') ? 1 : 0,
+                            'dflt_value' => $col['column_default'],
+                            'pk' => 0 // TODO: Check constraints for PK
+                        ];
+                    }
+                    $tableDetails[$table] = $cleanCols;
+                }
             }
         } catch (\PDOException $e) {
             die("Error connecting to database: " . $e->getMessage());

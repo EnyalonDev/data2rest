@@ -5,9 +5,9 @@
 @section('styles')
     <style type="text/tailwindcss">
         .input-dark {
-                @apply bg-black/40 border-2 border-glass-border rounded-xl px-4 py-2 text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-            }
-        </style>
+                    @apply bg-black/40 border-2 border-glass-border rounded-xl px-4 py-2 text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+                }
+            </style>
 @endsection
 
 @section('content')
@@ -89,24 +89,40 @@
             </h2>
             <div class="grid gap-4">
                 @foreach($databases as $db)
-                    <a href="{{ $baseUrl }}admin/api/docs?db_id={{ $db['id'] }}"
-                        class="group bg-p-bg dark:bg-white/5 border border-glass-border p-6 rounded-2xl hover:border-primary/50 transition-all flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-bold text-p-title group-hover:text-primary transition-colors">
-                                {{ $db['name'] }}
-                            </h3>
-                            <p class="text-xs text-p-muted mt-1 uppercase font-black tracking-widest">
-                                {{ \App\Core\Lang::get('api_control.connect_internal') }}
-                            </p>
-                        </div>
-                        <div class="text-primary group-hover:translate-x-1 transition-transform">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                                </path>
-                            </svg>
-                        </div>
-                    </a>
+                            <a href="{{ $baseUrl }}admin/api/docs?db_id={{ $db['id'] }}"
+                                class="group bg-p-bg dark:bg-white/5 border border-glass-border p-6 rounded-2xl hover:border-primary/50 transition-all flex items-center justify-between">
+                                <div>
+                                    <h3
+                                        class="text-lg font-bold text-p-title group-hover:text-primary transition-colors flex items-center gap-3">
+                                        {{ $db['name'] }}
+                                        @php
+                                            $dbType = strtolower($db['type'] ?? 'sqlite');
+                                            $badgeClass = match ($dbType) {
+                                                'mysql' => 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+                                                'pgsql', 'postgresql' => 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+                                                default => 'text-slate-500 bg-slate-500/10 border-slate-500/20'
+                                            };
+                                            $label = match ($dbType) {
+                                                'mysql' => 'MySQL',
+                                                'pgsql', 'postgresql' => 'PG',
+                                                default => 'SQLite'
+                                            };
+                                        @endphp
+                    <span
+                                            class="text-[9px] px-1.5 py-0.5 rounded border {{ $badgeClass }} uppercase font-black tracking-widest">{{ $label }}</span>
+                                    </h3>
+                                    <p class="text-xs text-p-muted mt-1 uppercase font-black tracking-widest">
+                                        {{ \App\Core\Lang::get('api_control.connect_internal') }}
+                                    </p>
+                                </div>
+                                <div class="text-primary group-hover:translate-x-1 transition-transform">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </a>
                 @endforeach
                 @if(empty($databases))
                     <div class="py-12 text-center opacity-20">

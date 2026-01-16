@@ -30,3 +30,10 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Load helper functions
+$helpersDir = __DIR__ . '/helpers/';
+if (is_dir($helpersDir)) {
+    foreach (glob($helpersDir . '*.php') as $helperFile) {
+        require_once $helperFile;
+    }
+}

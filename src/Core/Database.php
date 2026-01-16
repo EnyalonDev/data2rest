@@ -7,30 +7,29 @@ use PDOException;
 
 /**
  * Database Management Class
- * Implements the Singleton pattern to provide a single PDO connection to the system SQLite database.
+ * 
+ * Implements the Singleton pattern to provide a single connection to the system database.
+ * Now uses DatabaseAdapter for flexible multi-database support while maintaining backward compatibility.
+ * 
+ * @package App\Core
  */
 class Database
 {
     /** @var Database|null Singleton instance */
     private static $instance = null;
 
-    /** @var PDO PDO database connection object */
-    private $connection;
+    /** @var DatabaseAdapter Database adapter instance */
+    private $adapter;
 
     /**
      * Private constructor to prevent direct instantiation.
-     * Initializes the PDO connection using the path from Config.
+     * Initializes the database adapter using DatabaseFactory.
      */
     private function __construct()
     {
-        $dbPath = Config::get('db_path');
         try {
-            $this->connection = new PDO('sqlite:' . $dbPath);
-            // Configure Error Mode to Exceptions for better debugging
-            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            // Set Default Fetch Mode to Associative Array
-            $this->connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+            $this->adapter = DatabaseFactory::createSystemDatabase();
+        } catch (\Exception $e) {
             die("Database connection failed: " . $e->getMessage());
         }
     }
@@ -50,12 +49,24 @@ class Database
 
     /**
      * Get the actual PDO connection object.
+     * Maintains backward compatibility with existing code.
      * 
      * @return PDO
      */
     public function getConnection()
     {
-        return $this->connection;
+        return $this->adapter->getConnection();
+    }
+
+    /**
+     * Get the database adapter instance.
+     * Provides access to adapter-specific features.
+     * 
+     * @return DatabaseAdapter
+     */
+    public function getAdapter()
+    {
+        return $this->adapter;
     }
 }
 
