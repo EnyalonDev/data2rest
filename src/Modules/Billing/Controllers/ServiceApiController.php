@@ -7,19 +7,51 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Servicio API para gestionar el catálogo de servicios
+ * Service API Controller
+ * 
+ * Manages the billing services catalog including CRUD operations
+ * and task template management for each service.
+ * 
+ * This controller handles:
+ * - Service listing, creation, updating, and deletion
+ * - Task template management (CRUD operations)
+ * - Template export/import functionality
+ * 
+ * @package App\Modules\Billing\Controllers
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class ServiceApiController extends BaseController
 {
+    /**
+     * Database connection instance
+     * 
+     * @var PDO
+     */
     private $db;
 
+    /**
+     * Constructor - Initializes database connection
+     * 
+     * Establishes a PDO connection to the system database
+     * for all service and template operations.
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
     }
 
     /**
+     * Get all active services
+     * 
+     * Retrieves a list of all active billing services from the database,
+     * ordered alphabetically by name.
+     * 
+     * @return void Outputs JSON response with service list
+     * 
+     * @example
      * GET /api/billing/services
+     * Response: {"success": true, "data": [{"id": 1, "name": "Service A", ...}]}
      */
     public function index()
     {
@@ -33,7 +65,17 @@ class ServiceApiController extends BaseController
     }
 
     /**
+     * Create a new service
+     * 
+     * Creates a new billing service with the provided data including
+     * name, description, and multiple pricing options (monthly, yearly, one-time).
+     * 
+     * @return void Outputs JSON response with created service ID
+     * 
+     * @example
      * POST /api/billing/services
+     * Body: {"name": "Web Hosting", "price_monthly": 9.99, "price_yearly": 99.99}
+     * Response: {"success": true, "message": "Servicio creado exitosamente", "id": 5}
      */
     public function create()
     {
@@ -68,7 +110,18 @@ class ServiceApiController extends BaseController
     }
 
     /**
-     * PUT /api/billing/services/{id}
+     * Update an existing service
+     * 
+     * Updates the details of an existing billing service including
+     * name, description, and pricing information.
+     * 
+     * @param int $id The ID of the service to update
+     * @return void Outputs JSON response with success status
+     * 
+     * @example
+     * PUT /api/billing/services/5
+     * Body: {"name": "Premium Hosting", "price_monthly": 19.99}
+     * Response: {"success": true}
      */
     public function update($id)
     {
@@ -104,7 +157,18 @@ class ServiceApiController extends BaseController
     }
 
     /**
-     * DELETE /api/billing/services/{id}
+     * Delete a service (soft delete)
+     * 
+     * Performs a soft delete by setting the service status to 'deleted'
+     * instead of removing it from the database. This preserves data integrity
+     * and allows for potential recovery.
+     * 
+     * @param int $id The ID of the service to delete
+     * @return void Outputs JSON response with success status
+     * 
+     * @example
+     * DELETE /api/billing/services/5
+     * Response: {"success": true}
      */
     public function delete($id)
     {
@@ -119,7 +183,17 @@ class ServiceApiController extends BaseController
     }
 
     /**
-     * GET /api/billing/services/{id}/templates
+     * Get all task templates for a service
+     * 
+     * Retrieves all task templates associated with a specific service,
+     * ordered by creation date.
+     * 
+     * @param int $serviceId The ID of the service
+     * @return void Outputs JSON response with templates array
+     * 
+     * @example
+     * GET /api/billing/services/5/templates
+     * Response: {"success": true, "data": [{"id": 1, "title": "Setup", ...}]}
      */
     public function getTemplates($serviceId)
     {
@@ -134,7 +208,18 @@ class ServiceApiController extends BaseController
     }
 
     /**
-     * POST /api/billing/services/{id}/templates
+     * Add a new task template to a service
+     * 
+     * Creates a new task template associated with the specified service.
+     * Templates define standard tasks that should be performed for this service.
+     * 
+     * @param int $serviceId The ID of the service
+     * @return void Outputs JSON response with success status
+     * 
+     * @example
+     * POST /api/billing/services/5/templates
+     * Body: {"title": "Initial Setup", "description": "Configure server", "priority": "high"}
+     * Response: {"success": true}
      */
     public function addTemplate($serviceId)
     {
@@ -243,7 +328,23 @@ class ServiceApiController extends BaseController
 
 
     /**
-     * POST /api/billing/services/{id}/templates/import
+     * Import task templates from JSON
+     * 
+     * Imports task templates from multiple sources:
+     * - File upload (multipart/form-data)
+     * - Direct JSON content (POST field)
+     * - JSON body (application/json)
+     * 
+     * All templates are inserted within a database transaction to ensure
+     * data integrity. If any template fails, the entire import is rolled back.
+     * 
+     * @param int $serviceId The ID of the service to import templates into
+     * @return void Outputs JSON response with import count
+     * 
+     * @example
+     * POST /api/billing/services/5/templates/import
+     * Body: {"content": "[{\"title\":\"Task 1\",\"priority\":\"high\"}]"}
+     * Response: {"success": true, "count": 1}
      */
     public function importTemplates($serviceId)
     {
@@ -295,7 +396,23 @@ class ServiceApiController extends BaseController
         }
     }
     /**
-     * GET /api/billing/services/{id}/templates/export-data
+     * Export task templates as JSON data
+     * 
+     * Retrieves all task templates for a service and returns them as JSON data.
+     * This method is used for the copy-paste export functionality, allowing users
+     * to copy the JSON and import it elsewhere without file downloads.
+     * 
+     * The exported data includes only the essential fields:
+     * - title: Template name
+     * - description: Template description
+     * - priority: Task priority (low, medium, high)
+     * 
+     * @param int $serviceId The ID of the service to export templates from
+     * @return void Outputs JSON response with templates data
+     * 
+     * @example
+     * GET /api/billing/services/5/templates/export-data
+     * Response: {"success": true, "data": [{"title": "Setup", "description": "...", "priority": "high"}]}
      */
     public function exportTemplatesData($serviceId)
     {

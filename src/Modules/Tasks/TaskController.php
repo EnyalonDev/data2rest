@@ -9,11 +9,35 @@ use PDO;
 use Exception;
 
 /**
- * TaskController
- * Manages tasks with Kanban board functionality and role-based permissions
+ * Task Controller
+ * 
+ * Manages Kanban-style task management with role-based permissions
+ * and comprehensive task lifecycle tracking.
+ * 
+ * Features:
+ * - Kanban board visualization with drag-and-drop
+ * - Role-based task permissions (Admin, Marketing, Developer, Client)
+ * - Task assignment and status management
+ * - Task history and comment tracking
+ * - Client approval workflow
+ * 
+ * Permissions:
+ * - Admin: Full access (create, edit, delete, move, assign)
+ * - Marketing/Developer: Can create, move, assign, and take tasks
+ * - Client: Can create tasks and approve from validation status
+ * 
+ * @package App\Modules\Tasks
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class TaskController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication
+     * 
+     * Ensures that only authenticated users can access
+     * any task management functionality.
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -104,7 +128,7 @@ class TaskController extends BaseController
         $title = $_POST['title'] ?? '';
         $description = $_POST['description'] ?? '';
         $priority = $_POST['priority'] ?? 'medium';
-        $assignedTo = $_POST['assigned_to'] ?? null;
+        $assignedTo = !empty($_POST['assigned_to']) ? $_POST['assigned_to'] : null;
         $statusId = $_POST['status_id'] ?? 1; // Default to first status (Backlog)
 
         if (empty($title)) {
@@ -190,6 +214,38 @@ class TaskController extends BaseController
             $this->json(['success' => true]);
         } catch (Exception $e) {
             $this->json(['error' => 'Error al mover tarea: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Assign task to self
+     */
+    public function take()
+    {
+        $taskId = $_POST['task_id'] ?? null;
+        if (!$taskId) {
+            $this->json(['error' => 'ID de tarea inválido'], 400);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            // Check permissions (not client)
+            if ($this->isClientRole()) {
+                $this->json(['error' => 'Los clientes no pueden tomar tareas'], 403);
+                return;
+            }
+
+            // Assign to current user
+            $stmt = $db->prepare("UPDATE tasks SET assigned_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([Auth::getUserId(), $taskId]);
+
+            $this->logTaskHistory($taskId, 'updated', null, null, 'Usuario se auto-asignó la tarea');
+
+            $this->json(['success' => true]);
+        } catch (Exception $e) {
+            $this->json(['error' => 'Error al tomar tarea: ' . $e->getMessage()], 500);
         }
     }
 
@@ -322,10 +378,7 @@ class TaskController extends BaseController
         }
     }
 
-    /**
-     * Get task history
-     */
-    public function history()
+    public function getTaskDetails()
     {
         $taskId = $_GET['id'] ?? null;
         if (!$taskId) {
@@ -335,6 +388,13 @@ class TaskController extends BaseController
 
         try {
             $db = Database::getInstance()->getConnection();
+
+            // Get Task Info
+            $stmt = $db->prepare("SELECT * FROM tasks WHERE id = ?");
+            $stmt->execute([$taskId]);
+            $task = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Get History
             $stmt = $db->prepare("
                 SELECT th.*, 
                        u.username, u.public_name,
@@ -350,9 +410,91 @@ class TaskController extends BaseController
             $stmt->execute([$taskId]);
             $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $this->json(['success' => true, 'history' => $history]);
+            // Get Comments
+            $stmt = $db->prepare("
+                SELECT tc.*, 
+                       u.username, u.public_name
+                FROM task_comments tc
+                JOIN users u ON tc.user_id = u.id
+                WHERE tc.task_id = ?
+                ORDER BY tc.created_at DESC
+            ");
+            $stmt->execute([$taskId]);
+            $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $this->json(['success' => true, 'task' => $task, 'history' => $history, 'comments' => $comments]);
         } catch (Exception $e) {
-            $this->json(['error' => 'Error al obtener historial: ' . $e->getMessage()], 500);
+            $this->json(['error' => 'Error al obtener detalles: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Post a generic comment to the task
+     */
+    public function postComment()
+    {
+        $taskId = $_POST['task_id'] ?? null;
+        $comment = $_POST['comment'] ?? '';
+
+        if (!$taskId || empty($comment)) {
+            $this->json(['error' => 'Datos inválidos'], 400);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("INSERT INTO task_comments (task_id, user_id, comment) VALUES (?, ?, ?)");
+            $stmt->execute([$taskId, Auth::getUserId(), $comment]);
+
+            $this->json(['success' => true]);
+        } catch (Exception $e) {
+            $this->json(['error' => 'Error al publicar comentario: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Assign task to a user
+     */
+    public function assign()
+    {
+        $taskId = $_POST['task_id'] ?? null;
+        $userId = $_POST['user_id'] ?? null;
+
+        // Convert empty string to null (for unassigning)
+        if ($userId === '')
+            $userId = null;
+
+        if (!$taskId) {
+            $this->json(['error' => 'ID de tarea inválido'], 400);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            // Check current assignment
+            $current = $db->prepare("SELECT assigned_to FROM tasks WHERE id = ?");
+            $current->execute([$taskId]);
+            $oldUserId = $current->fetchColumn();
+
+            // Strict comparison might fail if types differ (string vs int), so use non-strict or cast
+            if ($oldUserId != $userId) {
+                $stmt = $db->prepare("UPDATE tasks SET assigned_to = ? WHERE id = ?");
+                $stmt->execute([$userId, $taskId]);
+
+                $userName = 'Nadie';
+                if ($userId) {
+                    $uStmt = $db->prepare("SELECT public_name FROM users WHERE id = ?");
+                    $uStmt->execute([$userId]);
+                    $userName = $uStmt->fetchColumn() ?: 'Usuario Desconocido';
+                }
+
+                $this->logTaskHistory($taskId, 'assigned', null, null, "Asignado a: $userName");
+            }
+
+            $this->json(['success' => true]);
+        } catch (Exception $e) {
+            $this->json(['error' => 'Error al asignar tarea: ' . $e->getMessage()], 500);
         }
     }
 
@@ -386,7 +528,7 @@ class TaskController extends BaseController
      */
     private function canMoveTask()
     {
-        // Admin, Editor, Dev can move
+        // Admin, Editor, Dev, Marketing can move
         // Client cannot move
         return !$this->isClientRole();
     }
