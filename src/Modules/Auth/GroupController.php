@@ -7,13 +7,65 @@ use App\Core\Database;
 use App\Core\BaseController;
 use PDO;
 
+
+/**
+ * Group Controller
+ * 
+ * Manages user groups for multi-tenant organization and permission
+ * inheritance in the system.
+ * 
+ * Core Features:
+ * - Group CRUD operations
+ * - User count per group
+ * - Permission assignment per group
+ * - Module-based permission structure
+ * - User isolation by group
+ * 
+ * Use Cases:
+ * - Multi-tenant organization
+ * - Department segregation
+ * - Client isolation
+ * - Team management
+ * 
+ * Permission Structure:
+ * - {"modules": {"module:name.action": true, ...}}
+ * 
+ * Security:
+ * - Permission-based access control
+ * - User group isolation
+ * - Automatic user cleanup on group deletion
+ * 
+ * @package App\Modules\Auth
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class GroupController extends BaseController
 {
+    /**
+     * Constructor - Requires user view permission
+     * 
+     * Ensures that only users with appropriate permissions
+     * can access group management.
+     */
     public function __construct()
     {
         Auth::requirePermission('module:users.view_users');
     }
 
+    /**
+     * Display list of groups
+     * 
+     * Shows all groups with user count for each group.
+     * 
+     * Features:
+     * - User count per group
+     * - Alphabetical sorting
+     * 
+     * @return void Renders group list view
+     * 
+     * @example
+     * GET /admin/groups
+     */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -35,6 +87,23 @@ class GroupController extends BaseController
         ]);
     }
 
+    /**
+     * Display group creation/edit form
+     * 
+     * Renders a form for creating new groups or editing existing ones
+     * with permission assignment interface.
+     * 
+     * Features:
+     * - Group name and description
+     * - Module-based permission checkboxes
+     * - JSON permission decoding for edit
+     * 
+     * @return void Renders group form view
+     * 
+     * @example
+     * GET /admin/groups/form (new group)
+     * GET /admin/groups/form?id=2 (edit group)
+     */
     public function form()
     {
         Auth::requirePermission('module:users.manage_groups');
@@ -61,6 +130,21 @@ class GroupController extends BaseController
         ]);
     }
 
+    /**
+     * Save group data (create or update)
+     * 
+     * Processes form submission to create or update groups with
+     * their permission configurations.
+     * 
+     * Permission Structure:
+     * - {"modules": {"module:name.action": true, ...}}
+     * 
+     * @return void Redirects to group list on success
+     * 
+     * @example
+     * POST /admin/groups/save
+     * Body: name=Marketing&description=Team&modules[module:databases.view_tables]=on
+     */
     public function save()
     {
         Auth::requirePermission('module:users.manage_groups');
@@ -87,6 +171,21 @@ class GroupController extends BaseController
         $this->redirect('admin/groups');
     }
 
+    /**
+     * Delete a group
+     * 
+     * Removes a group from the system and clears group assignment
+     * from all users in that group.
+     * 
+     * Features:
+     * - Automatic user cleanup (sets group_id to NULL)
+     * - Prevents orphaned user assignments
+     * 
+     * @return void Redirects to group list
+     * 
+     * @example
+     * GET /admin/groups/delete?id=3
+     */
     public function delete()
     {
         Auth::requirePermission('module:users.manage_groups');
