@@ -22,11 +22,11 @@ use App\Core\Auth;
  */
 class SystemController extends BaseController
 {
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -35,11 +35,11 @@ class SystemController extends BaseController
     /**
      * Returns JSON with critical server configuration.
      */
-/**
- * info method
- *
- * @return void
- */
+    /**
+     * info method
+     *
+     * @return void
+     */
     public function info()
     {
         $db = \App\Core\Database::getInstance()->getConnection();
@@ -73,11 +73,11 @@ class SystemController extends BaseController
     /**
      * Updates the global time offset in minutes.
      */
-/**
- * updateTimeOffset method
- *
- * @return void
- */
+    /**
+     * updateTimeOffset method
+     *
+     * @return void
+     */
     public function updateTimeOffset()
     {
         Auth::requireAdmin();
@@ -103,11 +103,11 @@ class SystemController extends BaseController
     /**
      * Toggles development mode in system settings.
      */
-/**
- * toggleDevMode method
- *
- * @return void
- */
+    /**
+     * toggleDevMode method
+     *
+     * @return void
+     */
     public function toggleDevMode()
     {
         Auth::requireAdmin();
@@ -127,11 +127,11 @@ class SystemController extends BaseController
     /**
      * Clears application temporary cache files.
      */
-/**
- * clearCache method
- *
- * @return void
- */
+    /**
+     * clearCache method
+     *
+     * @return void
+     */
     public function clearCache()
     {
         Auth::requireAdmin();
@@ -159,11 +159,11 @@ class SystemController extends BaseController
     /**
      * Clears all active PHP sessions except the current one.
      */
-/**
- * clearSessions method
- *
- * @return void
- */
+    /**
+     * clearSessions method
+     *
+     * @return void
+     */
     public function clearSessions()
     {
         Auth::requireAdmin();
@@ -187,11 +187,11 @@ class SystemController extends BaseController
         echo json_encode(['success' => true, 'cleared' => $cleared]);
         exit;
     }
-/**
- * dismissBanner method
- *
- * @return void
- */
+    /**
+     * dismissBanner method
+     *
+     * @return void
+     */
     public function dismissBanner()
     {
         Auth::requireAdmin();
@@ -205,98 +205,5 @@ class SystemController extends BaseController
         exit;
     }
 
-    /**
-     * Performs a global search across all databases and tables of the active project.
-     */
-/**
- * globalSearch method
- *
- * @return void
- */
-    public function globalSearch()
-    {
-        $query = $_POST['q'] ?? '';
-        if (strlen($query) < 2) {
-            header('Content-Type: application/json');
-            echo json_encode(['results' => []]);
-            exit;
-        }
-
-        $sysDb = \App\Core\Database::getInstance()->getConnection();
-        $projectId = Auth::getActiveProject();
-
-        // Get all databases for the active project
-        $stmt = $sysDb->prepare("SELECT id, name, path FROM databases WHERE project_id = ?");
-        $stmt->execute([$projectId]);
-        $databases = $stmt->fetchAll();
-
-        $results = [];
-
-        foreach ($databases as $dbInfo) {
-            if (!file_exists($dbInfo['path']))
-                continue;
-
-            try {
-                $targetDb = new \PDO('sqlite:' . $dbInfo['path']);
-                $targetDb->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-                // Get all tables in this database
-                $stmtTables = $targetDb->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-                $tables = $stmtTables->fetchAll(\PDO::FETCH_COLUMN);
-
-                foreach ($tables as $table) {
-                    // Get columns to search in
-                    $stmtCols = $targetDb->query("PRAGMA table_info($table)");
-                    $cols = $stmtCols->fetchAll(\PDO::FETCH_ASSOC);
-
-                    $searchCols = [];
-                    foreach ($cols as $col) {
-                        // Only search in text or blob-like columns for efficiency
-                        $type = strtolower($col['type']);
-                        if (strpos($type, 'text') !== false || strpos($type, 'varchar') !== false || $type === '' || strpos($type, 'char') !== false) {
-                            $searchCols[] = $col['name'];
-                        }
-                    }
-
-                    if (empty($searchCols))
-                        continue;
-
-                    $whereParts = [];
-                    foreach ($searchCols as $sc) {
-                        $whereParts[] = "$sc LIKE ?";
-                    }
-
-                    $sql = "SELECT * FROM $table WHERE " . implode(" OR ", $whereParts) . " LIMIT 5";
-                    $stmtSearch = $targetDb->prepare($sql);
-                    $searchParams = array_fill(0, count($searchCols), "%$query%");
-                    $stmtSearch->execute($searchParams);
-                    $found = $stmtSearch->fetchAll(\PDO::FETCH_ASSOC);
-
-                    foreach ($found as $item) {
-                        // Find a good display value (first non-id column)
-                        $displayVal = $item[array_keys($item)[1] ?? array_keys($item)[0]];
-
-                        $results[] = [
-                            'db_name' => $dbInfo['name'],
-                            'db_id' => $dbInfo['id'],
-                            'table' => $table,
-                            'id' => $item['id'] ?? null,
-                            'display' => mb_strimwidth(strip_tags((string) $displayVal), 0, 100, "..."),
-                            'snippet' => mb_strimwidth(strip_tags(implode(' ', array_values($item))), 0, 150, "...")
-                        ];
-                    }
-
-                    if (count($results) > 30)
-                        break 2; // Cap total results
-                }
-            } catch (\Exception $e) {
-                // Skip databases with errors
-                continue;
-            }
-        }
-
-        header('Content-Type: application/json');
-        echo json_encode(['results' => $results]);
-        exit;
-    }
+    // globalSearch method removed due to incompatibility with new DB system.
 }

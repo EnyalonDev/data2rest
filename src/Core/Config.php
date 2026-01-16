@@ -20,15 +20,36 @@ class Config
             return;
         }
 
-        self::$config = [
-            'db_path' => getenv('DB_PATH') ?: __DIR__ . '/../../data/system.sqlite',
+        // Default Config
+        $defaultConfig = [
             'app_name' => getenv('APP_NAME') ?: 'Data2Rest',
             'base_url' => getenv('BASE_URL') ?: '',
             'upload_dir' => realpath(__DIR__ . '/../../public/uploads/') . '/',
             'db_storage_path' => realpath(__DIR__ . '/../../data/') . '/',
             'allowed_roles' => ['admin', 'user'],
             'dev_mode' => getenv('DEV_MODE') === 'true',
+            'db_path' => __DIR__ . '/../../data/system.sqlite', // Legacy/Fallback
+            'system_db_config' => ['type' => 'sqlite', 'path' => __DIR__ . '/../../data/system.sqlite']
         ];
+
+        // Load specific system DB config from JSON if exists
+        $configFile = __DIR__ . '/../../data/config.json';
+        if (file_exists($configFile)) {
+            $jsonConfig = json_decode(file_get_contents($configFile), true);
+            if ($jsonConfig) {
+                // Adjust paths in JSON config if needed or use as is
+                if (($jsonConfig['type'] ?? '') === 'sqlite' && empty($jsonConfig['path'])) {
+                    $jsonConfig['path'] = __DIR__ . '/../../data/system.sqlite';
+                }
+                $defaultConfig['system_db_config'] = $jsonConfig;
+                // For backward compatibility mostly
+                if (($jsonConfig['type'] ?? '') === 'sqlite') {
+                    $defaultConfig['db_path'] = $jsonConfig['path'];
+                }
+            }
+        }
+
+        self::$config = $defaultConfig;
     }
 
     /**

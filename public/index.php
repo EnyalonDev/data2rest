@@ -12,7 +12,33 @@ use App\Core\Config;
 require_once __DIR__ . '/../src/autoload.php';
 
 // Load ENV variables
+// Load ENV variables
 Config::loadEnv();
+
+// Check for installation
+if (!file_exists(__DIR__ . '/../data/config.json') && !file_exists(__DIR__ . '/../data/system.sqlite')) {
+    // Basic Installation Router
+    $uri = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+    $basePath = str_replace('/index.php', '', $_SERVER['SCRIPT_NAME']);
+    // Normalize URI
+    if ($basePath !== '/' && strpos($uri, $basePath) === 0) {
+        $uri = substr($uri, strlen($basePath));
+    }
+
+    // Simple router for installation
+    if ($uri === '/install' || $uri === '/install/') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            (new \App\Modules\Install\InstallController())->install();
+        } else {
+            (new \App\Modules\Install\InstallController())->index();
+        }
+        exit;
+    } else {
+        // Redirect to install
+        header("Location: " . $basePath . ($basePath === '/' ? 'install' : '/install'));
+        exit;
+    }
+}
 
 Installer::check();
 Auth::init();
@@ -76,6 +102,8 @@ $router->add('POST', '/admin/system/clear-sessions', 'System\\SystemController@c
 $router->add('POST', '/admin/system/time-offset', 'System\\SystemController@updateTimeOffset');
 $router->add('POST', '/admin/system/dismiss-banner', 'System\\SystemController@dismissBanner');
 $router->add('POST', '/admin/system/global-search', 'System\\SystemController@globalSearch');
+$router->add('GET', '/admin/system/migrate', 'System\\MigrationController@showMigrationForm');
+$router->add('POST', '/admin/system/migrate/run', 'System\\MigrationController@migrate');
 
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');

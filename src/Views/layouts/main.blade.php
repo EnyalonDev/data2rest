@@ -268,11 +268,14 @@
                 @endif
 
                 <!-- Emoji Trigger -->
-                <button onclick="toggleEmojiPicker()" 
+                <button onclick="toggleEmojiPicker()"
                     class="p-2 text-p-muted hover:text-primary hover:bg-white/5 rounded-xl transition-all group"
                     title="Emojis (Ctrl+E)">
-                    <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
                     </svg>
                 </button>
 
@@ -304,7 +307,8 @@
 
                 @if(\App\Core\Auth::check())
                     <span class="text-sm text-p-muted">{{ \App\Core\Lang::get('common.welcome') }},
-                        <a href="{{ $baseUrl }}admin/profile" class="text-p-title hover:text-primary transition-colors border-b border-dashed border-primary/30 hover:border-primary">
+                        <a href="{{ $baseUrl }}admin/profile"
+                            class="text-p-title hover:text-primary transition-colors border-b border-dashed border-primary/30 hover:border-primary">
                             <b>{{ $_SESSION['username'] }}</b>
                         </a></span>
                     <a href="{{ $baseUrl }}logout"
@@ -347,14 +351,16 @@
                             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             <span class="text-sm font-bold text-p-title uppercase italic">{{ $activeName }}</span>
                         </div>
-                        <span class="text-primary text-[10px] font-black">{{ \App\Core\Lang::get('common.edit') }} &rarr;</span>
+                        <span class="text-primary text-[10px] font-black">{{ \App\Core\Lang::get('common.edit') }}
+                            &rarr;</span>
                     </a>
                 </div>
             @endif
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">{{ \App\Core\Lang::get('common.language') }}</span>
+                    <span
+                        class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">{{ \App\Core\Lang::get('common.language') }}</span>
                     <div class="flex items-center bg-black/40 rounded-xl p-1 justify-around">
                         <a href="{{ $baseUrl }}lang/es"
                             class="flex-1 py-2 text-center rounded-lg text-xs font-black {{ \App\Core\Lang::current() === 'es' ? 'bg-primary text-dark' : 'text-slate-500' }}">ES</a>
@@ -365,7 +371,8 @@
                     </div>
                 </div>
                 <div class="space-y-2 text-right">
-                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">{{ \App\Core\Lang::get('common.theme') }}</span>
+                    <span
+                        class="text-[10px] font-black text-p-muted uppercase tracking-widest italic">{{ \App\Core\Lang::get('common.theme') }}</span>
                     <div class="flex justify-end p-2 px-1">
                         @include('partials.theme_toggle')
                     </div>
@@ -484,6 +491,21 @@
                         });
                     }
                 </script>
+
+                @if(($system_db_config['type'] ?? 'sqlite') === 'sqlite')
+                    <div class="flex justify-center mt-4">
+                        <a href="{{ $baseUrl }}admin/system/migrate"
+                            class="group flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all border border-indigo-500/20">
+                            <svg class="w-4 h-4 group-hover:animate-bounce" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                            Migrar a MySQL/PostgreSQL
+                        </a>
+                    </div>
+                @endif
+
             @endif
 
             <div class="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
@@ -491,11 +513,13 @@
                 <div class="w-full md:w-72">
                     <div
                         class="bg-black/20 backdrop-blur-md border border-white/5 p-4 rounded-2xl hover:border-primary/20 transition-all group flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl">
                             🕒
                         </div>
                         <div>
-                            <h4 class="text-[10px] font-black text-p-muted uppercase tracking-widest italic leading-none mb-1">
+                            <h4
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest italic leading-none mb-1">
                                 {{ \App\Core\Lang::get('dashboard.server_time') }}
                             </h4>
                             <p id="footer-clock" class="text-xs font-black text-p-title tabular-nums">
@@ -532,7 +556,8 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                             <h4
                                 class="text-[10px] font-black text-p-muted uppercase tracking-widest italic leading-none">
-                                {{ \App\Core\Lang::get('common.last_commit') }}</h4>
+                                {{ \App\Core\Lang::get('common.last_commit') }}
+                            </h4>
                         </div>
                         <p class="text-[11px] font-bold text-p-title leading-tight line-clamp-2">
                             {{ $last_commit }}
@@ -545,10 +570,10 @@
 
     <script>
         // Footer Clock Synchronization
-        (function() {
+        (function () {
             let serverTime = new Date("{{ date('Y-m-d H:i:s', strtotime(\App\Core\Auth::getCurrentTime())) }}");
             const clockEl = document.getElementById('footer-clock');
-            
+
             if (clockEl) {
                 setInterval(() => {
                     serverTime.setSeconds(serverTime.getSeconds() + 1);

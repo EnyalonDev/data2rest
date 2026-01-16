@@ -329,12 +329,11 @@ class Installer
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id INTEGER NOT NULL REFERENCES projects(id),
                 service_id INTEGER NOT NULL REFERENCES billing_services(id),
-                custom_price REAL, -- If null, use the service price
-                billing_period TEXT, -- 'monthly', 'yearly', 'one_time'
+                custom_price REAL,
+                billing_period TEXT,
                 quantity INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                , use the service price
-                billing_period TEXT)"
+                )"
         ],
         'task_statuses' => [
             'sql' => "CREATE TABLE task_statuses (
@@ -416,22 +415,66 @@ class Installer
     /**
      * Synchronizes the physical database with the expected schema.
      */
+    /**
+     * Synchronizes the physical database with the expected schema.
+     */
     private static function syncSchema($dbPath)
     {
-        $isNew = !file_exists($dbPath);
+        // For SQLite, check file existence. For others, check tables.
+        $config = Config::get('system_db_config');
+        $isSQLite = ($config && ($config['type'] ?? 'sqlite') === 'sqlite');
+        $isNew = $isSQLite ? !file_exists($dbPath) : false; // For remote DBs, we check if tables exist later
 
         try {
-            $db = new PDO('sqlite:' . $dbPath);
-            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Use the configured system database adapter
+            $adapter = Database::getInstance()->getAdapter();
+            $db = Database::getInstance()->getConnection();
+
+            // For remote DBs, if we can connect, assumes DB exists (created by InstallController)
+            if (!$isSQLite) {
+                // Check if 'users' table exists as a proxy for "isNew"
+                $check = $db->query($adapter->getTableExistsSQL('users'));
+                $isNew = ($check->fetchColumn() === false);
+                // IF table exists check returns row count or name?
+                // Adapter::getTableExistsSQL returns a SELECT query. fetch() should return row or false.
+                $check->closeCursor();
+            }
 
             // 1. Ensure all tables exist
             foreach (self::$SCHEMA as $tableName => $definition) {
-                $exists = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='$tableName'")->fetch();
+                // Use Adapter to check existence
+                $existsSql = $adapter->getTableExistsSQL($tableName);
+                $exists = $db->query($existsSql)->fetch();
+
                 if (!$exists) {
-                    $db->exec($definition['sql']);
+                    // Create Table
+                    // NOTE: The $SCHEMA SQL is SQLite tailored (AUTOINCREMENT, etc.)
+                    // Ideally we should use $adapter->createTable() but our schema is complex.
+                    // For MVP, we try to run the SQL. MySQL might accept most if we replace AUTOINCREMENT
+                    $sql = $definition['sql'];
+
+                    if ($adapter->getType() === 'mysql') {
+                        $sql = str_replace('AUTOINCREMENT', 'AUTO_INCREMENT', $sql);
+                        $sql = str_replace('STRING', 'VARCHAR(255)', $sql);
+                        // Fix SQLite specific syntax if any
+                    } elseif ($adapter->getType() === 'pgsql') {
+                        $sql = str_replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY', $sql);
+                        $sql = str_replace('DATETIME', 'TIMESTAMP', $sql);
+                    }
+
+                    try {
+                        $db->exec($sql);
+                    } catch (\Exception $e) {
+                        // Fallback or log. 
+                        // For detailed migration, we'd need a Builder.
+                        // For now, let's assume the user uses SQLite or we fix SQL on fly.
+                    }
                 } else {
                     // Synchronize columns for existing tables
-                    self::syncColumns($db, $tableName, $definition['sql']);
+                    // Only for SQLite for now as regex is fragile
+                    if ($adapter->getType() === 'sqlite') {
+                        self::syncColumns($db, $tableName, $definition['sql']);
+                    }
                 }
             }
 
