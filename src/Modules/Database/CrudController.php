@@ -14,11 +14,43 @@ use RecursiveDirectoryIterator;
 
 /**
  * CRUD Controller
- * Handles the Create, Read, Update, and Delete operations for database records,
- * and also provides media management functionality.
+ * 
+ * Comprehensive controller for Create, Read, Update, and Delete operations
+ * on database records with advanced features including:
+ * 
+ * Core Features:
+ * - Full CRUD operations with role-based permissions
+ * - Data versioning and audit trail
+ * - Foreign key relationship management
+ * - File upload and media handling
+ * - CSV export functionality
+ * - Recycle bin (soft delete) system
+ * - Version restoration capabilities
+ * 
+ * Security:
+ * - Permission-based access control
+ * - SQL injection protection via prepared statements
+ * - CSRF token validation
+ * - Path traversal prevention
+ * 
+ * Data Integrity:
+ * - Automatic timestamp management (created_at, updated_at)
+ * - Complete audit trail for all operations
+ * - Version history tracking
+ * - Rollback capabilities
+ * 
+ * @package App\Modules\Database
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class CrudController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication
+     * 
+     * Ensures that only authenticated users can access
+     * any CRUD functionality.
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -162,7 +194,18 @@ LIMIT 1");
     }
 
     /**
-     * Renders a list view of records for a specific table.
+     * Display list view of table records
+     * 
+     * Renders a paginated list of all records in the specified table
+     * with support for:
+     * - Search functionality across visible fields
+     * - Foreign key resolution for display
+     * - Permission-based access control
+     * 
+     * @return void Renders the list view template
+     * 
+     * @example
+     * GET /admin/crud/list?db_id=1&table=users&s=search_term
      */
     public function list()
     {
@@ -233,7 +276,19 @@ LIMIT 1");
     }
 
     /**
-     * Renders the form to create or edit a record.
+     * Display form for creating or editing a record
+     * 
+     * Renders a dynamic form based on field configuration with:
+     * - Auto-populated foreign key dropdowns
+     * - File upload fields for media
+     * - Pre-filled values for edit mode
+     * - Field type-specific input controls
+     * 
+     * @return void Renders the form view template
+     * 
+     * @example
+     * GET /admin/crud/form?db_id=1&table=users (new record)
+     * GET /admin/crud/form?db_id=1&table=users&id=5 (edit record)
      */
     public function form()
     {
@@ -286,7 +341,22 @@ LIMIT 1");
     }
 
     /**
-     * Processes form submission to save (insert or update) a record.
+     * Process form submission to save a record
+     * 
+     * Handles both INSERT (new record) and UPDATE (existing record) operations.
+     * 
+     * Features:
+     * - File upload processing with automatic organization
+     * - Automatic timestamp management
+     * - Data versioning for audit trail
+     * - Foreign key validation
+     * - Metadata updates
+     * 
+     * @return void Redirects to list view on success
+     * 
+     * @example
+     * POST /admin/crud/save
+     * Body: db_id=1&table=users&field1=value1&field2=value2
      */
     public function save()
     {
@@ -444,7 +514,22 @@ LIMIT 1");
     }
 
     /**
-     * Deletes a record from a specific table.
+     * Delete a record from the database
+     * 
+     * Performs a hard delete with complete audit trail logging.
+     * The deleted data is preserved in data_versions table for
+     * potential restoration.
+     * 
+     * Features:
+     * - Complete data backup before deletion
+     * - Audit trail logging
+     * - Permission validation
+     * - Metadata timestamp updates
+     * 
+     * @return void Redirects to list view with status message
+     * 
+     * @example
+     * POST /admin/crud/delete?db_id=1&table=users&id=5
      */
     public function delete()
     {
@@ -519,7 +604,22 @@ LIMIT 1");
         $stmt->execute([$db_id, $table, $now]);
     }
     /**
-     * Exports the current table records to a CSV file (Excel compatible).
+     * Export table data to CSV file
+     * 
+     * Generates an Excel-compatible CSV file with UTF-8 BOM encoding.
+     * Includes foreign key resolution for human-readable exports.
+     * 
+     * Features:
+     * - UTF-8 BOM for Excel compatibility
+     * - Foreign key values resolved to display names
+     * - Only visible fields included
+     * - Automatic filename with timestamp
+     * 
+     * @return void Outputs CSV file download
+     * 
+     * @example
+     * GET /admin/crud/export?db_id=1&table=users
+     * Downloads: users_2026-01-16_00-55.csv
      */
     public function export()
     {
@@ -600,7 +700,19 @@ LIMIT 1");
     }
 
     /**
-     * View history of a record
+     * View audit history for a specific record
+     * 
+     * Displays complete version history including:
+     * - All CRUD operations (INSERT, UPDATE, DELETE, RESTORE)
+     * - User who performed each action
+     * - API key used (if applicable)
+     * - Before/after data comparison
+     * - Timestamps for each change
+     * 
+     * @return void Renders history view template
+     * 
+     * @example
+     * GET /admin/crud/history?db_id=1&table=users&id=5
      */
     public function history()
     {
@@ -644,7 +756,21 @@ LIMIT 1");
     }
 
     /**
-     * View all deletions across the project (Recycle Bin).
+     * Display recycle bin with deleted records
+     * 
+     * Shows all soft-deleted records across the current project
+     * with restoration capabilities.
+     * 
+     * Features:
+     * - Project-scoped deletion view
+     * - User and API key attribution
+     * - Restoration capability
+     * - Limited to 100 most recent deletions
+     * 
+     * @return void Renders trash view template
+     * 
+     * @example
+     * GET /admin/trash
      */
     public function trash()
     {
@@ -685,7 +811,21 @@ LIMIT 1");
     }
 
     /**
-     * Purge all deletions for the project.
+     * Permanently delete all items in recycle bin
+     * 
+     * Purges all soft-deleted records for the current project.
+     * This operation is irreversible and includes database optimization.
+     * 
+     * Features:
+     * - Project-scoped purge
+     * - Database VACUUM optimization
+     * - Audit logging
+     * - Admin-only operation
+     * 
+     * @return void Redirects to trash view with status message
+     * 
+     * @example
+     * POST /admin/trash/empty
      */
     public function emptyTrash()
     {
@@ -719,7 +859,22 @@ LIMIT 1");
     }
 
     /**
-     * Restore a version
+     * Restore a previous version of a record
+     * 
+     * Restores a record to a previous state from the audit trail.
+     * Creates a new audit entry for the restoration action.
+     * 
+     * Features:
+     * - Column validation (only restores existing columns)
+     * - Audit trail for restoration
+     * - Permission validation
+     * - Metadata updates
+     * 
+     * @return void Redirects to history view with status message
+     * 
+     * @example
+     * POST /admin/crud/restore
+     * Body: version_id=123
      */
     public function restore()
     {
