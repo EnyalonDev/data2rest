@@ -15,17 +15,64 @@ use App\Modules\Webhooks\WebhookDispatcher;
 
 /**
  * Media Controller
- * Handles file management, usage tracking, and organizational features.
+ * 
+ * Comprehensive file and media management system with advanced features
+ * including usage tracking, trash management, and image editing.
+ * 
+ * Core Features:
+ * - File upload with automatic optimization
+ * - Folder management and organization
+ * - Usage tracking across all databases
+ * - Trash system with restoration
+ * - Bulk operations (delete, move)
+ * - Image editing (crop, resize, filters)
+ * - AI-powered background removal support
+ * - Storage quota enforcement
+ * - Webhook integration
+ * 
+ * Image Editing:
+ * - Crop and resize
+ * - Filters (grayscale, sepia, vintage, dramatic, etc.)
+ * - Quality optimization
+ * - Format conversion (JPEG, PNG, WebP, AVIF)
+ * - Client-side AI processing support
+ * 
+ * Security:
+ * - Permission-based access control
+ * - Path traversal prevention
+ * - File type validation
+ * - Storage quota limits
+ * 
+ * Organization:
+ * - Project-scoped storage
+ * - Automatic folder structure
+ * - Breadcrumb navigation
+ * - File search and filtering
+ * 
+ * @package App\Modules\Media
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class MediaController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication
+     * 
+     * Ensures that only authenticated users can access
+     * media management functionality.
+     */
     public function __construct()
     {
         Auth::requireLogin();
     }
 
     /**
-     * Renders the main media manager UI.
+     * Display media library interface
+     * 
+     * Renders the main media manager UI with file browser,
+     * upload interface, and management tools.
+     * 
+     * @return void Renders media library view
      */
     // Local getStoragePrefix removed: using getStoragePrefix from BaseController
 
@@ -44,7 +91,23 @@ class MediaController extends BaseController
     }
 
     /**
-     * JSON endpoint to list files and folders.
+     * List files and folders (JSON endpoint)
+     * 
+     * Returns a JSON list of files and folders in the specified path
+     * with automatic trash cleanup and breadcrumb navigation.
+     * 
+     * Features:
+     * - Project-scoped file listing
+     * - Path traversal protection
+     * - Automatic sorting (folders first)
+     * - Image detection
+     * - File metadata (size, mtime)
+     * 
+     * @return void Outputs JSON response with file list
+     * 
+     * @example
+     * GET /admin/media/list?db_id=1&path=images/products
+     * Response: {"current_path": "...", "items": [...], "breadcrumbs": [...]}
      */
     public function list()
     {
@@ -130,7 +193,22 @@ class MediaController extends BaseController
     }
 
     /**
-     * Scans all databases for usage of a specific file.
+     * Scan databases for file usage
+     * 
+     * Searches all accessible databases to find where a specific file
+     * is being used. Useful for determining if a file can be safely deleted.
+     * 
+     * Features:
+     * - Project-scoped or admin-wide search
+     * - Searches all text/varchar columns
+     * - Returns database, table, and record IDs
+     * - Limited to 10 matches per table
+     * 
+     * @return void Outputs JSON response with usage information
+     * 
+     * @example
+     * GET /admin/media/usage?url=https://example.com/uploads/image.jpg
+     * Response: {"usage": [{"database": "...", "table": "...", "row_ids": [...]}]}
      */
     public function usage()
     {
@@ -214,7 +292,25 @@ class MediaController extends BaseController
     }
 
     /**
-     * Handles file uploads.
+     * Handle file upload
+     * 
+     * Processes file uploads with automatic optimization, quota enforcement,
+     * and webhook notifications.
+     * 
+     * Features:
+     * - Automatic image optimization via ImageService
+     * - Storage quota validation
+     * - Collision handling (auto-rename)
+     * - Project-scoped storage
+     * - Webhook trigger on success
+     * 
+     * @return void Outputs JSON response with upload result
+     * 
+     * @example
+     * POST /admin/media/upload
+     * Files: file=@image.jpg
+     * Body: path=products&db_id=1
+     * Response: {"success": true, "name": "image.jpg", "url": "..."}
      */
     public function upload()
     {
@@ -287,7 +383,23 @@ class MediaController extends BaseController
     }
 
     /**
-     * Moves a file or directory to the system trash.
+     * Move file or folder to trash
+     * 
+     * Performs a soft delete by moving the file to a project-scoped
+     * trash directory with restoration capability.
+     * 
+     * Features:
+     * - Soft delete (recoverable)
+     * - Path traversal protection
+     * - Trash metadata tracking
+     * - Automatic cleanup based on retention settings
+     * 
+     * @return void Outputs JSON response with success status
+     * 
+     * @example
+     * POST /admin/media/delete
+     * Body: path=images/old-photo.jpg&db_id=1
+     * Response: {"success": true}
      */
     public function delete()
     {
