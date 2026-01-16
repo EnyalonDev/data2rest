@@ -15,7 +15,9 @@ class MigrationController extends BaseController
         $currentConfig = Config::get('system_db_config') ?? ['type' => 'sqlite'];
         if (($currentConfig['type'] ?? 'sqlite') !== 'sqlite') {
             // Already migrated or remote
-            return $this->view('system/message', ['message' => 'El sistema ya está utilizando una base de datos remota (' . $currentConfig['type'] . ').']);
+            return $this->view('system/message', [
+                'message' => \App\Core\Lang::get('migration.current_remote_error', ['type' => $currentConfig['type']])
+            ]);
         }
 
         return $this->view('system/migration_form');
@@ -28,7 +30,7 @@ class MigrationController extends BaseController
         $targetType = $_POST['type'] ?? '';
 
         if (!in_array($targetType, ['mysql', 'pgsql'])) {
-            return $this->json(['success' => false, 'message' => 'Tipo de base de datos no válido.']);
+            return $this->json(['success' => false, 'message' => 'Invalid database type.']);
         }
 
         $targetConfig = [
@@ -113,7 +115,7 @@ class MigrationController extends BaseController
         } catch (\Exception $e) {
             if (isset($targetDb))
                 $targetDb->rollBack();
-            return $this->json(['success' => false, 'message' => 'Error de migración: ' . $e->getMessage()], 500);
+            return $this->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 

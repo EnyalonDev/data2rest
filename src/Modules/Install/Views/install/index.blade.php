@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-900">
+<html lang="{{ $lang['common']['language'] ?? 'es' }}" class="h-full bg-slate-900">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instalación - Data2Rest</title>
+    <title>{{ $lang['install']['title'] }} - Data2Rest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -29,6 +29,14 @@
                 }
             }
         }
+
+        window.I18N = {
+            config_sqlite: "{{ $lang['install']['sqlite_title'] }}",
+            config_mysql: "{{ $lang['install']['mysql_title'] }}",
+            config_pgsql: "{{ $lang['install']['pgsql_title'] }}",
+            installing: "{{ $lang['install']['installing'] }}",
+            retry: "{{ $lang['install']['retry_btn'] }}"
+        };
     </script>
     <style>
         .glass {
@@ -58,9 +66,9 @@
                         d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                 </svg>
             </div>
-            <h2 class="text-3xl font-bold tracking-tight text-white">Bienvenido a Data2Rest</h2>
+            <h2 class="text-3xl font-bold tracking-tight text-white">{{ $lang['install']['welcome'] }}</h2>
             <p class="mt-2 text-sm text-slate-400">
-                Tu plataforma de gestión de datos y APIs lista para usar.
+                {{ $lang['install']['subtitle'] }}
             </p>
         </div>
 
@@ -69,7 +77,7 @@
 
                 <!-- Step 1: Selection -->
                 <div id="step-select" class="space-y-6">
-                    <h3 class="text-lg font-medium text-white mb-4">Elige tu motor de base de datos</h3>
+                    <h3 class="text-lg font-medium text-white mb-4">{{ $lang['install']['select_db_type'] }}</h3>
 
                     <!-- Option SQLite -->
                     <button onclick="selectType('sqlite')"
@@ -80,9 +88,9 @@
                         </div>
                         <div>
                             <h4 class="text-base font-semibold text-white group-hover:text-blue-400 transition-colors">
-                                Modo Rápido (SQLite)</h4>
-                            <p class="mt-1 text-sm text-slate-400">Recomendado para empezar. Sin configuración, ideal
-                                para desarrollo local, pruebas o proyectos pequeños. ¡Listo en 1 click!</p>
+                                {{ $lang['install']['sqlite_title'] }}
+                            </h4>
+                            <p class="mt-1 text-sm text-slate-400">{{ $lang['install']['sqlite_desc'] }}</p>
                         </div>
                         <div class="absolute right-5 top-5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -102,9 +110,9 @@
                         <div>
                             <h4
                                 class="text-base font-semibold text-white group-hover:text-orange-400 transition-colors">
-                                MySQL / MariaDB</h4>
-                            <p class="mt-1 text-sm text-slate-400">Para entornos de producción. Requiere un servidor
-                                MySQL existente. Mayor rendimiento para múltiples usuarios.</p>
+                                {{ $lang['install']['mysql_title'] }}
+                            </h4>
+                            <p class="mt-1 text-sm text-slate-400">{{ $lang['install']['mysql_desc'] }}</p>
                         </div>
                     </button>
 
@@ -118,9 +126,9 @@
                         <div>
                             <h4
                                 class="text-base font-semibold text-white group-hover:text-indigo-400 transition-colors">
-                                PostgreSQL</h4>
-                            <p class="mt-1 text-sm text-slate-400">La opción más robusta. Ideal para aplicaciones
-                                complejas que requieren características avanzadas de SQL.</p>
+                                {{ $lang['install']['pgsql_title'] }}
+                            </h4>
+                            <p class="mt-1 text-sm text-slate-400">{{ $lang['install']['pgsql_desc'] }}</p>
                         </div>
                     </button>
 
@@ -136,7 +144,7 @@
                                     d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <h3 id="form-title" class="text-lg font-medium text-white">Configuración</h3>
+                        <h3 id="form-title" class="text-lg font-medium text-white">{{ $lang['common']['edit'] }}</h3>
                     </div>
 
                     <input type="hidden" name="type" id="input-type">
@@ -153,19 +161,22 @@
                     <div id="db-fields" class="space-y-4 hidden">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Host</label>
+                                <label
+                                    class="block text-xs font-medium text-slate-400 mb-1">{{ $lang['install']['db_host'] }}</label>
                                 <input type="text" name="host" value="localhost"
                                     class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Puerto</label>
+                                <label
+                                    class="block text-xs font-medium text-slate-400 mb-1">{{ $lang['install']['db_port'] }}</label>
                                 <input type="text" name="port" id="input-port"
                                     class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Base de Datos</label>
+                            <label
+                                class="block text-xs font-medium text-slate-400 mb-1">{{ $lang['install']['db_name'] }}</label>
                             <input type="text" name="database" value="data2rest_system"
                                 class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                             <p class="mt-1 text-[10px] text-slate-500">Si no existe, intentaremos crearla.</p>
@@ -173,12 +184,14 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Usuario</label>
+                                <label
+                                    class="block text-xs font-medium text-slate-400 mb-1">{{ $lang['install']['db_user'] }}</label>
                                 <input type="text" name="username"
                                     class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña</label>
+                                <label
+                                    class="block text-xs font-medium text-slate-400 mb-1">{{ $lang['install']['db_password'] }}</label>
                                 <input type="password" name="password"
                                     class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                             </div>
@@ -190,7 +203,7 @@
 
                     <button type="submit" id="btn-submit"
                         class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-slate-900 transition-all">
-                        Instalar Data2Rest
+                        {{ $lang['install']['install_btn'] }}
                     </button>
                 </form>
             </div>
@@ -213,11 +226,11 @@
             const title = document.getElementById('form-title');
 
             if (type === 'sqlite') {
-                title.textContent = 'Configurar SQLite (Automático)';
+                title.textContent = window.I18N.config_sqlite;
                 dbFields.classList.add('hidden');
                 sqliteFields.classList.remove('hidden');
             } else {
-                title.textContent = type === 'mysql' ? 'Configurar MySQL' : 'Configurar PostgreSQL';
+                title.textContent = type === 'mysql' ? window.I18N.config_mysql : window.I18N.config_pgsql;
                 dbFields.classList.remove('hidden');
                 sqliteFields.classList.add('hidden');
                 portInput.value = type === 'mysql' ? '3306' : '5432';
@@ -238,7 +251,7 @@
 
             // Loading state
             btn.disabled = true;
-            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Instalando...';
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ' + window.I18N.installing;
             errorDiv.classList.add('hidden');
 
             try {
@@ -259,7 +272,7 @@
                 errorDiv.textContent = 'Error: ' + err.message;
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
-                btn.textContent = 'Reintentar Instalación';
+                btn.textContent = window.I18N.retry;
             }
         }
     </script>

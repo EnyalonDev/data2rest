@@ -446,16 +446,16 @@
                         <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">🛠️ Dev Tools</span>
                     </div>
                     <button onclick="devClearCache()"
-                        class="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all">
-                        Limpiar Caché
+                        class="px-4 py-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all">
+                        {{ $lang['dashboard']['clear_cache'] }}
                     </button>
                     <button onclick="devClearSessions()"
                         class="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all">
-                        Limpiar Sesiones
+                        {{ $lang['dashboard']['clear_sessions'] }}
                     </button>
                     <button onclick="window.location.reload(true)"
                         class="px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-dark rounded-lg text-xs font-black uppercase tracking-widest transition-all">
-                        Súper Refresh (F5+)
+                        {{ $lang['dashboard']['super_refresh'] }}
                     </button>
                 </div>
                 <script>
@@ -467,14 +467,18 @@
                             .then(res => res.json())
                             .then(data => {
                                 if (data.success) {
-                                    showModal({ title: 'Cache Base de Datos/App', message: 'Variables de sistema y archivos temporales limpiados correctamente.', type: 'success' });
+                                    showModal({
+                                        title: '{{ $lang['dashboard']['cache_modal_title'] }}',
+                                        message: '{{ $lang['dashboard']['cache_modal_msg'] }}',
+                                        type: 'success'
+                                    });
                                 }
                             });
                     }
                     function devClearSessions() {
                         showModal({
-                            title: 'Limpiar Sesiones',
-                            message: 'Esto cerrará la sesión de todos los demás usuarios. ¿Continuar?',
+                            title: '{{ $lang['dashboard']['sessions_modal_title'] }}',
+                            message: '{{ $lang['dashboard']['sessions_modal_msg'] }}',
                             type: 'confirm',
                             onConfirm: () => {
                                 fetch('{{ $baseUrl }}admin/system/clear-sessions', {
@@ -484,7 +488,8 @@
                                     .then(res => res.json())
                                     .then(data => {
                                         if (data.success) {
-                                            showModal({ title: 'Sesiones Limpias', message: `Se han eliminado ${data.cleared} sesiones inactivas con éxito.`, type: 'success' });
+                                            const msg = '{{ $lang['dashboard']['sessions_cleared_msg'] }}'.replace(':count', data.cleared);
+                                            showModal({ title: '{{ $lang['dashboard']['sessions_modal_title'] }}', message: msg, type: 'success' });
                                         }
                                     });
                             }
@@ -501,7 +506,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
-                            Migrar a MySQL/PostgreSQL
+                            {{ $lang['migration']['link_text'] }}
                         </a>
                     </div>
                 @endif
@@ -532,7 +537,8 @@
                 <!-- Center Content -->
                 <div class="flex flex-col items-center gap-2 text-center flex-1">
                     <p class="text-slate-500 text-sm">
-                        © 2026 Data2Rest Framework | Powered by <a href="https://nestorovallos.com" target="_blank"
+                        © 2026 Data2Rest Framework <span class="text-blue-400 font-mono text-xs">v2.1.0</span> | Powered
+                        by <a href="https://nestorovallos.com" target="_blank"
                             class="text-primary hover:underline font-bold">EnyalonDev</a>
                     </p>
                     <p class="text-xs text-slate-600">
