@@ -44,6 +44,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * UserController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class UserController extends BaseController
 {
     /**
@@ -52,6 +63,11 @@ class UserController extends BaseController
      * Enforces that only users with 'module:users.view_users'
      * permission can access user management functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         // Allow anyone with view access to enter
@@ -76,6 +92,11 @@ class UserController extends BaseController
      * GET /admin/users
      * GET /admin/users?group_id=1&search=john
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -167,6 +188,11 @@ class UserController extends BaseController
      * GET /admin/users/form (new user)
      * GET /admin/users/form?id=5 (edit user)
      */
+/**
+ * form method
+ *
+ * @return void
+ */
     public function form()
     {
         $id = $_GET['id'] ?? null;
@@ -223,6 +249,11 @@ class UserController extends BaseController
      * POST /admin/users/save
      * Body: username=john_doe&password=secret&role_id=2&group_id=1
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         $id = $_POST['id'] ?? null;
@@ -288,6 +319,11 @@ class UserController extends BaseController
      * @example
      * GET /admin/users/delete?id=5
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         Auth::requirePermission('module:users.delete_users');

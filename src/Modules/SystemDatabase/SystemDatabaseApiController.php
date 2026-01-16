@@ -14,12 +14,28 @@ use PDO;
  * All endpoints require a valid API Key from a Super Admin user.
  * This ensures only authorized administrators can perform system-level operations via API.
  */
+/**
+ * SystemDatabaseApiController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class SystemDatabaseApiController extends BaseController
 {
     private $apiKeyData;
     private $systemDbPath;
     private $backupDir;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->systemDbPath = realpath(__DIR__ . '/../../../data/system.sqlite') ?: __DIR__ . '/../../../data/system.sqlite';
@@ -87,6 +103,11 @@ class SystemDatabaseApiController extends BaseController
      * 
      * Get system database information
      */
+/**
+ * getInfo method
+ *
+ * @return void
+ */
     public function getInfo()
     {
         $this->apiKeyData = $this->authenticateSuperAdmin();
@@ -157,6 +178,11 @@ class SystemDatabaseApiController extends BaseController
      * 
      * Create a new backup of the system database
      */
+/**
+ * createBackup method
+ *
+ * @return void
+ */
     public function createBackup()
     {
         $this->apiKeyData = $this->authenticateSuperAdmin();
@@ -200,6 +226,11 @@ class SystemDatabaseApiController extends BaseController
      * 
      * List all available backups
      */
+/**
+ * listBackups method
+ *
+ * @return void
+ */
     public function listBackups()
     {
         $this->apiKeyData = $this->authenticateSuperAdmin();
@@ -223,6 +254,11 @@ class SystemDatabaseApiController extends BaseController
      * 
      * Optimize the system database (VACUUM + ANALYZE)
      */
+/**
+ * optimize method
+ *
+ * @return void
+ */
     public function optimize()
     {
         $this->apiKeyData = $this->authenticateSuperAdmin();
@@ -257,6 +293,11 @@ class SystemDatabaseApiController extends BaseController
      * Execute a SELECT query on the system database
      * Only SELECT queries are allowed for security
      */
+/**
+ * executeQuery method
+ *
+ * @return void
+ */
     public function executeQuery()
     {
         $this->apiKeyData = $this->authenticateSuperAdmin();
@@ -310,6 +351,11 @@ class SystemDatabaseApiController extends BaseController
      * 
      * List all system tables with statistics
      */
+/**
+ * listTables method
+ *
+ * @return void
+ */
     public function listTables()
     {
         $this->apiKeyData = $this->authenticateSuperAdmin();

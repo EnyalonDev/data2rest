@@ -47,6 +47,17 @@ use RecursiveDirectoryIterator;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * DashboardController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class DashboardController extends BaseController
 {
     /**
@@ -74,6 +85,11 @@ class DashboardController extends BaseController
      * @example
      * GET /admin/dashboard
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         Auth::requireLogin();

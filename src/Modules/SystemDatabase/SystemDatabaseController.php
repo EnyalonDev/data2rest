@@ -15,11 +15,27 @@ use Exception;
  * SUPER ADMIN ONLY - Manages the system database (system.sqlite)
  * Includes backups, SQL execution, optimization, and comprehensive logging
  */
+/**
+ * SystemDatabaseController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class SystemDatabaseController extends BaseController
 {
     private $systemDbPath;
     private $backupDir;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -38,6 +54,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Dashboard - System Database Overview
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -91,6 +112,11 @@ class SystemDatabaseController extends BaseController
     /**
      * List all system tables with statistics
      */
+/**
+ * tables method
+ *
+ * @return void
+ */
     public function tables()
     {
         $db = Database::getInstance()->getConnection();
@@ -135,6 +161,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Show table details (structure, indexes, sample data)
      */
+/**
+ * tableDetails method
+ *
+ * @return void
+ */
     public function tableDetails()
     {
         $tableName = $_GET['table'] ?? null;
@@ -185,6 +216,11 @@ class SystemDatabaseController extends BaseController
     /**
      * SQL Query Executor
      */
+/**
+ * queryExecutor method
+ *
+ * @return void
+ */
     public function queryExecutor()
     {
         $this->view('admin/system_database/query_executor', [
@@ -199,6 +235,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Execute SQL Query
      */
+/**
+ * executeQuery method
+ *
+ * @return void
+ */
     public function executeQuery()
     {
         $query = $_POST['query'] ?? '';
@@ -281,6 +322,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Optimize System Database (VACUUM + ANALYZE)
      */
+/**
+ * optimize method
+ *
+ * @return void
+ */
     public function optimize()
     {
         $db = Database::getInstance()->getConnection();
@@ -304,6 +350,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Clean old data (logs, audit trail, recycle bin)
      */
+/**
+ * cleanOldData method
+ *
+ * @return void
+ */
     public function cleanOldData()
     {
         $db = Database::getInstance()->getConnection();
@@ -355,6 +406,11 @@ class SystemDatabaseController extends BaseController
     /**
      * List all backups
      */
+/**
+ * backupsList method
+ *
+ * @return void
+ */
     public function backupsList()
     {
         $backups = $this->getBackupsList();
@@ -372,6 +428,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Create manual backup
      */
+/**
+ * createBackup method
+ *
+ * @return void
+ */
     public function createBackup()
     {
         try {
@@ -400,6 +461,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Restore from backup
      */
+/**
+ * restoreBackup method
+ *
+ * @return void
+ */
     public function restoreBackup()
     {
         $backupFile = $_POST['backup_file'] ?? '';
@@ -442,6 +508,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Delete a backup
      */
+/**
+ * deleteBackup method
+ *
+ * @return void
+ */
     public function deleteBackup()
     {
         $backupFile = $_GET['file'] ?? '';
@@ -476,6 +547,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Download a backup file
      */
+/**
+ * downloadBackup method
+ *
+ * @return void
+ */
     public function downloadBackup()
     {
         $backupFile = $_GET['file'] ?? '';
@@ -502,6 +578,11 @@ class SystemDatabaseController extends BaseController
     /**
      * View system logs with filters
      */
+/**
+ * viewLogs method
+ *
+ * @return void
+ */
     public function viewLogs()
     {
         $db = Database::getInstance()->getConnection();
@@ -562,6 +643,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Export logs to CSV
      */
+/**
+ * exportLogs method
+ *
+ * @return void
+ */
     public function exportLogs()
     {
         $db = Database::getInstance()->getConnection();
@@ -595,6 +681,11 @@ class SystemDatabaseController extends BaseController
     /**
      * Clear old logs
      */
+/**
+ * clearLogs method
+ *
+ * @return void
+ */
     public function clearLogs()
     {
         $db = Database::getInstance()->getConnection();
@@ -623,6 +714,11 @@ class SystemDatabaseController extends BaseController
     /**
      * API Explorer - Visual interface for testing System API endpoints
      */
+/**
+ * apiExplorer method
+ *
+ * @return void
+ */
     public function apiExplorer()
     {
         $db = Database::getInstance()->getConnection();

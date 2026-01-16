@@ -48,6 +48,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * RestController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class RestController extends BaseController
 {
     /**
@@ -119,6 +130,11 @@ class RestController extends BaseController
      * PUT /api/db/1/users/5 - Update user 5
      * DELETE /api/db/1/users/5 - Delete user 5
      */
+/**
+ * handle method
+ *
+ * @return void
+ */
     public function handle($db_id, $table, $id = null)
     {
         $this->apiKeyData = $this->authenticate();

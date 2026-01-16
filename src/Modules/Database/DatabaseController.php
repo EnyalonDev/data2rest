@@ -54,6 +54,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * DatabaseController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class DatabaseController extends BaseController
 {
     /**
@@ -62,6 +73,11 @@ class DatabaseController extends BaseController
      * Ensures that only authenticated users can access
      * database management functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -70,6 +86,11 @@ class DatabaseController extends BaseController
     /**
      * Lists all databases registered in the system.
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         Auth::requirePermission('module:databases', 'view_tables');
@@ -124,6 +145,11 @@ class DatabaseController extends BaseController
      *
      * @return void Redirects to sync page or dies on error.
      */
+/**
+ * create method
+ *
+ * @return void
+ */
     public function create()
     {
         Auth::requirePermission('module:databases.create_db');
@@ -172,6 +198,11 @@ class DatabaseController extends BaseController
     /**
      * Deletes a database entry and its physical SQLite file.
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         Auth::requirePermission('module:databases.delete_db');
@@ -199,6 +230,11 @@ class DatabaseController extends BaseController
     /**
      * Shows the configuration form for a database (visibility settings, etc).
      */
+/**
+ * edit method
+ *
+ * @return void
+ */
     public function edit()
     {
         Auth::requirePermission('module:databases.edit_db');
@@ -239,6 +275,11 @@ class DatabaseController extends BaseController
     /**
      * Saves the database configuration (hidden tables).
      */
+/**
+ * saveConfig method
+ *
+ * @return void
+ */
     public function saveConfig()
     {
         Auth::requirePermission('module:databases.edit_db');
@@ -260,6 +301,11 @@ class DatabaseController extends BaseController
     /**
      * Lists all tables within a specific database.
      */
+/**
+ * viewTables method
+ *
+ * @return void
+ */
     public function viewTables()
     {
         try {
@@ -343,6 +389,11 @@ class DatabaseController extends BaseController
     /**
      * Adds a new table to a specific database.
      */
+/**
+ * createTable method
+ *
+ * @return void
+ */
     public function createTable()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -399,6 +450,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Creates a new table using raw SQL.
      */
+/**
+ * createTableSql method
+ *
+ * @return void
+ */
     public function createTableSql()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -442,6 +498,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Removes a table from the database.
      */
+/**
+ * deleteTable method
+ *
+ * @return void
+ */
     public function deleteTable()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -472,6 +533,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Displays and manages the fields (columns) of a specific table.
      */
+/**
+ * manageFields method
+ *
+ * @return void
+ */
     public function manageFields()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -512,6 +578,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Adds a new field structure to the system metadata for a table.
      */
+/**
+ * addField method
+ *
+ * @return void
+ */
     public function addField()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -552,6 +623,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Removes a field from the table metadata and potentially the physical database.
      */
+/**
+ * deleteField method
+ *
+ * @return void
+ */
     public function deleteField()
     {
         $config_id = $_GET['config_id'] ?? null;
@@ -608,6 +684,11 @@ is_visible, is_required) VALUES (?, ?, 'fecha_edicion', 'TEXT', 'text', 0, 1, 0)
     /**
      * Updates the configuration (UI type, constraints) for existing fields.
      */
+/**
+ * updateFieldConfig method
+ *
+ * @return void
+ */
     public function updateFieldConfig()
     {
         $config_id = $_POST['config_id'] ?? null;
@@ -653,6 +734,11 @@ WHERE id = ?");
      * Synchronizes the physical database structure with the system's metadata.
      * Handles ALTER TABLE operations, additions, and deletions.
      */
+/**
+ * syncDatabase method
+ *
+ * @return void
+ */
     public function syncDatabase()
     {
         $id = $_GET['id'] ?? null;
@@ -757,6 +843,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Creates a database from an uploaded SQL script.
      */
+/**
+ * importSql method
+ *
+ * @return void
+ */
     public function importSql()
     {
         Auth::requirePermission('module:databases.create_db');
@@ -812,6 +903,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Exports a database as a SQL dump.
      */
+/**
+ * exportSql method
+ *
+ * @return void
+ */
     public function exportSql()
     {
         $id = $_GET['id'] ?? null;
@@ -875,6 +971,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Export a single table as SQL
      */
+/**
+ * exportTableSql method
+ *
+ * @return void
+ */
     public function exportTableSql()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -932,6 +1033,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Export a single table as Excel
      */
+/**
+ * exportTableExcel method
+ *
+ * @return void
+ */
     public function exportTableExcel()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -987,6 +1093,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Export a single table as CSV
      */
+/**
+ * exportTableCsv method
+ *
+ * @return void
+ */
     public function exportTableCsv()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1034,6 +1145,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Generate Excel template for import
      */
+/**
+ * generateExcelTemplate method
+ *
+ * @return void
+ */
     public function generateExcelTemplate()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1090,6 +1206,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Generate CSV template for import
      */
+/**
+ * generateCsvTemplate method
+ *
+ * @return void
+ */
     public function generateCsvTemplate()
     {
         $db_id = $_GET['db_id'] ?? null;
@@ -1144,6 +1265,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import SQL into a table
      */
+/**
+ * importTableSql method
+ *
+ * @return void
+ */
     public function importTableSql()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -1192,6 +1318,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import SQL from text input into a table
      */
+/**
+ * importTableSqlText method
+ *
+ * @return void
+ */
     public function importTableSqlText()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -1249,6 +1380,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import Excel into a table
      */
+/**
+ * importTableExcel method
+ *
+ * @return void
+ */
     public function importTableExcel()
     {
         $db_id = $_POST['db_id'] ?? null;
@@ -1342,6 +1478,11 @@ is_visible, is_required) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
     /**
      * Import CSV into a table
      */
+/**
+ * importTableCsv method
+ *
+ * @return void
+ */
     public function importTableCsv()
     {
         $db_id = $_POST['db_id'] ?? null;

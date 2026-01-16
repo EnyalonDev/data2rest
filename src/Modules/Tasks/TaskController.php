@@ -30,6 +30,17 @@ use Exception;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * TaskController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class TaskController extends BaseController
 {
     /**
@@ -38,6 +49,11 @@ class TaskController extends BaseController
      * Ensures that only authenticated users can access
      * any task management functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -46,6 +62,11 @@ class TaskController extends BaseController
     /**
      * Display Kanban board for current project
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $projectId = Auth::getActiveProject();
@@ -112,6 +133,11 @@ class TaskController extends BaseController
     /**
      * Create a new task
      */
+/**
+ * create method
+ *
+ * @return void
+ */
     public function create()
     {
         if (!$this->canCreateTask()) {
@@ -173,6 +199,11 @@ class TaskController extends BaseController
     /**
      * Update task status and position (Drag & Drop)
      */
+/**
+ * move method
+ *
+ * @return void
+ */
     public function move()
     {
         if (!$this->canMoveTask()) {
@@ -220,6 +251,11 @@ class TaskController extends BaseController
     /**
      * Assign task to self
      */
+/**
+ * take method
+ *
+ * @return void
+ */
     public function take()
     {
         $taskId = $_POST['task_id'] ?? null;
@@ -252,6 +288,11 @@ class TaskController extends BaseController
     /**
      * Update task details
      */
+/**
+ * update method
+ *
+ * @return void
+ */
     public function update()
     {
         $taskId = $_POST['id'] ?? null;
@@ -301,6 +342,11 @@ class TaskController extends BaseController
     /**
      * Delete a task (Admin only)
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         Auth::requireAdmin();
@@ -329,6 +375,11 @@ class TaskController extends BaseController
     /**
      * Add comment to task and optionally approve (Client special action)
      */
+/**
+ * addComment method
+ *
+ * @return void
+ */
     public function addComment()
     {
         $taskId = $_POST['task_id'] ?? null;
@@ -378,6 +429,11 @@ class TaskController extends BaseController
         }
     }
 
+/**
+ * getTaskDetails method
+ *
+ * @return void
+ */
     public function getTaskDetails()
     {
         $taskId = $_GET['id'] ?? null;
@@ -431,6 +487,11 @@ class TaskController extends BaseController
     /**
      * Post a generic comment to the task
      */
+/**
+ * postComment method
+ *
+ * @return void
+ */
     public function postComment()
     {
         $taskId = $_POST['task_id'] ?? null;
@@ -455,6 +516,11 @@ class TaskController extends BaseController
     /**
      * Assign task to a user
      */
+/**
+ * assign method
+ *
+ * @return void
+ */
     public function assign()
     {
         $taskId = $_POST['task_id'] ?? null;

@@ -26,6 +26,17 @@ use PDO;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * ApiDocsController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ApiDocsController extends BaseController
 {
     /**
@@ -35,6 +46,11 @@ class ApiDocsController extends BaseController
      *
      * @return void
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -49,6 +65,11 @@ class ApiDocsController extends BaseController
      * @return void Renders the `admin/api/index` view with keys and databases.
      * @example GET /admin/api
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         Auth::requirePermission('module:api.view_keys');
@@ -95,6 +116,11 @@ class ApiDocsController extends BaseController
      * @return void Redirects back to the API management page.
      * @example POST /admin/api/createKey
      */
+/**
+ * createKey method
+ *
+ * @return void
+ */
     public function createKey()
     {
         Auth::requirePermission('module:api.create_keys');
@@ -117,6 +143,11 @@ class ApiDocsController extends BaseController
      * @return void Redirects back to the API management page.
      * @example GET /admin/api/deleteKey?id=5
      */
+/**
+ * deleteKey method
+ *
+ * @return void
+ */
     public function deleteKey()
     {
         Auth::requirePermission('module:api.revoke_keys'); // Mapped to 'revoke_keys' in policy_architect
@@ -144,6 +175,11 @@ class ApiDocsController extends BaseController
      * @return void Renders the `admin/api/docs` view with schema details.
      * @example GET /admin/api/docs?db_id=3
      */
+/**
+ * docs method
+ *
+ * @return void
+ */
     public function docs()
     {
         $db_id = $_GET['db_id'] ?? null;

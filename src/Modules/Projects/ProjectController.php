@@ -56,6 +56,17 @@ use Exception;
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
+/**
+ * ProjectController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ProjectController extends BaseController
 {
     /**
@@ -64,6 +75,11 @@ class ProjectController extends BaseController
      * Ensures that only authenticated users can access
      * project management functionality.
      */
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         Auth::requireLogin();
@@ -86,6 +102,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects
      */
+/**
+ * index method
+ *
+ * @return void
+ */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -123,6 +144,11 @@ class ProjectController extends BaseController
     /**
      * Renders project creation form.
      */
+/**
+ * form method
+ *
+ * @return void
+ */
     public function form()
     {
         Auth::requireAdmin();
@@ -193,6 +219,11 @@ class ProjectController extends BaseController
      * POST /admin/projects/save
      * Body: name=Project&user_ids[]=1&services[0][service_id]=1
      */
+/**
+ * save method
+ *
+ * @return void
+ */
     public function save()
     {
         Auth::requireAdmin();
@@ -346,6 +377,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects/select
      */
+/**
+ * select method
+ *
+ * @return void
+ */
     public function select()
     {
         Auth::requireLogin();
@@ -384,6 +420,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects/switch?id=5
      */
+/**
+ * switch method
+ *
+ * @return void
+ */
     public function switch()
     {
         $id = $_GET['id'] ?? null;
@@ -398,6 +439,11 @@ class ProjectController extends BaseController
     /**
      * Updates only the plan for a project.
      */
+/**
+ * updatePlan method
+ *
+ * @return void
+ */
     public function updatePlan()
     {
         Auth::requireAdmin();
@@ -438,6 +484,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects/delete?id=5
      */
+/**
+ * delete method
+ *
+ * @return void
+ */
     public function delete()
     {
         Auth::requireAdmin();

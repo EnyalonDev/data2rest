@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-            private static $SCHEMA = [
+    private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -314,6 +314,16 @@ class Installer
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 , price REAL DEFAULT 0, price_monthly REAL DEFAULT 0, price_yearly REAL DEFAULT 0, price_one_time REAL DEFAULT 0)"
         ],
+        'billing_service_templates' => [
+            'sql' => "CREATE TABLE billing_service_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                service_id INTEGER NOT NULL REFERENCES billing_services(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                description TEXT,
+                priority TEXT DEFAULT 'medium',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )"
+        ],
         'project_services' => [
             'sql' => "CREATE TABLE project_services (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -349,10 +359,22 @@ class Installer
                 position INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                service_id INTEGER REFERENCES billing_services(id),
                 FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
                 FOREIGN KEY(status_id) REFERENCES task_statuses(id),
                 FOREIGN KEY(assigned_to) REFERENCES users(id),
                 FOREIGN KEY(created_by) REFERENCES users(id)
+                )"
+        ],
+        'task_comments' => [
+            'sql' => "CREATE TABLE task_comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                comment TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                FOREIGN KEY(user_id) REFERENCES users(id)
                 )"
         ],
         'task_history' => [
@@ -533,6 +555,74 @@ class Installer
         foreach ($taskStatuses as $status) {
             $stmt->execute([$status['name'], $status['slug'], $status['color'], $status['position']]);
         }
+
+        // Default Services (as per requirements) and their templates
+        $services = [
+            'Web Básica' => [
+                ['title' => 'Recolectar logo y textos', 'priority' => 'high'],
+                ['title' => 'Configurar subdominio', 'priority' => 'high'],
+                ['title' => 'Carga inicial', 'priority' => 'medium'],
+                ['title' => 'Carga 5 productos', 'priority' => 'medium'],
+                ['title' => 'Botón WhatsApp', 'priority' => 'medium'],
+                ['title' => 'Control de Calidad (QA)', 'priority' => 'high'],
+                ['title' => 'Entrega final', 'priority' => 'high']
+            ],
+            'Dominio Propio' => [
+                ['title' => 'Búsqueda de disponibilidad', 'priority' => 'high'],
+                ['title' => 'Registro de dominio', 'priority' => 'high'],
+                ['title' => 'Configuración DNS', 'priority' => 'high'],
+                ['title' => 'Instalación SSL', 'priority' => 'high']
+            ],
+            'ChatBot IA' => [
+                ['title' => 'Definir base de conocimientos', 'priority' => 'high'],
+                ['title' => 'Configuración del Prompt IA', 'priority' => 'high'],
+                ['title' => 'Integración en web', 'priority' => 'medium'],
+                ['title' => 'Pruebas de respuesta', 'priority' => 'medium']
+            ],
+            'Catálogo Expandido' => [
+                ['title' => 'Ampliar estructura de BD', 'priority' => 'high'],
+                ['title' => 'Recibir inventario completo', 'priority' => 'medium'],
+                ['title' => 'Carga masiva de productos', 'priority' => 'medium'],
+                ['title' => 'Categorización avanzada', 'priority' => 'low']
+            ],
+            'Correos Corporativos' => [
+                ['title' => 'Crear cuentas de correo', 'priority' => 'high'],
+                ['title' => 'Configurar registros MX', 'priority' => 'high'],
+                ['title' => 'Enviar credenciales al cliente', 'priority' => 'medium'],
+                ['title' => 'Enviar manual Outlook/Gmail', 'priority' => 'low']
+            ],
+            'Gestor de Citas' => [
+                ['title' => 'Configurar horarios de atención', 'priority' => 'high'],
+                ['title' => 'Definir servicios reservables', 'priority' => 'high'],
+                ['title' => 'Configurar avisos Correo/WA', 'priority' => 'medium'],
+                ['title' => 'Instalar widget de calendario', 'priority' => 'medium']
+            ]
+        ];
+
+        // Insert Services and Templates
+        foreach ($services as $name => $templates) {
+            $stmt = $db->prepare("INSERT INTO billing_services (name, status) VALUES (?, 'active')");
+            $stmt->execute([$name]);
+            $serviceId = $db->lastInsertId();
+
+            $tplStmt = $db->prepare("INSERT INTO billing_service_templates (service_id, title, priority) VALUES (?, ?, ?)");
+            foreach ($templates as $t) {
+                $tplStmt->execute([$serviceId, $t['title'], $t['priority']]);
+            }
+        }
+
+        // Pack Todo en Uno (Clone A, B, E)
+        $packName = 'Pack "Todo en Uno"';
+        $stmt = $db->prepare("INSERT INTO billing_services (name, status) VALUES (?, 'active')");
+        $stmt->execute([$packName]);
+        $packId = $db->lastInsertId();
+
+        // Clone templates from Web Básica, Dominio Propio, Correos Corporativos
+        $db->exec("INSERT INTO billing_service_templates (service_id, title, priority)
+                   SELECT $packId, title, priority FROM billing_service_templates 
+                   WHERE service_id IN (
+                       SELECT id FROM billing_services WHERE name IN ('Web Básica', 'Dominio Propio', 'Correos Corporativos')
+                   )");
     }
 
     /**

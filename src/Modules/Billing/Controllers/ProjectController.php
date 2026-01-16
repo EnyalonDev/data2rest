@@ -11,10 +11,26 @@ use PDO;
 /**
  * Controlador REST de Proyectos con Billing
  */
+/**
+ * ProjectController Controller
+ *
+ * Core Features: TODO
+ *
+ * Security: Requires login, permission checks as implemented.
+ *
+ * @package App\Modules\
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class ProjectController extends BaseController
 {
     private $db;
 
+/**
+ * __construct method
+ *
+ * @return void
+ */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -24,6 +40,11 @@ class ProjectController extends BaseController
      * POST /api/billing/projects
      * Crea un proyecto con plan de pago
      */
+/**
+ * create method
+ *
+ * @return void
+ */
     public function create()
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -86,6 +107,11 @@ class ProjectController extends BaseController
      * PATCH /api/billing/projects/{id}/change-plan
      * Cambia el plan de pago de un proyecto
      */
+/**
+ * changePlan method
+ *
+ * @return void
+ */
     public function changePlan($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -115,6 +141,11 @@ class ProjectController extends BaseController
      * PATCH /api/billing/projects/{id}/start-date
      * Cambia la fecha de inicio de un proyecto
      */
+/**
+ * changeStartDate method
+ *
+ * @return void
+ */
     public function changeStartDate($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -142,6 +173,11 @@ class ProjectController extends BaseController
      * GET /api/billing/projects/{id}/plan-history
      * Obtiene el historial de cambios de plan
      */
+/**
+ * getPlanHistory method
+ *
+ * @return void
+ */
     public function getPlanHistory($id)
     {
         $stmt = $this->db->prepare("
@@ -169,6 +205,11 @@ class ProjectController extends BaseController
     /**
      * GET /api/billing/projects/{id}/services
      */
+/**
+ * getServices method
+ *
+ * @return void
+ */
     public function getServices($id)
     {
         $stmt = $this->db->prepare("
@@ -186,6 +227,11 @@ class ProjectController extends BaseController
     /**
      * POST /api/billing/projects/{id}/services
      */
+/**
+ * addService method
+ *
+ * @return void
+ */
     public function addService($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -216,6 +262,11 @@ class ProjectController extends BaseController
     /**
      * DELETE /api/billing/projects/{id}/services/{service_id}
      */
+/**
+ * removeService method
+ *
+ * @return void
+ */
     public function removeService($id, $service_id)
     {
         try {
