@@ -11,10 +11,66 @@ use App\Modules\Webhooks\WebhookDispatcher;
 use App\Modules\Media\ImageService;
 use PDO;
 
+/**
+ * REST API Controller
+ * 
+ * Main controller for the RESTful API providing full CRUD operations
+ * on database tables with advanced features.
+ * 
+ * Core Features:
+ * - RESTful endpoints (GET, POST, PUT/PATCH, DELETE)
+ * - API key authentication
+ * - Internal session bypass for dashboard users
+ * - Foreign key relationship resolution
+ * - File upload handling via multipart/form-data
+ * - Pagination and filtering
+ * - Field projection (selective column retrieval)
+ * - Webhook integration for events
+ * - Complete audit trail logging
+ * 
+ * Authentication:
+ * - API Key via X-API-KEY header or api_key parameter
+ * - Internal session support for authenticated dashboard users
+ * - Automatic API key tracking in audit logs
+ * 
+ * Query Features:
+ * - Pagination: ?limit=50&offset=0
+ * - Filtering: ?field_name=value (supports LIKE with %)
+ * - Field selection: ?fields=id,name,email
+ * - Foreign key auto-resolution with _label suffix
+ * 
+ * Events:
+ * - record.created - Triggered on POST
+ * - record.updated - Triggered on PUT/PATCH
+ * - record.deleted - Triggered on DELETE
+ * 
+ * @package App\Modules\Api
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class RestController extends BaseController
 {
+    /**
+     * API key data for the current request
+     * 
+     * @var array|null
+     */
     private $apiKeyData;
 
+    /**
+     * Authenticate API request
+     * 
+     * Validates API key from X-API-KEY header or api_key parameter.
+     * Supports internal session bypass for authenticated dashboard users.
+     * 
+     * @return array API key data or internal session data
+     * @throws void Outputs JSON error and exits on authentication failure
+     * 
+     * @example
+     * Header: X-API-KEY: your_api_key_here
+     * OR
+     * Query: ?api_key=your_api_key_here
+     */
     private function authenticate()
     {
         Auth::init();
@@ -45,6 +101,24 @@ class RestController extends BaseController
         return $keyData;
     }
 
+    /**
+     * Main API request handler
+     * 
+     * Routes HTTP requests to appropriate CRUD handlers based on method.
+     * Supports method spoofing via _method parameter for PUT/PATCH with files.
+     * 
+     * @param string|int $db_id Database ID or name
+     * @param string $table Table name
+     * @param int|null $id Optional record ID for single record operations
+     * @return void Outputs JSON response
+     * 
+     * @example
+     * GET /api/db/1/users - List all users
+     * GET /api/db/1/users/5 - Get user with ID 5
+     * POST /api/db/1/users - Create new user
+     * PUT /api/db/1/users/5 - Update user 5
+     * DELETE /api/db/1/users/5 - Delete user 5
+     */
     public function handle($db_id, $table, $id = null)
     {
         $this->apiKeyData = $this->authenticate();
