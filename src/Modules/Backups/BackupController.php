@@ -11,10 +11,55 @@ use ZipArchive;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
 
+
+/**
+ * Backup Controller
+ * 
+ * Comprehensive backup management system with local and cloud storage support.
+ * 
+ * Core Features:
+ * - Create full system backups (ZIP format)
+ * - List and manage existing backups
+ * - Download backups locally
+ * - Upload backups to cloud (Google Drive via Apps Script)
+ * - Delete old backups
+ * - Backup manifest generation
+ * - Cloud URL configuration
+ * 
+ * Backup Contents:
+ * - All SQLite database files (.sqlite)
+ * - Manifest file with metadata
+ * - Creation timestamp and creator info
+ * 
+ * Cloud Integration:
+ * - Google Drive via Apps Script webhook
+ * - Base64 encoding for transfer
+ * - File size limit: 20MB for cloud sync
+ * - Configurable cloud URL
+ * 
+ * Security:
+ * - Login required
+ * - Permission check: module:system.backups
+ * - Path traversal prevention
+ * - Activity logging
+ * 
+ * @package App\Modules\Backups
+ * @author DATA2REST Development Team
+ * @version 1.0.0
+ */
 class BackupController extends BaseController
 {
+    /**
+     * @var string Backup directory path
+     */
     private $backupDir;
 
+    /**
+     * Constructor - Requires backup permissions
+     * 
+     * Initializes backup directory and ensures it exists.
+     * Requires system.backups permission.
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -26,6 +71,22 @@ class BackupController extends BaseController
         }
     }
 
+    /**
+     * Display list of backups
+     * 
+     * Shows all available backups with metadata (name, size, date).
+     * Sorted from newest to oldest.
+     * 
+     * Features:
+     * - Lists all ZIP backups
+     * - Shows file size and creation date
+     * - Displays cloud URL configuration
+     * 
+     * @return void Renders backup list view
+     * 
+     * @example
+     * GET /admin/backups
+     */
     public function index()
     {
         // Get list of backups
@@ -51,6 +112,23 @@ class BackupController extends BaseController
         ]);
     }
 
+    /**
+     * Create new backup
+     * 
+     * Creates a ZIP archive containing all SQLite databases
+     * and a manifest file with metadata.
+     * 
+     * Backup Contents:
+     * - All .sqlite files from data/ directory
+     * - manifest.json with creation info
+     * 
+     * Naming: backup_YYYY-MM-DD_HH-mm-ss.zip
+     * 
+     * @return void Redirects to backup list
+     * 
+     * @example
+     * POST /admin/backups/create
+     */
     public function create()
     {
         $filename = 'backup_' . date('Y-m-d_H-i-s') . '.zip';
@@ -83,6 +161,20 @@ class BackupController extends BaseController
         }
     }
 
+    /**
+     * Download backup file
+     * 
+     * Serves a backup ZIP file for download.
+     * 
+     * Security:
+     * - Path traversal prevention via basename()
+     * - File existence validation
+     * 
+     * @return void Sends file download or redirects
+     * 
+     * @example
+     * GET /admin/backups/download?file=backup_2026-01-16_06-30-00.zip
+     */
     public function download()
     {
         $file = $_GET['file'] ?? '';
@@ -98,6 +190,20 @@ class BackupController extends BaseController
         $this->redirect('admin/backups');
     }
 
+    /**
+     * Delete backup file
+     * 
+     * Removes a backup file from the system.
+     * 
+     * Security:
+     * - Path traversal prevention
+     * - Activity logging
+     * 
+     * @return void Redirects to backup list
+     * 
+     * @example
+     * GET /admin/backups/delete?file=backup_2026-01-16_06-30-00.zip
+     */
     public function delete()
     {
         $file = $_GET['file'] ?? '';
@@ -110,7 +216,18 @@ class BackupController extends BaseController
         $this->redirect('admin/backups');
     }
 
-    // Configure Cloud URL
+    /**
+     * Save cloud configuration
+     * 
+     * Stores the Google Drive Apps Script webhook URL
+     * for cloud backup uploads.
+     * 
+     * @return void Redirects to backup list
+     * 
+     * @example
+     * POST /admin/backups/saveConfig
+     * Body: cloud_url=https://script.google.com/...
+     */
     public function saveConfig()
     {
         $url = $_POST['cloud_url'] ?? '';
@@ -121,7 +238,28 @@ class BackupController extends BaseController
         $this->redirect('admin/backups');
     }
 
-    // Upload to Cloud (Google Drive via Apps Script)
+    /**
+     * Upload backup to cloud
+     * 
+     * Uploads a backup file to Google Drive via Apps Script webhook.
+     * Uses Base64 encoding for file transfer.
+     * 
+     * Features:
+     * - File size limit: 20MB
+     * - Base64 encoding
+     * - cURL with timeout (180s)
+     * - Activity logging
+     * 
+     * Limitations:
+     * - Google Apps Script has payload size limits
+     * - For larger files, use rclone instead
+     * 
+     * @return void Outputs JSON response
+     * 
+     * @example
+     * GET /admin/backups/uploadToCloud?file=backup_2026-01-16_06-30-00.zip
+     * Response: {"success": true, "response": {...}}
+     */
     public function uploadToCloud()
     {
         // Increase limits for processing large files
@@ -184,6 +322,14 @@ class BackupController extends BaseController
         return $this->json(['error' => 'Upload failed', 'code' => $code, 'curl_error' => $error, 'response' => $response], 500);
     }
 
+    /**
+     * Get configured cloud URL
+     * 
+     * Retrieves the Google Drive Apps Script webhook URL
+     * from system settings.
+     * 
+     * @return string Cloud URL or empty string if not configured
+     */
     private function getCloudUrl()
     {
         $db = Database::getInstance()->getConnection();
