@@ -258,6 +258,22 @@ class DatabaseController extends BaseController
                     header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
                     exit;
                 }
+            } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                // PostgreSQL configuration
+                $config['type'] = 'pgsql'; // Normalize type
+                $config['host'] = $_POST['pgsql_host'] ?? 'localhost';
+                $config['port'] = (int) ($_POST['pgsql_port'] ?? 5432);
+                $config['database'] = $_POST['pgsql_database'] ?? '';
+                $config['username'] = $_POST['pgsql_username'] ?? 'postgres';
+                $config['password'] = $_POST['pgsql_password'] ?? '';
+                $config['schema'] = $_POST['pgsql_schema'] ?? 'public';
+                $config['charset'] = 'utf8';
+
+                if (empty($config['database'])) {
+                    Auth::setFlashError("Database name is required for PostgreSQL");
+                    header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
+                    exit;
+                }
             }
 
             // Use DatabaseManager to create the database
@@ -306,6 +322,15 @@ class DatabaseController extends BaseController
                 $config['username'] = $_POST['username'] ?? 'root';
                 $config['password'] = $_POST['password'] ?? '';
                 $config['charset'] = $_POST['charset'] ?? 'utf8mb4';
+            } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                $config['type'] = 'pgsql'; // Normalize type
+                $config['host'] = $_POST['host'] ?? 'localhost';
+                $config['port'] = (int) ($_POST['port'] ?? 5432);
+                $config['database'] = $_POST['database'] ?? '';
+                $config['username'] = $_POST['username'] ?? 'postgres';
+                $config['password'] = $_POST['password'] ?? '';
+                $config['schema'] = $_POST['schema'] ?? 'public';
+                $config['charset'] = 'utf8';
             }
 
             $result = \App\Core\DatabaseManager::testConnection($config);

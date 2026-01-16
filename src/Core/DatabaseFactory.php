@@ -4,6 +4,7 @@ namespace App\Core;
 
 use App\Core\Adapters\SQLiteAdapter;
 use App\Core\Adapters\MySQLAdapter;
+use App\Core\Adapters\PostgreSQLAdapter;
 use InvalidArgumentException;
 
 /**
@@ -20,9 +21,8 @@ class DatabaseFactory
     private static $adapters = [
         'sqlite' => SQLiteAdapter::class,
         'mysql' => MySQLAdapter::class,
-        // Future support:
-        // 'pgsql' => PostgreSQLAdapter::class,
-        // 'sqlsrv' => SQLServerAdapter::class,
+        'pgsql' => PostgreSQLAdapter::class,
+        'postgresql' => PostgreSQLAdapter::class, // Alias for pgsql
     ];
 
     /**
