@@ -210,8 +210,11 @@ $router->add('POST', '/admin/tasks/create', 'Tasks\\TaskController@create');
 $router->add('POST', '/admin/tasks/move', 'Tasks\\TaskController@move');
 $router->add('POST', '/admin/tasks/update', 'Tasks\\TaskController@update');
 $router->add('POST', '/admin/tasks/delete', 'Tasks\\TaskController@delete');
-$router->add('POST', '/admin/tasks/addComment', 'Tasks\\TaskController@addComment');
+$router->add('POST', '/admin/tasks/take', 'Tasks\\TaskController@take');
+$router->add('POST', '/admin/tasks/assign', 'Tasks\\TaskController@assign');
+$router->add('POST', '/admin/tasks/postComment', 'Tasks\\TaskController@postComment');
 $router->add('GET', '/admin/tasks/history', 'Tasks\\TaskController@history');
+$router->add('GET', '/admin/tasks/getTaskDetails', 'Tasks\\TaskController@getTaskDetails');
 
 // --- Module: Activity Logs ---
 $router->add('GET', '/admin/logs', 'Logs\\LogController@index');
@@ -280,6 +283,13 @@ $router->add('GET', '/api/billing/services', 'Billing\\Controllers\\ServiceApiCo
 $router->add('POST', '/api/billing/services', 'Billing\\Controllers\\ServiceApiController@create');
 $router->add('PUT', '/api/billing/services/{id}', 'Billing\\Controllers\\ServiceApiController@update');
 $router->add('DELETE', '/api/billing/services/{id}', 'Billing\\Controllers\\ServiceApiController@delete');
+// Service Templates
+$router->add('GET', '/api/billing/services/{id}/templates', 'Billing\\Controllers\\ServiceApiController@getTemplates');
+$router->add('POST', '/api/billing/services/{id}/templates', 'Billing\\Controllers\\ServiceApiController@addTemplate');
+$router->add('PUT', '/api/billing/services/templates/{id}', 'Billing\\Controllers\\ServiceApiController@updateTemplate');
+$router->add('DELETE', '/api/billing/services/templates/{id}', 'Billing\\Controllers\\ServiceApiController@deleteTemplate');
+$router->add('GET', '/api/billing/services/{id}/templates/export-data', 'Billing\\Controllers\\ServiceApiController@exportTemplatesData');
+$router->add('POST', '/api/billing/services/{id}/templates/import', 'Billing\\Controllers\\ServiceApiController@importTemplates');
 
 // Project Services
 $router->add('GET', '/api/billing/projects/{id}/services', 'Billing\\Controllers\\ProjectController@getServices');
