@@ -204,6 +204,15 @@ $router->add('GET', '/admin/projects/select', 'Projects\\ProjectController@selec
 $router->add('GET', '/admin/projects/switch', 'Projects\\ProjectController@switch');
 $router->add('POST', '/admin/projects/plan/update', 'Projects\\ProjectController@updatePlan');
 
+// --- Module: Task Management (Kanban Board) ---
+$router->add('GET', '/admin/tasks', 'Tasks\\TaskController@index');
+$router->add('POST', '/admin/tasks/create', 'Tasks\\TaskController@create');
+$router->add('POST', '/admin/tasks/move', 'Tasks\\TaskController@move');
+$router->add('POST', '/admin/tasks/update', 'Tasks\\TaskController@update');
+$router->add('POST', '/admin/tasks/delete', 'Tasks\\TaskController@delete');
+$router->add('POST', '/admin/tasks/addComment', 'Tasks\\TaskController@addComment');
+$router->add('GET', '/admin/tasks/history', 'Tasks\\TaskController@history');
+
 // --- Module: Activity Logs ---
 $router->add('GET', '/admin/logs', 'Logs\\LogController@index');
 

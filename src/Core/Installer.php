@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-    private static $SCHEMA = [
+            private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,9 +87,8 @@ class Installer
                 key_value TEXT UNIQUE,
                 name TEXT,
                 permissions TEXT,
-                status INTEGER DEFAULT 1,
-                user_id INTEGER
-                , project_id INTEGER)"
+                status INTEGER DEFAULT 1
+                , project_id INTEGER, user_id INTEGER)"
         ],
         'api_endpoints' => [
             'sql' => "CREATE TABLE api_endpoints (
@@ -130,19 +129,6 @@ class Installer
                 value TEXT
                 )"
         ],
-        'billing_services' => [
-            'sql' => "CREATE TABLE billing_services (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                description TEXT,
-                price_monthly REAL DEFAULT 0,
-                price_yearly REAL DEFAULT 0,
-                price_one_time REAL DEFAULT 0,
-                price REAL DEFAULT 0,
-                status TEXT DEFAULT 'active',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"
-        ],
         'projects' => [
             'sql' => "CREATE TABLE projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -150,30 +136,8 @@ class Installer
                 description TEXT,
                 status TEXT DEFAULT 'active',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                storage_quota INTEGER DEFAULT 300,
-                client_id INTEGER,
-                billing_user_id INTEGER,
-                start_date DATE,
-                current_plan_id INTEGER,
-                billing_status TEXT DEFAULT 'active',
-                FOREIGN KEY(client_id) REFERENCES clients(id),
-                FOREIGN KEY(billing_user_id) REFERENCES users(id),
-                FOREIGN KEY(current_plan_id) REFERENCES payment_plans(id)
-                )"
-        ],
-        'project_services' => [
-            'sql' => "CREATE TABLE project_services (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id INTEGER NOT NULL,
-                service_id INTEGER NOT NULL,
-                custom_price REAL,
-                billing_period TEXT,
-                quantity INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (service_id) REFERENCES billing_services(id)
-            )"
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                , storage_quota INTEGER DEFAULT 300, client_id INTEGER, start_date DATE, current_plan_id INTEGER, billing_status TEXT DEFAULT 'active', billing_user_id INTEGER REFERENCES users(id))"
         ],
         'project_users' => [
             'sql' => "CREATE TABLE project_users (
@@ -256,10 +220,9 @@ class Installer
                 old_data TEXT,
                 new_data TEXT,
                 user_id INTEGER,
-                api_key_id INTEGER,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP, api_key_id INTEGER,
                 FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
-            )"
+                )"
         ],
         'clients' => [
             'sql' => "CREATE TABLE clients (
@@ -272,7 +235,7 @@ class Installer
                 status TEXT DEFAULT 'active',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"
+                )"
         ],
         'payment_plans' => [
             'sql' => "CREATE TABLE payment_plans (
@@ -280,11 +243,10 @@ class Installer
                 name TEXT NOT NULL,
                 frequency TEXT NOT NULL,
                 installments INTEGER NOT NULL,
-                contract_duration_months INTEGER,
                 description TEXT,
                 status TEXT DEFAULT 'active',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"
+                , contract_duration_months INTEGER)"
         ],
         'installments' => [
             'sql' => "CREATE TABLE installments (
@@ -299,7 +261,7 @@ class Installer
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
                 FOREIGN KEY(plan_id) REFERENCES payment_plans(id)
-            )"
+                )"
         ],
         'payments' => [
             'sql' => "CREATE TABLE payments (
@@ -310,10 +272,9 @@ class Installer
                 payment_method TEXT,
                 reference TEXT,
                 notes TEXT,
-                status TEXT DEFAULT 'approved',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP, status TEXT DEFAULT 'approved',
                 FOREIGN KEY(installment_id) REFERENCES installments(id) ON DELETE CASCADE
-            )"
+                )"
         ],
         'project_plan_history' => [
             'sql' => "CREATE TABLE project_plan_history (
@@ -330,7 +291,7 @@ class Installer
                 FOREIGN KEY(old_plan_id) REFERENCES payment_plans(id),
                 FOREIGN KEY(new_plan_id) REFERENCES payment_plans(id),
                 FOREIGN KEY(changed_by) REFERENCES users(id)
-            )"
+                )"
         ],
         'notifications_log' => [
             'sql' => "CREATE TABLE notifications_log (
@@ -342,7 +303,73 @@ class Installer
                 sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 error_message TEXT,
                 FOREIGN KEY(installment_id) REFERENCES installments(id) ON DELETE CASCADE
-            )"
+                )"
+        ],
+        'billing_services' => [
+            'sql' => "CREATE TABLE billing_services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                status TEXT DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                , price REAL DEFAULT 0, price_monthly REAL DEFAULT 0, price_yearly REAL DEFAULT 0, price_one_time REAL DEFAULT 0)"
+        ],
+        'project_services' => [
+            'sql' => "CREATE TABLE project_services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES projects(id),
+                service_id INTEGER NOT NULL REFERENCES billing_services(id),
+                custom_price REAL, -- If null, use the service price
+                billing_period TEXT, -- 'monthly', 'yearly', 'one_time'
+                quantity INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                , use the service price
+                billing_period TEXT)"
+        ],
+        'task_statuses' => [
+            'sql' => "CREATE TABLE task_statuses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                color TEXT DEFAULT '#6366f1',
+                position INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )"
+        ],
+        'tasks' => [
+            'sql' => "CREATE TABLE tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                priority TEXT DEFAULT 'medium',
+                status_id INTEGER NOT NULL,
+                assigned_to INTEGER,
+                created_by INTEGER NOT NULL,
+                position INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY(status_id) REFERENCES task_statuses(id),
+                FOREIGN KEY(assigned_to) REFERENCES users(id),
+                FOREIGN KEY(created_by) REFERENCES users(id)
+                )"
+        ],
+        'task_history' => [
+            'sql' => "CREATE TABLE task_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                action TEXT NOT NULL,
+                old_status_id INTEGER,
+                new_status_id INTEGER,
+                comment TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(old_status_id) REFERENCES task_statuses(id),
+                FOREIGN KEY(new_status_id) REFERENCES task_statuses(id)
+                )"
         ]
     ];
 
@@ -493,6 +520,19 @@ class Installer
 
         $db->prepare("INSERT INTO payment_plans (name, frequency, installments, description) VALUES (?, ?, ?, ?)")
             ->execute(['Plan Anual', 'yearly', 1, 'Plan de pago anual con 1 cuota']);
+
+        // Default Task Statuses for Kanban Board
+        $taskStatuses = [
+            ['name' => 'Solicitud', 'slug' => 'backlog', 'color' => '#94a3b8', 'position' => 1],
+            ['name' => 'En Desarrollo', 'slug' => 'in_progress', 'color' => '#3b82f6', 'position' => 2],
+            ['name' => 'En Revisión', 'slug' => 'review', 'color' => '#f59e0b', 'position' => 3],
+            ['name' => 'Validación Cliente', 'slug' => 'client_validation', 'color' => '#8b5cf6', 'position' => 4],
+            ['name' => 'Finalizado', 'slug' => 'done', 'color' => '#10b981', 'position' => 5]
+        ];
+        $stmt = $db->prepare("INSERT INTO task_statuses (name, slug, color, position) VALUES (?, ?, ?, ?)");
+        foreach ($taskStatuses as $status) {
+            $stmt->execute([$status['name'], $status['slug'], $status['color'], $status['position']]);
+        }
     }
 
     /**

@@ -6,6 +6,8 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\BaseController;
 use App\Core\PlanManager;
+use App\Core\Config;
+use App\Core\Logger;
 use App\Modules\Billing\Services\InstallmentGenerator;
 use PDO;
 use Exception;
@@ -265,10 +267,63 @@ class ProjectController extends BaseController
         $id = $_GET['id'] ?? null;
         if ($id) {
             $db = Database::getInstance()->getConnection();
+
+            // 1. Fetch Project Info and Databases
+            $stmt = $db->prepare("SELECT name FROM projects WHERE id = ?");
+            $stmt->execute([$id]);
+            $projectName = $stmt->fetchColumn() ?: 'UnknownProject';
+            // Sanitize project name for filename
+            $safeProjectName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $projectName);
+
+            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ?");
+            $stmt->execute([$id]);
+            $databases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 2. Prepare Backup Directory
+            $backupDir = dirname(Config::get('db_path')) . '/backups/deleted_projects';
+            if (!is_dir($backupDir)) {
+                mkdir($backupDir, 0755, true);
+            }
+
+            // 3. Backup and Delete Databases
+            foreach ($databases as $database) {
+                // Check if physical file exists
+                if (file_exists($database['path'])) {
+                    // "Project Delete DataBase" format as requested
+                    // Project_Delete_DataBase_{Project}_{DB}_{Timestamp}.sqlite
+                    $safeDbName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $database['name']);
+                    $backupName = sprintf(
+                        "Project_Delete_DataBase_%s_%s_%s.sqlite",
+                        $safeProjectName,
+                        $safeDbName,
+                        date('Y-m-d_H-i-s')
+                    );
+                    $backupPath = $backupDir . '/' . $backupName;
+
+                    // Copy file to backup location
+                    if (copy($database['path'], $backupPath)) {
+                        // Delete original file
+                        unlink($database['path']);
+                    }
+                }
+
+                // Delete field configs for this DB
+                $db->prepare("DELETE FROM fields_config WHERE db_id = ?")->execute([$database['id']]);
+                // Delete DB record
+                $db->prepare("DELETE FROM databases WHERE id = ?")->execute([$database['id']]);
+            }
+
+            // 4. Delete Project Associations
             $db->prepare("DELETE FROM project_users WHERE project_id = ?")->execute([$id]);
             $db->prepare("DELETE FROM project_plans WHERE project_id = ?")->execute([$id]);
+            $db->prepare("DELETE FROM project_services WHERE project_id = ?")->execute([$id]);
+            $db->prepare("DELETE FROM installments WHERE project_id = ?")->execute([$id]);
+
+            // 5. Delete Project Record
             $db->prepare("DELETE FROM projects WHERE id = ?")->execute([$id]);
-            Auth::setFlashError("Project deleted successfully.", 'success');
+
+            Logger::log('DELETE_PROJECT', ['id' => $id, 'name' => $projectName, 'backup_dir' => $backupDir]);
+            Auth::setFlashError("Project deleted successfully. Databases backed up to deleted_projects folder.", 'success');
         }
         $this->redirect('admin/projects');
     }
