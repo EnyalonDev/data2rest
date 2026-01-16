@@ -9,18 +9,63 @@ use App\Core\Lang;
 use PDO;
 
 /**
- * User Profile Controller
- * Handles user profile viewing and updating.
+ * Profile Controller
+ * 
+ * Handles user profile management including viewing and updating
+ * personal information and password changes.
+ * 
+ * Core Features:
+ * - View user profile
+ * - Update personal information
+ * - Change password
+ * - Email and contact management
+ * - Session-based user identification
+ * 
+ * User Fields:
+ * - public_name (display name)
+ * - email (contact email)
+ * - phone (contact phone)
+ * - address (physical address)
+ * - password (optional update)
+ * 
+ * Security:
+ * - Login required for all operations
+ * - Password hashing with PASSWORD_DEFAULT
+ * - Session-based user identification
+ * - Users can only edit their own profile
+ * 
+ * @package App\Modules\Auth
+ * @author DATA2REST Development Team
+ * @version 1.0.0
  */
 class ProfileController extends BaseController
 {
+    /**
+     * Constructor - Requires user authentication
+     * 
+     * Ensures that only authenticated users can access
+     * profile management functionality.
+     */
     public function __construct()
     {
         Auth::requireLogin();
     }
 
     /**
-     * Display the user profile form.
+     * Display user profile form
+     * 
+     * Shows the profile editing form with current user information
+     * loaded from the database.
+     * 
+     * Features:
+     * - Loads current user data
+     * - Displays editable profile fields
+     * - Internationalized interface
+     * 
+     * @return void Renders profile view
+     * 
+     * @example
+     * GET /admin/profile
      */
     public function index()
     {
@@ -40,7 +85,27 @@ class ProfileController extends BaseController
     }
 
     /**
-     * Save the user profile information.
+     * Save user profile information
+     * 
+     * Updates user profile data including optional password change.
+     * Only updates password if new password is provided.
+     * 
+     * Features:
+     * - Update personal information
+     * - Optional password change
+     * - Password hashing for security
+     * - Success/error flash messages
+     * 
+     * Security:
+     * - Session-based user identification
+     * - Password hashing with PASSWORD_DEFAULT
+     * - Users can only update their own profile
+     * 
+     * @return void Redirects to profile page with status message
+     * 
+     * @example
+     * POST /admin/profile/save
+     * Body: public_name=John&email=john@example.com&new_password=secret
      */
     public function save()
     {
