@@ -45,6 +45,14 @@ abstract class DatabaseAdapter
     abstract protected function connect(): PDO;
 
     /**
+     * Create a new database
+     * 
+     * @param string $databaseName Name of the database to create
+     * @return bool True on success
+     */
+    abstract public function createDatabase(string $databaseName): bool;
+
+    /**
      * Get the PDO connection, creating it if necessary
      * 
      * @return PDO

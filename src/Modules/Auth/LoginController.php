@@ -52,17 +52,17 @@ class LoginController extends BaseController
      * @example
      * GET /login
      */
-/**
- * showLoginForm method
- *
- * @return void
- */
+    /**
+     * showLoginForm method
+     *
+     * @return void
+     */
     public function showLoginForm()
     {
         if (Auth::check()) {
             $this->redirect('');
         }
-        $this->view('auth/login', ['title' => 'Login'], null);
+        $this->view('auth/login', ['title' => 'Login']);
     }
 
     /**
@@ -77,11 +77,11 @@ class LoginController extends BaseController
      * POST /login
      * Body: username=admin&password=secret
      */
-/**
- * login method
- *
- * @return void
- */
+    /**
+     * login method
+     *
+     * @return void
+     */
     public function login()
     {
         $username = $_POST['username'] ?? '';
@@ -94,7 +94,7 @@ class LoginController extends BaseController
         $this->view('auth/login', [
             'title' => 'Login',
             'error' => "Invalid username or password"
-        ], null);
+        ]);
     }
 
     /**
@@ -107,11 +107,11 @@ class LoginController extends BaseController
      * @example
      * GET /logout
      */
-/**
- * logout method
- *
- * @return void
- */
+    /**
+     * logout method
+     *
+     * @return void
+     */
     public function logout()
     {
         Auth::logout();

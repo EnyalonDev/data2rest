@@ -185,4 +185,21 @@ class SQLiteAdapter extends DatabaseAdapter
         $connection->exec("ALTER TABLE " . $this->quoteName($tableName) . " DROP COLUMN " . $this->quoteName($columnName));
         return true;
     }
+
+    /**
+     * Create a new database
+     * For SQLite, connecting to it creates it, so this checks if we can write.
+     * 
+     * @param string $databaseName Not used for SQLite file
+     * @return bool True on success
+     */
+    public function createDatabase(string $databaseName): bool
+    {
+        try {
+            $this->getConnection();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
 }

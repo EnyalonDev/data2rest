@@ -44,6 +44,7 @@ class BaseController
         $this->initBlade();
 
         $data['baseUrl'] = Auth::getBaseUrl();
+        $data['system_db_config'] = Config::get('system_db_config');
         $data['flash'] = Auth::getFlashMsg();
         $data['lang'] = Lang::current();
         $data['csrf_token'] = Csrf::getToken();
