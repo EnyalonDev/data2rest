@@ -172,23 +172,23 @@ class RestController extends BaseController
             switch ($method) {
                 case 'GET':
                     Logger::log('API_GET', "Table: $table" . ($id ? " ID: $id" : ""), $db_id);
-                    $this->handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id);
+                    $this->handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id, $adapter);
                     break;
 
                 case 'POST':
                     Logger::log('API_POST', ['table' => $table], $database['id']);
-                    $this->handlePostRequest($targetDb, $table, $database['id']);
+                    $this->handlePostRequest($targetDb, $table, $database['id'], $adapter);
                     break;
 
                 case 'PUT':
                 case 'PATCH':
                     Logger::log('API_UPDATE', ['table' => $table, 'id' => $id, 'method' => $method], $database['id']);
-                    $this->handleUpdateRequest($targetDb, $table, $id, $database['id']);
+                    $this->handleUpdateRequest($targetDb, $table, $id, $database['id'], $adapter);
                     break;
 
                 case 'DELETE':
                     Logger::log('API_DELETE', ['table' => $table, 'id' => $id], $database['id']);
-                    $this->handleDeleteRequest($targetDb, $table, $id, $database['id']);
+                    $this->handleDeleteRequest($targetDb, $table, $id, $database['id'], $adapter);
                     break;
 
                 default:
@@ -204,25 +204,24 @@ class RestController extends BaseController
     /**
      * Helper to get column names for any supported database
      */
-    private function getDbColumns($targetDb, $table)
+    private function getDbColumns($targetDb, $table, $adapter)
     {
-        $driver = $targetDb->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $driver = $adapter->getType();
         if ($driver === 'sqlite') {
-            $stmt = $targetDb->query("PRAGMA table_info(`$table`)");
+            $stmt = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($table) . ")");
             return $stmt->fetchAll(PDO::FETCH_COLUMN, 1); // name
         } elseif ($driver === 'mysql') {
-            $stmt = $targetDb->query("SHOW COLUMNS FROM `$table`");
+            $stmt = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($table));
             return $stmt->fetchAll(PDO::FETCH_COLUMN, 0); // Field
         } elseif ($driver === 'pgsql') {
-            $stmt = $targetDb->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = ?");
-            $stmt->execute([$table]);
-            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $stmt = $targetDb->query($adapter->getTableStructureSQL($table));
+            return $stmt->fetchAll(PDO::FETCH_COLUMN, 0); // name
         }
         return [];
     }
 
 
-    private function handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id)
+    private function handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id, $adapter)
     {
         $params = $_GET;
         unset($params['api_key']);
@@ -239,8 +238,12 @@ class RestController extends BaseController
                 // Determine display field for the related table
                 $displayField = $this->getDisplayField($targetDb, $db_id, $relTable, $field['related_field']);
 
-                $joins[] = "LEFT JOIN `$relTable` $alias ON t.`{$field['field_name']}` = $alias.id";
-                $selectFields[] = "$alias.`$displayField` AS `{$field['field_name']}_label`";
+                $qRelTable = $adapter->quoteName($relTable);
+                $qField = $adapter->quoteName($field['field_name']);
+                $qDisplay = $adapter->quoteName($displayField);
+
+                $joins[] = "LEFT JOIN $qRelTable $alias ON t.$qField = $alias.id";
+                $selectFields[] = "$alias.$qDisplay AS " . $adapter->quoteName($field['field_name'] . "_label");
             }
         }
 
@@ -250,11 +253,12 @@ class RestController extends BaseController
             $selectFields = [];
             foreach ($requested as $r) {
                 // If it's a basic field, we prefix with t.
-                $selectFields[] = "t.`$r`";
+                $selectFields[] = "t." . $adapter->quoteName($r);
                 // Also try to find if it has a label from our joins
                 foreach ($fieldsConfig as $f) {
                     if ($f['field_name'] === $r && $f['is_foreign_key']) {
-                        $selectFields[] = "ref_$r.`" . $this->getDisplayField($targetDb, $db_id, $f['related_table'], $f['related_field']) . "` AS `{$r}_label`";
+                        $labelDisplay = $this->getDisplayField($targetDb, $db_id, $f['related_table'], $f['related_field']);
+                        $selectFields[] = "ref_$r." . $adapter->quoteName($labelDisplay) . " AS " . $adapter->quoteName($r . "_label");
                     }
                 }
             }
@@ -265,7 +269,8 @@ class RestController extends BaseController
         $sqlJoins = implode(' ', $joins);
 
         if ($id) {
-            $sql = "SELECT $sqlSelect FROM `$table` t $sqlJoins WHERE t.id = ?";
+            $qTable = $adapter->quoteName($table);
+            $sql = "SELECT $sqlSelect FROM $qTable t $sqlJoins WHERE t.id = ?";
             $stmt = $targetDb->prepare($sql);
             $stmt->execute([$id]);
             $result = $stmt->fetch();
@@ -283,7 +288,7 @@ class RestController extends BaseController
             $values = [];
 
             // Validate columns for filtering
-            $validCols = $this->getDbColumns($targetDb, $table);
+            $validCols = $this->getDbColumns($targetDb, $table, $adapter);
 
             foreach ($params as $key => $val) {
                 if (is_string($val)) {
@@ -291,16 +296,18 @@ class RestController extends BaseController
                 }
 
                 if (in_array($key, $validCols)) {
+                    $qKey = $adapter->quoteName($key);
                     if (strpos($val, '%') !== false) {
-                        $where[] = "t.`$key` LIKE ?";
+                        $where[] = "t.$qKey LIKE ?";
                     } else {
-                        $where[] = "t.`$key` = ?";
+                        $where[] = "t.$qKey = ?";
                     }
                     $values[] = $val;
                 }
             }
 
-            $sql = "SELECT $sqlSelect FROM `$table` t $sqlJoins";
+            $qTable = $adapter->quoteName($table);
+            $sql = "SELECT $sqlSelect FROM $qTable t $sqlJoins";
             if (!empty($where)) {
                 $sql .= " WHERE " . implode(' AND ', $where);
             }
@@ -313,7 +320,8 @@ class RestController extends BaseController
             $results = $stmt->fetchAll();
 
             // Metadata for response
-            $countSql = "SELECT COUNT(*) FROM `$table` t";
+            $qCountTable = $adapter->quoteName($table);
+            $countSql = "SELECT COUNT(*) FROM $qCountTable t";
             if (!empty($where))
                 $countSql .= " WHERE " . implode(' AND ', $where);
             $total = $targetDb->prepare($countSql);
@@ -350,7 +358,14 @@ class RestController extends BaseController
 
         // Fallback to searching in actual table schema
         try {
-            $columns = $this->getDbColumns($targetDb, $tableName);
+            $db_stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ?");
+            $db_stmt->execute([$db_id]);
+            $database_config = $db_stmt->fetch();
+            if (!$database_config)
+                return 'id';
+            $adapter = \App\Core\DatabaseManager::getAdapter($database_config);
+
+            $columns = $this->getDbColumns($targetDb, $tableName, $adapter);
             foreach ($columns as $colName) {
                 // getDbColumns returns array of names directly now
                 if (in_array(strtolower($colName), ['nombre', 'name', 'title', 'titulo', 'label'])) {
@@ -363,7 +378,7 @@ class RestController extends BaseController
         return 'id';
     }
 
-    private function handlePostRequest($targetDb, $table, $db_id)
+    private function handlePostRequest($targetDb, $table, $db_id, $adapter)
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
@@ -373,7 +388,7 @@ class RestController extends BaseController
         $input = array_merge($input, $filesData);
 
         // Filter input to only include actual table columns
-        $validCols = $this->getDbColumns($targetDb, $table);
+        $validCols = $this->getDbColumns($targetDb, $table, $adapter);
         $input = array_intersect_key($input, array_flip($validCols));
 
         if (empty($input))
@@ -385,12 +400,14 @@ class RestController extends BaseController
             $input['fecha_edicion'] = Auth::getCurrentTime();
 
         $keys = array_keys($input);
-        // Backtick keys
-        $cols = implode(', ', array_map(function ($k) {
-            return "`$k`"; }, $keys));
+        // Quote keys
+        $cols = implode(', ', array_map(function ($k) use ($adapter) {
+            return $adapter->quoteName($k);
+        }, $keys));
         $vals = implode(', ', array_fill(0, count($keys), '?'));
 
-        $stmt = $targetDb->prepare("INSERT INTO `$table` ($cols) VALUES ($vals)");
+        $qTable = $adapter->quoteName($table);
+        $stmt = $targetDb->prepare("INSERT INTO $qTable ($cols) VALUES ($vals)");
         $stmt->execute(array_values($input));
         $newId = $targetDb->lastInsertId();
 
@@ -440,7 +457,7 @@ class RestController extends BaseController
         $this->json(['success' => true, 'id' => $newId], 201);
     }
 
-    private function handleUpdateRequest($targetDb, $table, $id, $db_id)
+    private function handleUpdateRequest($targetDb, $table, $id, $db_id, $adapter)
     {
         if (!$id)
             $this->json(['error' => 'ID required'], 400);
@@ -453,7 +470,7 @@ class RestController extends BaseController
         $input = array_merge($input, $filesData);
 
         // Filter input to only include actual table columns
-        $validCols = $this->getDbColumns($targetDb, $table);
+        $validCols = $this->getDbColumns($targetDb, $table, $adapter);
         $input = array_intersect_key($input, array_flip($validCols));
 
         // id should not be updated manually
@@ -467,7 +484,8 @@ class RestController extends BaseController
         }
 
         if ($id) {
-            $stmtFetch = $targetDb->prepare("SELECT * FROM `$table` WHERE id = ?");
+            $qTable = $adapter->quoteName($table);
+            $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE id = ?");
             $stmtFetch->execute([$id]);
             $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -500,9 +518,10 @@ class RestController extends BaseController
         $sets = [];
         foreach ($input as $key => $val) {
             $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
-            $sets[] = "`$safeKey` = ?";
+            $sets[] = $adapter->quoteName($safeKey) . " = ?";
         }
-        $sql = "UPDATE `$table` SET " . implode(', ', $sets) . " WHERE id = ?";
+        $qTable = $adapter->quoteName($table);
+        $sql = "UPDATE $qTable SET " . implode(', ', $sets) . " WHERE id = ?";
 
         $stmt = $targetDb->prepare($sql);
         $stmt->execute(array_merge(array_values($input), [$id]));
@@ -528,13 +547,14 @@ class RestController extends BaseController
         $this->json(['success' => true]);
     }
 
-    private function handleDeleteRequest($targetDb, $table, $id, $db_id)
+    private function handleDeleteRequest($targetDb, $table, $id, $db_id, $adapter)
     {
         if (!$id)
             $this->json(['error' => 'ID required'], 400);
 
         // Fetch data before delete for webhook payload (optional but good practice)
-        $stmtFetch = $targetDb->prepare("SELECT * FROM `$table` WHERE id = ?");
+        $qTable = $adapter->quoteName($table);
+        $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE id = ?");
         $stmtFetch->execute([$id]);
         $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -563,7 +583,8 @@ class RestController extends BaseController
             }
         }
 
-        $stmt = $targetDb->prepare("DELETE FROM `$table` WHERE id = ?");
+        $qTable = $adapter->quoteName($table);
+        $stmt = $targetDb->prepare("DELETE FROM $qTable WHERE id = ?");
         $stmt->execute([$id]);
 
         // Webhook Trigger

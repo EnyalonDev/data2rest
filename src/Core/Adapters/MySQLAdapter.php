@@ -109,21 +109,12 @@ class MySQLAdapter extends DatabaseAdapter
      * @param string $name
      * @return string
      */
-    protected function quoteName(string $name): string
+    public function quoteName(string $name): string
     {
         return '`' . str_replace('`', '``', $name) . '`';
     }
 
-    /**
-     * Quote a value for MySQL
-     * 
-     * @param string $value
-     * @return string
-     */
-    protected function quote(string $value): string
-    {
-        return $this->getConnection()->quote($value);
-    }
+
 
     /**
      * Get database size in bytes
@@ -168,32 +159,98 @@ class MySQLAdapter extends DatabaseAdapter
         }
     }
 
-    /**
-     * Create database if it doesn't exist
-     * Note: Requires connection without database specified
-     * 
-     * @param string $databaseName
-     * @param string $charset
-     * @param string $collation
-     * @return bool
-     */
-    public function createDatabase(
-        string $databaseName,
-        string $charset = 'utf8mb4',
-        string $collation = 'utf8mb4_unicode_ci'
-    ): bool {
-        try {
-            $sql = sprintf(
-                "CREATE DATABASE IF NOT EXISTS %s CHARACTER SET %s COLLATE %s",
-                $this->quoteName($databaseName),
-                $charset,
-                $collation
-            );
 
-            $this->getConnection()->exec($sql);
+
+    /**
+     * Create a new table with standard fields for MySQL
+     * 
+     * @param string $tableName Name of the table to create
+     * @return bool True on success
+     */
+    public function createTable(string $tableName): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("CREATE TABLE " . $this->quoteName($tableName) . " (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        return true;
+    }
+
+    /**
+     * Delete a table from the database
+     * 
+     * @param string $tableName Name of the table to delete
+     * @return bool True on success
+     */
+    public function deleteTable(string $tableName): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("DROP TABLE IF EXISTS " . $this->quoteName($tableName));
+        return true;
+    }
+
+    /**
+     * Add a new column to an existing table
+     * 
+     * @param string $tableName Table name
+     * @param string $columnName Column name
+     * @param string $columnType Data type (e.g., 'TEXT', 'INTEGER', 'DATETIME')
+     * @return bool True on success
+     */
+    public function addColumn(string $tableName, string $columnName, string $columnType): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("ALTER TABLE " . $this->quoteName($tableName) . " ADD COLUMN " . $this->quoteName($columnName) . " $columnType");
+        return true;
+    }
+
+    /**
+     * Delete a column from a table
+     * 
+     * @param string $tableName Table name
+     * @param string $columnName Column name to delete
+     * @return bool True on success
+     */
+    public function deleteColumn(string $tableName, string $columnName): bool
+    {
+        $connection = $this->getConnection();
+        $connection->exec("ALTER TABLE " . $this->quoteName($tableName) . " DROP COLUMN " . $this->quoteName($columnName));
+        return true;
+    }
+
+    /**
+     * Create a new database
+     * 
+     * @param string $databaseName Name of the database to create
+     * @return bool True on success
+     */
+    public function createDatabase(string $databaseName): bool
+    {
+        // Connect to the server without selecting a database first
+        $host = $this->config['host'] ?? 'localhost';
+        $port = $this->config['port'] ?? 3306;
+        $username = $this->config['username'] ?? 'root';
+        $password = $this->config['password'] ?? '';
+        $charset = $this->config['charset'] ?? 'utf8mb4';
+
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;charset=%s',
+            $host,
+            $port,
+            $charset
+        );
+
+        try {
+            $pdo = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
+
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS " . $this->quoteName($databaseName) . " CHARACTER SET $charset COLLATE {$charset}_unicode_ci");
             return true;
         } catch (PDOException $e) {
-            return false;
+            throw new PDOException("MySQL Database Creation Failed: " . $e->getMessage());
         }
     }
 }

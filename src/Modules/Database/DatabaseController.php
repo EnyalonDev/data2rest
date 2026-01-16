@@ -572,6 +572,9 @@ class DatabaseController extends BaseController
             } elseif ($dbType === 'mysql') {
                 $stmt = $connection->query("SHOW TABLES");
                 $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($dbType === 'pgsql') {
+                $stmt = $connection->query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+                $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
             } else {
                 throw new \Exception("Unsupported database type: $dbType");
             }
@@ -588,7 +591,8 @@ class DatabaseController extends BaseController
                 }
 
                 try {
-                    $count = $connection->query("SELECT COUNT(*) FROM `$tableName`")->fetchColumn();
+                    $quote = ($dbType === 'pgsql') ? '"' : '`';
+                    $count = $connection->query("SELECT COUNT(*) FROM $quote$tableName$quote")->fetchColumn();
                 } catch (\Exception $e) {
                     $count = 0;
                 }
@@ -648,22 +652,8 @@ class DatabaseController extends BaseController
             $connection = $adapter->getConnection();
             $dbType = $adapter->getType();
 
-            // Create table based on database type
-            if ($dbType === 'sqlite') {
-                $connection->exec("CREATE TABLE `$table_name` (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP
-                )");
-            } elseif ($dbType === 'mysql') {
-                $connection->exec("CREATE TABLE `$table_name` (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    fecha_de_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    fecha_edicion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            } else {
-                throw new \Exception("Unsupported database type: $dbType");
-            }
+            // Create table using adapter (automatically handles PostgreSQL/MySQL/SQLite differences)
+            $adapter->createTable($table_name);
 
             // Register fields in metadata
             $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_editable, is_visible, is_required) VALUES (?, ?, 'id', 'INTEGER', 'number', 0, 1, 0)");
@@ -780,8 +770,8 @@ class DatabaseController extends BaseController
             $connection = $adapter->getConnection();
             $dbType = $adapter->getType();
 
-            // DROP TABLE works the same across all database types
-            $connection->exec("DROP TABLE IF EXISTS `$table_name`");
+            // Delete table using adapter (automatically handles PostgreSQL/MySQL/SQLite differences)
+            $adapter->deleteTable($table_name);
 
             // Delete metadata
             $stmt = $db->prepare("DELETE FROM fields_config WHERE db_id = ? AND table_name = ?");
@@ -904,15 +894,8 @@ class DatabaseController extends BaseController
             $connection = $adapter->getConnection();
             $dbType = $adapter->getType();
 
-            // Add column based on database type
-            if ($dbType === 'sqlite') {
-                $connection->exec("ALTER TABLE `$table_name` ADD COLUMN `$field_name` $data_type");
-            } elseif ($dbType === 'mysql') {
-                // MySQL ALTER TABLE syntax
-                $connection->exec("ALTER TABLE `$table_name` ADD COLUMN `$field_name` $data_type");
-            } else {
-                throw new \Exception("Unsupported database type: $dbType");
-            }
+            // Add column using adapter (automatically handles PostgreSQL/MySQL/SQLite differences)
+            $adapter->addColumn($table_name, $field_name, $data_type);
 
             // Register field in metadata
             $stmt = $db->prepare("INSERT INTO fields_config (db_id, table_name, field_name, data_type, view_type, is_required) VALUES (?, ?, ?, ?, ?, 0)");
@@ -978,14 +961,8 @@ class DatabaseController extends BaseController
             $connection = $adapter->getConnection();
             $dbType = $adapter->getType();
 
-            // Drop column based on database type
-            if ($dbType === 'sqlite') {
-                // SQLite supports DROP COLUMN in newer versions
-                $connection->exec("ALTER TABLE `$table_name` DROP COLUMN `$field_name`");
-            } elseif ($dbType === 'mysql') {
-                // MySQL DROP COLUMN syntax
-                $connection->exec("ALTER TABLE `$table_name` DROP COLUMN `$field_name`");
-            }
+            // Drop column using adapter (automatically handles PostgreSQL/MySQL/SQLite differences)
+            $adapter->deleteColumn($table_name, $field_name);
 
             Auth::setFlashError("Field '$field_name' dropped successfully from $dbType table.", 'success');
         } catch (\PDOException $e) {
@@ -1077,6 +1054,9 @@ WHERE id = ?");
             } elseif ($dbType === 'mysql') {
                 $stmt = $connection->query("SHOW TABLES");
                 $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($dbType === 'pgsql') {
+                $stmt = $connection->query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
             } else {
                 throw new \Exception("Unsupported database type: $dbType");
             }
@@ -1087,10 +1067,10 @@ WHERE id = ?");
             foreach ($tables as $table) {
                 // Get columns based on database type
                 if ($dbType === 'sqlite') {
-                    $stmtCols = $connection->query("PRAGMA table_info(`$table`)");
+                    $stmtCols = $connection->query("PRAGMA table_info(" . $adapter->quoteName($table) . ")");
                     $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                 } elseif ($dbType === 'mysql') {
-                    $stmtCols = $connection->query("SHOW COLUMNS FROM `$table`");
+                    $stmtCols = $connection->query("SHOW COLUMNS FROM " . $adapter->quoteName($table));
                     $mysqlCols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                     // Convert MySQL format to SQLite-like format for consistency
                     $columns = [];
@@ -1100,6 +1080,14 @@ WHERE id = ?");
                             'type' => $col['Type']
                         ];
                     }
+                } elseif ($dbType === 'pgsql') {
+                    $stmtCols = $connection->query("
+                        SELECT column_name as name, data_type as type 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' AND table_name = '$table'
+                        ORDER BY ordinal_position
+                    ");
+                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                 }
 
                 $syncedTables++;

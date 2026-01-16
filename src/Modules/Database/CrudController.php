@@ -153,14 +153,17 @@ class CrudController extends BaseController
                 $columns = [];
 
                 if ($dbType === 'sqlite') {
-                    $stmtCols = $targetDb->query("PRAGMA table_info(`$table`)");
+                    $stmtCols = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($table) . ")");
                     $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                 } elseif ($dbType === 'mysql') {
-                    $stmtCols = $targetDb->query("SHOW COLUMNS FROM `$table`");
+                    $stmtCols = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($table));
                     $mysqlCols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($mysqlCols as $mCol) {
                         $columns[] = ['name' => $mCol['Field'], 'type' => $mCol['Type']];
                     }
+                } elseif ($dbType === 'pgsql') {
+                    $stmtCols = $targetDb->query($adapter->getTableStructureSQL($table));
+                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
                 }
 
                 foreach ($columns as $col) {
@@ -210,28 +213,29 @@ LIMIT 1");
             return $found;
 
         try {
-            // Need to know DB type to query correctly. 
-            // Since we receive $targetDb connection but not type/adapter, we assume simple query compatibility or inspect object if possible.
-            // BUT, passing just connection is risky if query syntax differs.
-            // Ideally, refactor to pass adapter or know type.
-            // For now, try standardized query logic or try/catch both.
-            // Better yet, let's assume getDisplayField is called inside context where we know type?
-            // Actually, showing columns is different per DB.
+            $db_stmt = Database::getInstance()->getConnection()->prepare("SELECT * FROM databases WHERE id = ?");
+            $db_stmt->execute([$db_id]);
+            $database_config = $db_stmt->fetch();
 
-            // Hack: Try SHOW COLUMNS (MySQL) first, if fails try PRAGMA (SQLite)
-            // Or better: Checking attributes (driver name)
-            $driver = $targetDb->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if (!$database_config)
+                return 'id';
+
+            $adapter = \App\Core\DatabaseManager::getAdapter($database_config);
+            $driver = $adapter->getType();
 
             $columns = [];
             if ($driver === 'sqlite') {
-                $stmt = $targetDb->query("PRAGMA table_info(`$tableName`)");
+                $stmt = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($tableName) . ")");
                 $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } elseif ($driver === 'mysql') {
-                $stmt = $targetDb->query("SHOW COLUMNS FROM `$tableName`");
+                $stmt = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($tableName));
                 $mysqlCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($mysqlCols as $mCol) {
                     $columns[] = ['name' => $mCol['Field']];
                 }
+            } elseif ($driver === 'pgsql') {
+                $stmt = $targetDb->query($adapter->getTableStructureSQL($tableName));
+                $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             foreach ($columns as $col) {
@@ -291,7 +295,8 @@ LIMIT 1");
 
             $whereSql = !empty($whereClauses) ? "WHERE " . implode(" OR ", $whereClauses) : "";
 
-            $sql = "SELECT * FROM `$tableName` $whereSql ORDER BY id DESC";
+            $qTable = $adapter->quoteName($tableName);
+            $sql = "SELECT * FROM $qTable $whereSql ORDER BY id DESC";
             $stmt = $targetDb->prepare($sql);
             $stmt->execute($params);
             $records = $stmt->fetchAll();
@@ -302,9 +307,9 @@ LIMIT 1");
                     $relatedDisplay = $this->getDisplayField($targetDb, $ctx['db_id'], $relatedTable, $field['related_field']);
 
                     try {
-                        $stmtRel = $targetDb->query("SELECT id, $relatedDisplay as display FROM `$relatedTable`");
+                        $qRelTable = $adapter->quoteName($relatedTable);
+                        $stmtRel = $targetDb->query("SELECT id, $relatedDisplay as display FROM $qRelTable");
                         $relMap = $stmtRel->fetchAll(PDO::FETCH_KEY_PAIR);
-
                         foreach ($records as &$row) {
                             if (!empty($row[$field['field_name']]) && isset($relMap[$row[$field['field_name']]])) {
                                 $row[$field['field_name']] = $relMap[$row[$field['field_name']]];
@@ -367,7 +372,8 @@ LIMIT 1");
 
             if ($id) {
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
-                $stmt = $targetDb->prepare("SELECT * FROM `$tableName` WHERE id = ?");
+                $qTable = $adapter->quoteName($tableName);
+                $stmt = $targetDb->prepare("SELECT * FROM $qTable WHERE id = ?");
                 $stmt->execute([$id]);
                 $record = $stmt->fetch();
             }
@@ -377,7 +383,9 @@ LIMIT 1");
                     $table = $field['related_table'];
                     $display = $this->getDisplayField($targetDb, $ctx['db_id'], $table, $field['related_field']);
                     try {
-                        $stmtRel = $targetDb->query("SELECT id, $display as label FROM `$table` ORDER BY `$display` ASC");
+                        $qRelTable = $adapter->quoteName($table);
+                        $qDisplay = $adapter->quoteName($display);
+                        $stmtRel = $targetDb->query("SELECT id, $qDisplay as label FROM $qRelTable ORDER BY $qDisplay ASC");
                         $foreignOptions[$field['field_name']] = $stmtRel->fetchAll();
                     } catch (\PDOException $e) {
                         $foreignOptions[$field['field_name']] = [];
@@ -490,11 +498,14 @@ LIMIT 1");
             // Fetch target table info to check if timestamp columns exist
             $columns = [];
             if ($dbType === 'sqlite') {
-                $stmtCols = $targetDb->query("PRAGMA table_info(`$tableName`)");
+                $stmtCols = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($tableName) . ")");
                 $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1); // 1 is 'name'
             } elseif ($dbType === 'mysql') {
-                $stmtCols = $targetDb->query("SHOW COLUMNS FROM `$tableName`");
+                $stmtCols = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($tableName));
                 $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 0); // 0 is 'Field'
+            } elseif ($dbType === 'pgsql') {
+                $stmtCols = $targetDb->query($adapter->getTableStructureSQL($tableName));
+                $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 0); // 0 is 'name'
             }
 
             if ($id) {
@@ -503,7 +514,8 @@ LIMIT 1");
                 }
 
                 // Data Versioning
-                $stmtFetch = $targetDb->prepare("SELECT * FROM `$tableName` WHERE id = ?");
+                $qTable = $adapter->quoteName($tableName);
+                $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE id = ?");
                 $stmtFetch->execute([$id]);
                 $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -532,11 +544,12 @@ LIMIT 1");
                     if ($safeKey === 'id' || !in_array($safeKey, $columns))
                         continue;
 
-                    $sets[] = "`$safeKey` = ?";
+                    $sets[] = $adapter->quoteName($safeKey) . " = ?";
                     $values[] = $value;
                 }
                 $values[] = $id;
-                $stmt = $targetDb->prepare("UPDATE `$tableName` SET " . implode(', ', $sets) . " WHERE id = ?");
+                $qTable = $adapter->quoteName($tableName);
+                $stmt = $targetDb->prepare("UPDATE $qTable SET " . implode(', ', $sets) . " WHERE id = ?");
                 $stmt->execute($values);
                 Logger::log('UPDATE_RECORD', ['table' => $tableName, 'id' => $id, 'fields' => array_keys($data)], $ctx['db_id']);
             } else {
@@ -557,13 +570,14 @@ LIMIT 1");
                 }
 
                 $keys = array_keys($filteredData);
-                // Backtick keys
-                $tickedKeys = array_map(function ($k) {
-                    return "`$k`";
+                // Quote keys
+                $quotedKeys = array_map(function ($k) use ($adapter) {
+                    return $adapter->quoteName($k);
                 }, $keys);
 
                 $placeholders = array_fill(0, count($keys), '?');
-                $stmt = $targetDb->prepare("INSERT INTO `$tableName` (" . implode(', ', $tickedKeys) . ") VALUES (" . implode(', ', $placeholders) . ")");
+                $qTable = $adapter->quoteName($tableName);
+                $stmt = $targetDb->prepare("INSERT INTO $qTable (" . implode(', ', $quotedKeys) . ") VALUES (" . implode(', ', $placeholders) . ")");
                 $stmt->execute(array_values($filteredData));
                 $newId = $targetDb->lastInsertId();
 
@@ -636,7 +650,8 @@ LIMIT 1");
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
 
                 // Data Versioning
-                $stmtFetch = $targetDb->prepare("SELECT * FROM `$tableName` WHERE id = ?");
+                $qTable = $adapter->quoteName($tableName);
+                $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE id = ?");
                 $stmtFetch->execute([$id]);
                 $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -657,7 +672,8 @@ LIMIT 1");
                     }
                 }
 
-                $stmt = $targetDb->prepare("DELETE FROM `$tableName` WHERE id = ?");
+                $qTable = $adapter->quoteName($tableName);
+                $stmt = $targetDb->prepare("DELETE FROM $qTable WHERE id = ?");
                 $stmt->execute([$id]);
 
                 Auth::setFlashError("Registro eliminado exitosamente.", 'success');
@@ -725,7 +741,8 @@ LIMIT 1");
             $targetDb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, $targetDb::FETCH_ASSOC);
 
             $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
-            $stmt = $targetDb->query("SELECT * FROM `$tableName` ORDER BY id DESC");
+            $qTable = $adapter->quoteName($tableName);
+            $stmt = $targetDb->query("SELECT * FROM $qTable ORDER BY id DESC");
             $records = $stmt->fetchAll();
 
             // Resolve foreign keys for the export as well
@@ -1014,7 +1031,9 @@ LIMIT 1");
         $ctx = $this->getContext('crud_update');
 
         try {
-            $targetDb = new PDO('sqlite:' . $ctx['database']['path']);
+            $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
+            $targetDb = $adapter->getConnection();
+            $dbType = $adapter->getType();
             $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // Prepare update
@@ -1022,21 +1041,31 @@ LIMIT 1");
             $values = [];
 
             // Filter columns to ensure we only update columns that still exist
-            $stmtCols = $targetDb->query("PRAGMA table_info({$version['table_name']})");
-            $validCols = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+            $columns = [];
+            if ($dbType === 'sqlite') {
+                $stmtCols = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($version['table_name']) . ")");
+                $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 1);
+            } elseif ($dbType === 'mysql') {
+                $stmtCols = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($version['table_name']));
+                $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 0);
+            } elseif ($dbType === 'pgsql') {
+                $stmtCols = $targetDb->query($adapter->getTableStructureSQL($version['table_name']));
+                $columns = $stmtCols->fetchAll(PDO::FETCH_COLUMN, 0);
+            }
 
             foreach ($oldData as $key => $val) {
                 if ($key === 'id')
                     continue;
-                if (!in_array($key, $validCols))
+                if (!in_array($key, $columns))
                     continue;
 
-                $sets[] = "$key = ?";
+                $sets[] = $adapter->quoteName($key) . " = ?";
                 $values[] = $val;
             }
 
             // Update
-            $sql = "UPDATE {$version['table_name']} SET " . implode(', ', $sets) . " WHERE id = ?";
+            $qTable = $adapter->quoteName($version['table_name']);
+            $sql = "UPDATE $qTable SET " . implode(', ', $sets) . " WHERE id = ?";
             $values[] = $version['record_id'];
 
             $stmtUpd = $targetDb->prepare($sql);

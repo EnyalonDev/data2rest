@@ -153,6 +153,14 @@ class DatabaseManager
                 }
             }
 
+            // For PostgreSQL, create the database if it doesn't exist
+            if (($config['type'] ?? '') === 'pgsql') {
+                $adapter = DatabaseFactory::create($config);
+                if (method_exists($adapter, 'createDatabase')) {
+                    $adapter->createDatabase($config['database']);
+                }
+            }
+
             // Insert into databases table
             $stmt = $db->prepare(
                 "INSERT INTO databases (name, path, type, config, project_id, created_at, last_edit_at) 
