@@ -15,7 +15,7 @@ require_once __DIR__ . '/../src/autoload.php';
 // Load ENV variables
 Config::loadEnv();
 
-// Check for installation - system is not installed if config doesn't exist OR database file doesn't exist
+// Check for installation - system is not installed if config doesn't exist
 $needsInstallation = !file_exists(__DIR__ . '/../data/config.json');
 
 if ($needsInstallation) {
@@ -28,12 +28,16 @@ if ($needsInstallation) {
     }
 
     // Simple router for installation
-    if ($uri === '/install' || $uri === '/install/' || $uri === '/') {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($uri === '/install' || $uri === '/install/')) {
+    if ($uri === '/install' || $uri === '/install/' || strpos($uri, '/install') === 0) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (new \App\Modules\Install\InstallController())->install();
         } else {
             (new \App\Modules\Install\InstallController())->index();
         }
+        exit;
+    } else {
+        // Redirect to install
+        header("Location: " . $basePath . ($basePath === '/' ? 'install' : '/install'));
         exit;
     }
 }
