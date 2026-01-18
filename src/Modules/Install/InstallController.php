@@ -14,8 +14,12 @@ class InstallController extends BaseController
             $this->redirect('login');
         }
 
+        // Initialize Lang for installer
+        \App\Core\Lang::init();
+
         $this->view('install/index', [
-            'baseUrl' => Auth::getBaseUrl()
+            'baseUrl' => Auth::getBaseUrl(),
+            'lang' => \App\Core\Lang::all()
         ]);
     }
 
