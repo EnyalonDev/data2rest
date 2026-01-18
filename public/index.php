@@ -15,8 +15,13 @@ require_once __DIR__ . '/../src/autoload.php';
 // Load ENV variables
 Config::loadEnv();
 
-// Check for installation - system is not installed if config doesn't exist
-$needsInstallation = !file_exists(__DIR__ . '/../data/config.json');
+// Check for installation - system needs installation ONLY if BOTH config and database don't exist
+// This prevents the installer from showing up when updating an existing installation
+$configExists = file_exists(__DIR__ . '/../data/config.json');
+$dbExists = file_exists(__DIR__ . '/../data/system.sqlite');
+
+// Only show installer if NEITHER config NOR database exist (fresh installation)
+$needsInstallation = !$configExists && !$dbExists;
 
 if ($needsInstallation) {
     // Basic Installation Router
