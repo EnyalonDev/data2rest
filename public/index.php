@@ -15,8 +15,10 @@ require_once __DIR__ . '/../src/autoload.php';
 // Load ENV variables
 Config::loadEnv();
 
-// Check for installation
-if (!file_exists(__DIR__ . '/../data/config.json') && !file_exists(__DIR__ . '/../data/system.sqlite')) {
+// Check for installation - system is not installed if config doesn't exist OR database file doesn't exist
+$needsInstallation = !file_exists(__DIR__ . '/../data/config.json');
+
+if ($needsInstallation) {
     // Basic Installation Router
     $uri = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
     $basePath = str_replace('/index.php', '', $_SERVER['SCRIPT_NAME']);
@@ -26,16 +28,12 @@ if (!file_exists(__DIR__ . '/../data/config.json') && !file_exists(__DIR__ . '/.
     }
 
     // Simple router for installation
-    if ($uri === '/install' || $uri === '/install/') {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($uri === '/install' || $uri === '/install/' || $uri === '/') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($uri === '/install' || $uri === '/install/')) {
             (new \App\Modules\Install\InstallController())->install();
         } else {
             (new \App\Modules\Install\InstallController())->index();
         }
-        exit;
-    } else {
-        // Redirect to install
-        header("Location: " . $basePath . ($basePath === '/' ? 'install' : '/install'));
         exit;
     }
 }
