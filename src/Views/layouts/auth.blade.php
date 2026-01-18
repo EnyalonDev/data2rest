@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ $lang }}" class="dark">
+<html lang="{{ \App\Core\Lang::current() }}" class="dark">
 
 <head>
     <meta charset="UTF-8">

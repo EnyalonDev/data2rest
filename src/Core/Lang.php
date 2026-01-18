@@ -105,4 +105,17 @@ class Lang
     {
         return self::$currentLang;
     }
+
+    /**
+     * Returns the entire translation array.
+     * 
+     * @return array
+     */
+    public static function all()
+    {
+        if (self::$translations === null) {
+            self::init();
+        }
+        return self::$translations;
+    }
 }

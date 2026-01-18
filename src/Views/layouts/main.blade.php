@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ $lang }}" class="dark">
+<html lang="{{ \App\Core\Lang::current() }}" class="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -497,19 +497,6 @@
                     }
                 </script>
 
-                @if(($system_db_config['type'] ?? 'sqlite') === 'sqlite')
-                    <div class="flex justify-center mt-4">
-                        <a href="{{ $baseUrl }}admin/system/migrate"
-                            class="group flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all border border-indigo-500/20">
-                            <svg class="w-4 h-4 group-hover:animate-bounce" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 12h14M12 5l7 7-7 7" />
-                            </svg>
-                            {{ $lang['migration']['link_text'] }}
-                        </a>
-                    </div>
-                @endif
 
             @endif
 
