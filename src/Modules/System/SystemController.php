@@ -65,6 +65,7 @@ class SystemController extends BaseController
             'server_time' => $now->format('Y-m-d H:i:s'),
             'time_offset' => $offset,
             'os' => PHP_OS,
+            'database_type' => \App\Core\Config::get('system_db_config')['type'] ?? 'sqlite',
             'sqlite_version' => \PDO::class ? (new \PDO('sqlite::memory:'))->query('select sqlite_version()')->fetchColumn() : 'N/A'
         ]);
         exit;
