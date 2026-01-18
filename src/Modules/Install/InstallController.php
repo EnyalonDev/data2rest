@@ -25,6 +25,11 @@ class InstallController extends BaseController
 
     public function install()
     {
+        // Start session for CSRF token generation (needed by BaseController::json)
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         $type = $_POST['type'] ?? 'sqlite';
 
         $config = [
