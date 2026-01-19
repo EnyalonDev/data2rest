@@ -217,8 +217,8 @@ class BaseController
     protected function verifyCsrf()
     {
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
-        // Skip API
-        if (strpos($uri, '/api/') === 0) {
+        // Skip API and Install
+        if (strpos($uri, '/api/') === 0 || strpos($uri, '/install') === 0) {
             return true;
         }
 
