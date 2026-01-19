@@ -482,11 +482,11 @@ class BillingWebController extends BaseController
         $stmt = $this->db->query("
             SELECT 
                 COUNT(CASE WHEN status = 'pagada' THEN 1 END) as paid_count,
-                SUM(CASE WHEN status = 'pagada' THEN amount ELSE 0 END) as paid_amount,
+                COALESCE(SUM(CASE WHEN status = 'pagada' THEN amount ELSE 0 END), 0) as paid_amount,
                 COUNT(CASE WHEN status = 'pendiente' THEN 1 END) as pending_count,
-                SUM(CASE WHEN status = 'pendiente' THEN amount ELSE 0 END) as pending_amount,
+                COALESCE(SUM(CASE WHEN status = 'pendiente' THEN amount ELSE 0 END), 0) as pending_amount,
                 COUNT(CASE WHEN status = 'vencida' THEN 1 END) as overdue_count,
-                SUM(CASE WHEN status = 'vencida' THEN amount ELSE 0 END) as overdue_amount
+                COALESCE(SUM(CASE WHEN status = 'vencida' THEN amount ELSE 0 END), 0) as overdue_amount
             FROM installments
         ");
 
