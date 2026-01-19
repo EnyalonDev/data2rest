@@ -99,7 +99,7 @@ class Config
     {
         try {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key = ?");
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE `key` = ?");
             $stmt->execute([$key]);
             $val = $stmt->fetchColumn();
             return ($val !== false) ? $val : $default;

@@ -105,7 +105,7 @@ class CrudController extends BaseController
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -118,7 +118,7 @@ class CrudController extends BaseController
             if (file_exists($localPath)) {
                 // Found it locally! Update DB to fix permanently
                 $database['path'] = realpath($localPath);
-                $upd = $db->prepare("UPDATE databases SET path = ? WHERE id = ?");
+                $upd = $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('databases') . " SET path = ? WHERE id = ?");
                 $upd->execute([$database['path'], $db_id]);
             }
         }
@@ -213,7 +213,7 @@ LIMIT 1");
             return $found;
 
         try {
-            $db_stmt = Database::getInstance()->getConnection()->prepare("SELECT * FROM databases WHERE id = ?");
+            $db_stmt = Database::getInstance()->getConnection()->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
             $db_stmt->execute([$db_id]);
             $database_config = $db_stmt->fetch();
 
@@ -696,16 +696,28 @@ LIMIT 1");
     protected function updateMetadata($db_id, $table)
     {
         $db = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $type = $adapter->getType();
         $now = Auth::getCurrentTime();
 
         // Update database last edit
-        $db->prepare("UPDATE databases SET last_edit_at = ? WHERE id = ?")->execute([$now, $db_id]);
+        $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('databases') . " SET last_edit_at = ? WHERE id = ?")->execute([$now, $db_id]);
 
         // Update or Initialize table metadata
-        $stmt = $db->prepare("INSERT INTO table_metadata (db_id, table_name, last_edit_at) 
-                             VALUES (?, ?, ?) 
-                             ON CONFLICT(db_id, table_name) DO UPDATE SET last_edit_at = excluded.last_edit_at");
-        $stmt->execute([$db_id, $table, $now]);
+        if ($type === 'sqlite') {
+            $sql = "INSERT INTO table_metadata (db_id, table_name, last_edit_at) 
+                     VALUES (?, ?, ?) 
+                     ON CONFLICT(db_id, table_name) DO UPDATE SET last_edit_at = excluded.last_edit_at";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$db_id, $table, $now]);
+        } else {
+            // MySQL/MariaDB
+            $sql = "INSERT INTO table_metadata (db_id, table_name, last_edit_at) 
+                     VALUES (?, ?, ?) 
+                     ON DUPLICATE KEY UPDATE last_edit_at = ?";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$db_id, $table, $now, $now]);
+        }
     }
     /**
      * Export table data to CSV file
@@ -966,7 +978,7 @@ LIMIT 1");
         $params = [];
 
         if ($projectId) {
-            $sql = "DELETE FROM data_versions WHERE action = 'DELETE' AND database_id IN (SELECT id FROM databases WHERE project_id = ?)";
+            $sql = "DELETE FROM data_versions WHERE action = 'DELETE' AND database_id IN (SELECT id FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE project_id = ?)";
             $params[] = $projectId;
         }
 

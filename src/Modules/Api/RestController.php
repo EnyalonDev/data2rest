@@ -144,7 +144,7 @@ class RestController extends BaseController
 
         $sysDb = Database::getInstance()->getConnection();
         // Support finding by ID or by name
-        $stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ? OR name = ? OR REPLACE(LOWER(name), ' ', '_') = ?");
+        $stmt = $sysDb->prepare("SELECT * FROM `databases` WHERE id = ? OR name = ? OR REPLACE(LOWER(name), ' ', '_') = ?");
         $stmt->execute([$db_id, $db_id, strtolower($db_id)]);
         $database = $stmt->fetch();
 
@@ -358,7 +358,7 @@ class RestController extends BaseController
 
         // Fallback to searching in actual table schema
         try {
-            $db_stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ?");
+            $db_stmt = $sysDb->prepare("SELECT * FROM `databases` WHERE id = ?");
             $db_stmt->execute([$db_id]);
             $database_config = $db_stmt->fetch();
             if (!$database_config)
@@ -438,7 +438,7 @@ class RestController extends BaseController
         // Webhook Trigger
         try {
             $sysDb = Database::getInstance()->getConnection();
-            $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $projectStmt = $sysDb->prepare("SELECT project_id FROM `databases` WHERE id = ?");
             $projectStmt->execute([$db_id]);
             $projectId = $projectStmt->fetchColumn();
 
@@ -529,7 +529,7 @@ class RestController extends BaseController
         // Webhook Trigger
         try {
             $sysDb = Database::getInstance()->getConnection();
-            $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $projectStmt = $sysDb->prepare("SELECT project_id FROM `databases` WHERE id = ?");
             $projectStmt->execute([$db_id]);
             $projectId = $projectStmt->fetchColumn();
 
@@ -591,7 +591,7 @@ class RestController extends BaseController
         try {
             if ($oldData) {
                 $sysDb = Database::getInstance()->getConnection();
-                $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+                $projectStmt = $sysDb->prepare("SELECT project_id FROM `databases` WHERE id = ?");
                 $projectStmt->execute([$db_id]);
                 $projectId = $projectStmt->fetchColumn();
 

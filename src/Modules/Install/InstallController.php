@@ -25,6 +25,7 @@ class InstallController extends BaseController
 
     public function install()
     {
+        ob_start();
         // Start session (CSRF is excluded for the installation module)
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -64,7 +65,7 @@ class InstallController extends BaseController
         try {
             $this->runInitialSetup($config);
             $this->json(['success' => true, 'redirect' => Auth::getBaseUrl() . 'login']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // If failed, remove config so user can try again
             @unlink(__DIR__ . '/../../../data/config.json');
             $this->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -88,7 +89,7 @@ class InstallController extends BaseController
                 // Create Database
                 $tempAdapter->createDatabase($config['database']);
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Ignore if DB already exists or connection fails (might be that we can't connect to default 'postgres'/'mysql')
             }
         }

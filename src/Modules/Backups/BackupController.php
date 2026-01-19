@@ -71,11 +71,11 @@ class BackupController extends BaseController
      * Initializes backup directory and ensures it exists.
      * Requires system.backups permission.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -103,11 +103,11 @@ class BackupController extends BaseController
      * @example
      * GET /admin/backups
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         // Get list of backups
@@ -150,11 +150,11 @@ class BackupController extends BaseController
      * @example
      * POST /admin/backups/create
      */
-/**
- * create method
- *
- * @return void
- */
+    /**
+     * create method
+     *
+     * @return void
+     */
     public function create()
     {
         $filename = 'backup_' . date('Y-m-d_H-i-s') . '.zip';
@@ -201,11 +201,11 @@ class BackupController extends BaseController
      * @example
      * GET /admin/backups/download?file=backup_2026-01-16_06-30-00.zip
      */
-/**
- * download method
- *
- * @return void
- */
+    /**
+     * download method
+     *
+     * @return void
+     */
     public function download()
     {
         $file = $_GET['file'] ?? '';
@@ -235,11 +235,11 @@ class BackupController extends BaseController
      * @example
      * GET /admin/backups/delete?file=backup_2026-01-16_06-30-00.zip
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         $file = $_GET['file'] ?? '';
@@ -264,16 +264,16 @@ class BackupController extends BaseController
      * POST /admin/backups/saveConfig
      * Body: cloud_url=https://script.google.com/...
      */
-/**
- * saveConfig method
- *
- * @return void
- */
+    /**
+     * saveConfig method
+     *
+     * @return void
+     */
     public function saveConfig()
     {
         $url = $_POST['cloud_url'] ?? '';
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('backup_cloud_url', ?)");
+        $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES ('backup_cloud_url', ?)");
         $stmt->execute([$url]);
 
         $this->redirect('admin/backups');
@@ -301,11 +301,11 @@ class BackupController extends BaseController
      * GET /admin/backups/uploadToCloud?file=backup_2026-01-16_06-30-00.zip
      * Response: {"success": true, "response": {...}}
      */
-/**
- * uploadToCloud method
- *
- * @return void
- */
+    /**
+     * uploadToCloud method
+     *
+     * @return void
+     */
     public function uploadToCloud()
     {
         // Increase limits for processing large files
@@ -382,7 +382,7 @@ class BackupController extends BaseController
         // ensure table exists? configured in basic installer. But system_settings is standard.
         // Let's assume system_settings exists or handle it.
         try {
-            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key = 'backup_cloud_url'");
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE `key` = 'backup_cloud_url'");
             $stmt->execute();
             return $stmt->fetchColumn();
         } catch (\Exception $e) {

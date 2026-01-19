@@ -40,11 +40,11 @@ use PDO;
  */
 class MaintenanceController extends BaseController
 {
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -58,11 +58,11 @@ class MaintenanceController extends BaseController
      *
      * @return void Redirects to admin dashboard with success flash message.
      */
-/**
- * resetSystem method
- *
- * @return void
- */
+    /**
+     * resetSystem method
+     *
+     * @return void
+     */
     public function resetSystem()
     {
         Auth::requireAdmin();
@@ -70,7 +70,7 @@ class MaintenanceController extends BaseController
         $db = Database::getInstance()->getConnection();
 
         // 1. Get all databases to delete files
-        $databases = $db->query("SELECT * FROM databases")->fetchAll();
+        $databases = $db->query("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . "")->fetchAll();
         foreach ($databases as $d) {
             $fullPath = realpath($d['path']) ?: $d['path'];
             error_log("Attempting to delete database file: " . $fullPath);
@@ -86,7 +86,7 @@ class MaintenanceController extends BaseController
         }
 
         // 2. Clear tables
-        $db->exec("DELETE FROM databases");
+        $db->exec("DELETE FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . "");
         $db->exec("DELETE FROM fields_config");
         $db->exec("DELETE FROM user_db_permissions");
         $db->exec("DELETE FROM logs");
@@ -118,11 +118,11 @@ class MaintenanceController extends BaseController
      *
      * @return void Redirects to admin dashboard with success or error flash.
      */
-/**
- * loadDemo method
- *
- * @return void
- */
+    /**
+     * loadDemo method
+     *
+     * @return void
+     */
     public function loadDemo()
     {
         Auth::requirePermission('module:databases', 'create');
@@ -130,7 +130,7 @@ class MaintenanceController extends BaseController
         $db = Database::getInstance()->getConnection();
 
         // Check if DBs already exist
-        $count = $db->query("SELECT COUNT(*) FROM databases")->fetchColumn();
+        $count = $db->query("SELECT COUNT(*) FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . "")->fetchColumn();
         if ($count > 0) {
             Auth::setFlashError("Demo can only be loaded when no databases are present.");
             $this->redirect('admin/dashboard');
@@ -185,7 +185,7 @@ class MaintenanceController extends BaseController
             }
 
             // Register in System
-            $stmt = $db->prepare("INSERT INTO databases (name, path, created_at) VALUES (?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO " . Database::getInstance()->getAdapter()->quoteName('databases') . " (name, path, created_at) VALUES (?, ?, ?)");
             $stmt->execute([$dbName, $path, $now]);
             $dbId = $db->lastInsertId();
 

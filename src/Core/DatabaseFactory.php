@@ -85,12 +85,17 @@ class DatabaseFactory
      */
     public static function createSystemDatabase(): DatabaseAdapter
     {
-        $dbPath = Config::get('db_path');
+        $config = Config::get('system_db_config');
 
-        return self::create([
-            'type' => 'sqlite',
-            'path' => $dbPath,
-        ]);
+        // If no config found or invalid, fallback to SQLite (installer case or old setup)
+        if (!$config || !isset($config['type'])) {
+            return self::create([
+                'type' => 'sqlite',
+                'path' => Config::get('db_path'),
+            ]);
+        }
+
+        return self::create($config);
     }
 
     /**

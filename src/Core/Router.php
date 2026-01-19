@@ -84,7 +84,7 @@ class Router
 
         // No match found
         http_response_code(404);
-        echo "404 Not Found - Router: " . htmlspecialchars($uri);
+        echo "Error 404: The requested route [" . htmlspecialchars($uri) . "] was not found in the system router.";
     }
 
     /**

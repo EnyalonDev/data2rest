@@ -433,41 +433,117 @@ class Installer
             // For remote DBs, if we can connect, assumes DB exists (created by InstallController)
             if (!$isSQLite) {
                 // Check if 'users' table exists as a proxy for "isNew"
-                $check = $db->query($adapter->getTableExistsSQL('users'));
-                $isNew = ($check->fetchColumn() === false);
-                // IF table exists check returns row count or name?
-                // Adapter::getTableExistsSQL returns a SELECT query. fetch() should return row or false.
-                $check->closeCursor();
+                $checkSql = $adapter->getTableExistsSQL('users');
+                try {
+                    $check = $db->query($checkSql);
+                    $isNew = ($check->fetch() === false);
+                    $check->closeCursor();
+                } catch (\Exception $e) {
+                    $isNew = true;
+                }
             }
+
+            error_log("Installer: Starting sync. Type: " . $adapter->getType() . ", isNew: " . ($isNew ? 'true' : 'false'));
 
             // 1. Ensure all tables exist
             foreach (self::$SCHEMA as $tableName => $definition) {
                 // Use Adapter to check existence
                 $existsSql = $adapter->getTableExistsSQL($tableName);
-                $exists = $db->query($existsSql)->fetch();
+                $exists = false;
+                try {
+                    $result = $db->query($existsSql);
+                    // Use fetchColumn to handle both "SELECT name" (SQLite) and "SELECT EXISTS" (Postgres)
+                    // Postgres returns boolean true/false. SQLite returns name (truthy) or false (falsy).
+                    $exists = (bool) $result->fetchColumn();
+                    $result->closeCursor();
+                } catch (\Exception $e) {
+                    $exists = false;
+                }
 
                 if (!$exists) {
+                    error_log("Installer: Table [$tableName] does not exist. Creating...");
                     // Create Table
-                    // NOTE: The $SCHEMA SQL is SQLite tailored (AUTOINCREMENT, etc.)
-                    // Ideally we should use $adapter->createTable() but our schema is complex.
-                    // For MVP, we try to run the SQL. MySQL might accept most if we replace AUTOINCREMENT
                     $sql = $definition['sql'];
 
                     if ($adapter->getType() === 'mysql') {
+                        // 1. Basic syntax repairs
                         $sql = str_replace('AUTOINCREMENT', 'AUTO_INCREMENT', $sql);
                         $sql = str_replace('STRING', 'VARCHAR(255)', $sql);
-                        // Fix SQLite specific syntax if any
+
+                        // 2. Escape table name
+                        $sql = preg_replace('/CREATE TABLE (\w+)/i', 'CREATE TABLE `$1`', $sql);
+
+                        // 3. MySQL Limitation: TEXT columns cannot have DEFAULT values. Convert to VARCHAR(255).
+                        // This fixes the 'projects.status' and 'projects.billing_status' errors.
+                        $sql = preg_replace('/(\w+)\s+TEXT\s+DEFAULT/i', '`$1` VARCHAR(255) DEFAULT', $sql);
+
+                        // 4. MySQL Limitation: UNIQUE/PRIMARY KEY cannot be on plain TEXT columns (Inline).
+                        $sql = preg_replace('/(\w+)\s+TEXT\s+UNIQUE/i', '`$1` VARCHAR(255) UNIQUE', $sql);
+                        $sql = preg_replace('/(\w+)\s+TEXT\s+PRIMARY KEY/i', '`$1` VARCHAR(255) PRIMARY KEY', $sql);
+
+                        // 5. MySQL Limitation: UNIQUE/PRIMARY KEY constraints at the end of CREATE TABLE
+                        // If a column is in a UNIQUE() index, it cannot be TEXT.
+                        if (preg_match('/UNIQUE\s*\(([^)]+)\)/i', $sql, $matches)) {
+                            $cols = explode(',', $matches[1]);
+                            foreach ($cols as $col) {
+                                $col = trim($col, " \t\n\r\0\x0B` ");
+                                // Find 'colname TEXT' and change to 'colname VARCHAR(255)'
+                                $sql = preg_replace('/(\b' . preg_quote($col, '/') . '\b)\s+TEXT/i', '$1 VARCHAR(255)', $sql);
+                            }
+                        }
+
+                        // 6. Escape all column names (heuristic: match words at start of line or after comma/parenthesis)
+                        $sql = preg_replace('/^\s*(\w+)\s+(INTEGER|TEXT|VARCHAR|DATETIME|DATE|FLOAT|TIMESTAMP|SERIAL|BOOLEAN)/im', '`$1` $2', $sql);
+                        $sql = preg_replace('/(,\s*|\(\s*)(\w+)\s+(INTEGER|TEXT|VARCHAR|DATETIME|DATE|FLOAT|TIMESTAMP|SERIAL|BOOLEAN)/i', '$1`$2` $3', $sql);
+
+                        // 7. Escape Foreign Keys
+                        $sql = preg_replace('/FOREIGN KEY\s*\((\w+)\)\s*REFERENCES\s*(\w+)\s*\((\w+)\)/i', 'FOREIGN KEY (`$1`) REFERENCES `$2` (`$3`)', $sql);
                     } elseif ($adapter->getType() === 'pgsql') {
                         $sql = str_replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY', $sql);
                         $sql = str_replace('DATETIME', 'TIMESTAMP', $sql);
+                        // Fix for JSON fields or text fields that might be interpreted wrong
+                        // But mostly the issue is "Database Sync Error: ... invalid JSON" 
+                        // It seems like the ERROR message itself is being parsed as JSON somewhere?
+                        // Or maybe a previous query failed and returned an error string instead of JSON.
+
+                        // Ensure table names are double quoted for Postgres to preserve case/reserved words if needed
+                        // But standard Postgres is lowercase. Our schema uses lowercase keys.
+                        // Let's just ensure we don't have lingering SQLite syntax
+                        $sql = str_replace('INT DEFAULT 0', 'INTEGER DEFAULT 0', $sql);
+                        $sql = str_replace('INT DEFAULT 1', 'INTEGER DEFAULT 1', $sql);
+
+                        // Handle "Database S" error - likely the word "Database" appearing in an error 
+                        // unexpectedly.
+
+                        // IMPORTANT: The user error 'Unexpected token 'D', "Database S"... is not valid JSON'
+                        // suggests that the RESPONSE from the server (which might be this die() message)
+                        // is being parsed by the Javascript frontend which expects JSON.
+                        // So we should NOT die() with plain text if it's an AJAX request, or we should format it.
+                        // However, let's fix the SQL schema issues first.
+
+                        // Postgres specific fixes if needed.
+                        // e.g. "groups" is a reserved word in MySQL, but fine in Postgres if quoted.
+                        // SQLite uses "groups".
+                        $sql = str_replace('CREATE TABLE groups', 'CREATE TABLE "groups"', $sql);
+                        $sql = str_replace('REFERENCES groups(id)', 'REFERENCES "groups"(id)', $sql);
+
+                        // "users" is also reserved in Postgres
+                        $sql = str_replace('CREATE TABLE users', 'CREATE TABLE "users"', $sql);
+                        $sql = str_replace('from users', 'from "users"', $sql); // regex might be safer
+                        $sql = str_replace('key TEXT PRIMARY KEY', '"key" TEXT PRIMARY KEY', $sql);
+
+                        // Generic quoting for Postgres
+                        $sql = preg_replace('/CREATE TABLE ([a-z_]+)/i', 'CREATE TABLE "$1"', $sql);
+                        // Fix references
+                        $sql = preg_replace('/REFERENCES ([a-z_]+)\(/i', 'REFERENCES "$1"(', $sql);
                     }
 
                     try {
                         $db->exec($sql);
+                        error_log("Installer: Table [$tableName] created successfully.");
                     } catch (\Exception $e) {
-                        // Fallback or log. 
-                        // For detailed migration, we'd need a Builder.
-                        // For now, let's assume the user uses SQLite or we fix SQL on fly.
+                        error_log("Schema Creation Error for table [$tableName]: " . $e->getMessage());
+                        throw new \Exception("Could not create table [$tableName]: " . $e->getMessage());
                     }
                 } else {
                     // Synchronize columns for existing tables
@@ -480,15 +556,28 @@ class Installer
 
             // 2. Data Initialization (Only if it was new)
             if ($isNew) {
+                error_log("Installer: Seeding default data...");
                 self::seedDefaults($db);
+                error_log("Installer: Seeding completed.");
             }
 
             // 3. Maintenance / Dynamic checks
             self::runHealthChecks($db);
 
-        } catch (PDOException $e) {
-            if (Config::get('dev_mode') === 'on') {
-                die("Database Sync Error: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            error_log("Database Sync Error: " . $e->getMessage());
+            // In PostgreSQL, error details are often crucial
+            if (Config::get('dev_mode')) {
+                // If it fails during schema creation, it might be due to partial queries.
+                // We don't want to stop execution if it's just a warning.
+                if (stripos($e->getMessage(), 'already exists') === false) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'message' => "Database Sync Error (See logs): " . $e->getMessage()
+                    ]);
+                    exit;
+                }
             }
         }
     }
@@ -536,32 +625,83 @@ class Installer
      */
     private static function seedDefaults($db)
     {
-        // Default Admin Role
+        // 1. Default Admin Role
         $adminPermissions = json_encode(['all' => true]);
         $stmt = $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Administrator', 'Full system access', ?)");
         $stmt->execute([$adminPermissions]);
         $adminRoleId = $db->lastInsertId();
 
-        // Manager Role
-        $managerPermissions = json_encode(['all' => false, 'modules' => ['billing' => ['view', 'manage']], 'databases' => []]);
-        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Manager', 'Can manage billing and projects', ?)")
-            ->execute([$managerPermissions]);
+        // 2. Project Director Role (Editor)
+        $directorPermissions = json_encode([
+            'all' => false,
+            'modules' => [
+                'projects' => ['view', 'create', 'edit', 'delete'],
+                'media' => ['view', 'upload', 'delete'],
+                'databases' => ['view', 'view_tables'],
+                'billing' => ['view']
+            ]
+        ]);
+        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Director de Proyecto', 'Can manage projects and contents', ?)")
+            ->execute([$directorPermissions]);
+        $directorRoleId = $db->lastInsertId();
 
-        // Client Role (ID 4)
-        $clientPermissions = json_encode(['all' => false, 'modules' => ['billing' => ['view']], 'databases' => []]);
-        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Client', 'Customer access to see their own data', ?)")
+        // 3. Client Role
+        $clientPermissions = json_encode([
+            'all' => false,
+            'modules' => [
+                'projects' => ['view'],
+                'billing' => ['view']
+            ]
+        ]);
+        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Cliente', 'Limited access to assigned projects', ?)")
             ->execute([$clientPermissions]);
         $clientRoleId = $db->lastInsertId();
 
-        // Initial Admin User (admin / admin123)
-        $password = password_hash('admin123', PASSWORD_DEFAULT);
-        $db->prepare("INSERT INTO users (username, password, role_id) VALUES ('admin', ?, ?)")
-            ->execute([$password, $adminRoleId]);
+        // 4. Default User Role (Empty permissions)
+        $userPermissions = json_encode(['all' => false, 'modules' => []]);
+        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Usuario', 'No access by default', ?)")
+            ->execute([$userPermissions]);
+        $userRoleId = $db->lastInsertId();
 
-        // Initial Standard User (user1 / user123)
-        $userPassword = password_hash('user123', PASSWORD_DEFAULT);
-        $db->prepare("INSERT INTO users (username, password, role_id) VALUES ('user1', ?, ?)")
-            ->execute([$userPassword, $clientRoleId]);
+        // --- USERS ---
+
+        // 1. Super Admin (admin / admin123)
+        $password = password_hash('admin123', PASSWORD_DEFAULT);
+        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('admin', ?, ?, 'Super Admin')")
+            ->execute([$password, $adminRoleId]);
+        $adminUserId = $db->lastInsertId();
+
+        // 2. Editor (editor / director123) - Rol Director de Proyecto
+        $directorPass = password_hash('director123', PASSWORD_DEFAULT);
+        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('editor', ?, ?, 'Director Proyecto')")
+            ->execute([$directorPass, $directorRoleId]);
+        $editorUserId = $db->lastInsertId();
+
+        // 3. Cliente (cliente / cliente123) - Rol Cliente
+        $clientPass = password_hash('cliente123', PASSWORD_DEFAULT);
+        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('cliente', ?, ?, 'Cliente Principal')")
+            ->execute([$clientPass, $clientRoleId]);
+        $clientUserId = $db->lastInsertId();
+
+        // 4. Usuario (usuario / usuario123) - Rol Usuario
+        $userPass = password_hash('usuario123', PASSWORD_DEFAULT);
+        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('usuario', ?, ?, 'Usuario Estándar')")
+            ->execute([$userPass, $userRoleId]);
+
+        // --- DEFAULT PROJECT ---
+
+        $db->prepare("INSERT INTO projects (name, description, status, storage_quota, client_id) VALUES ('Data2Rest', 'Proyecto base por defecto', 'active', 500, ?)")
+            ->execute([$clientUserId]);
+        $defaultProjectId = $db->lastInsertId();
+
+        // Assign users to default project
+        // Admin gets access via 'all' permission, but explicit assignment is good for filtering
+        $assignStmt = $db->prepare("INSERT INTO project_users (project_id, user_id, permissions) VALUES (?, ?, ?)");
+        $fullAccess = json_encode(['all' => true]);
+
+        $assignStmt->execute([$defaultProjectId, $adminUserId, $fullAccess]);
+        $assignStmt->execute([$defaultProjectId, $editorUserId, $fullAccess]); // Director has full project access
+        $assignStmt->execute([$defaultProjectId, $clientUserId, json_encode(['view_only' => true])]); // Client typically read-only or limited logic
 
         // Default Settings
         $settings = [
@@ -574,7 +714,7 @@ class Installer
             'media_optimize_priority' => 'webp',
             'media_optimize_quality' => '85'
         ];
-        $stmt = $db->prepare("INSERT INTO system_settings (key, value) VALUES (?, ?)");
+        $stmt = $db->prepare("INSERT INTO system_settings (`key`, value) VALUES (?, ?)");
         foreach ($settings as $k => $v) {
             $stmt->execute([$k, $v]);
         }
@@ -674,23 +814,46 @@ class Installer
     private static function runHealthChecks($db)
     {
         // Ensure at least one project exists if there are databases
-        $orphans = $db->query("SELECT COUNT(*) FROM databases WHERE project_id IS NULL")->fetchColumn();
-        if ($orphans > 0) {
-            $projectCheck = $db->query("SELECT id FROM projects LIMIT 1")->fetch();
-            if (!$projectCheck) {
-                $db->exec("INSERT INTO projects (name, description) VALUES ('Default Project', 'System generated')");
-                $projectId = $db->lastInsertId();
-            } else {
-                $projectId = $projectCheck['id'];
+        // Use adapter to quote correctly for both MySQL (`) and Postgres (")
+        $adapter = Database::getInstance()->getAdapter();
+        $qDatabases = $adapter->quoteName('databases');
+
+        try {
+            $orphans = $db->query("SELECT COUNT(*) FROM $qDatabases WHERE project_id IS NULL")->fetchColumn();
+            if ($orphans > 0) {
+                $projectCheck = $db->query("SELECT id FROM projects LIMIT 1")->fetch();
+                if (!$projectCheck) {
+                    $db->exec("INSERT INTO projects (name, description) VALUES ('Default Project', 'System generated')");
+                    $projectId = $db->lastInsertId();
+                } else {
+                    $projectId = $projectCheck['id'];
+                }
+                $db->prepare("UPDATE $qDatabases SET project_id = ? WHERE project_id IS NULL")->execute([$projectId]);
             }
-            $db->prepare("UPDATE databases SET project_id = ? WHERE project_id IS NULL")->execute([$projectId]);
+        } catch (\PDOException $e) {
+            // Ignore table not found errors during early install
         }
 
         // Final sanity check for settings
-        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_trash_retention', '30')");
-        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('time_offset_total', '0')");
-        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_optimize_max_dimension', '1080')");
-        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_optimize_priority', 'webp')");
-        $db->exec("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('media_optimize_quality', '85')");
+        // Use portable check-then-insert instead of SQLite 'INSERT OR IGNORE'
+        $defaults = [
+            'media_trash_retention' => '30',
+            'time_offset_total' => '0',
+            'media_optimize_max_dimension' => '1080',
+            'media_optimize_priority' => 'webp',
+            'media_optimize_quality' => '85',
+            'start_week_on' => '1' // Monday
+        ];
+
+        $qKey = $adapter->quoteName('key');
+        $checkStmt = $db->prepare("SELECT 1 FROM system_settings WHERE $qKey = ?");
+        $insertStmt = $db->prepare("INSERT INTO system_settings ($qKey, value) VALUES (?, ?)");
+
+        foreach ($defaults as $key => $val) {
+            $checkStmt->execute([$key]);
+            if (!$checkStmt->fetch()) {
+                $insertStmt->execute([$key, $val]);
+            }
+        }
     }
 }

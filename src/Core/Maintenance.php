@@ -31,7 +31,7 @@ class Maintenance
             $db = Database::getInstance()->getConnection();
 
             // 1. Retention Policy: Data Versions (Audit Trail)
-            $stmtConf = $db->prepare("SELECT value FROM system_settings WHERE key = 'audit_retention_days'");
+            $stmtConf = $db->prepare("SELECT value FROM system_settings WHERE `key` = 'audit_retention_days'");
             $stmtConf->execute();
             $retentionDays = $stmtConf->fetchColumn() ?: 30;
 
@@ -40,7 +40,7 @@ class Maintenance
             $deletedVersions = $stmt->rowCount();
 
             // 2. Retention Policy: Activity Logs
-            $stmtLogConf = $db->prepare("SELECT value FROM system_settings WHERE key = 'log_retention_days'");
+            $stmtLogConf = $db->prepare("SELECT value FROM system_settings WHERE `key` = 'log_retention_days'");
             $stmtLogConf->execute();
             $logRetention = $stmtLogConf->fetchColumn() ?: 60;
 
@@ -48,9 +48,10 @@ class Maintenance
             $stmtLogs->execute(["-$logRetention days"]);
             $deletedLogs = $stmtLogs->rowCount();
 
-            // 3. Database Optimization
-            // VACUUM cleans up unused space after large deletes
-            $db->exec("VACUUM");
+            // 3. Database Optimization (Only for SQLite)
+            if (strpos($db->getAttribute(PDO::ATTR_DRIVER_NAME), 'sqlite') !== false) {
+                $db->exec("VACUUM");
+            }
 
             if ($deletedVersions > 0 || $deletedLogs > 0) {
                 error_log("Maintenance: Deleted $deletedVersions old versions and $deletedLogs logs.");

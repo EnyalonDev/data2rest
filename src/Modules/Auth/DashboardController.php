@@ -106,13 +106,13 @@ class DashboardController extends BaseController
 
         // 1. Fetch Databases filtered by Project
         if (Auth::isAdmin() && !$projectId) {
-            $stmt = $db->query("SELECT * FROM databases");
+            $stmt = $db->query("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases'));
             $databases = $stmt->fetchAll();
         } else {
             if (!$projectId) {
                 $databases = [];
             } else {
-                $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ?");
+                $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE project_id = ?");
                 $stmt->execute([$projectId]);
                 $databases = $stmt->fetchAll();
             }
@@ -195,7 +195,7 @@ class DashboardController extends BaseController
         // 3b. Fetch Activity from data_versions (Deletions/Updates)
         try {
             $stmtVers = $db->prepare("SELECT v.*, d.name as db_name FROM data_versions v 
-                                    JOIN databases d ON v.database_id = d.id 
+                                    JOIN `databases` d ON v.database_id = d.id 
                                     WHERE d.project_id = ? 
                                     ORDER BY v.created_at DESC LIMIT 10");
             $stmtVers->execute([$projectId]);
@@ -244,10 +244,11 @@ class DashboardController extends BaseController
         $showWelcomeBanner = 0;
 
         if (Auth::isAdmin()) {
-            $stmt = $db->query("SELECT COUNT(*) FROM databases");
+            $stmt = $db->query("SELECT COUNT(*) FROM " . Database::getInstance()->getAdapter()->quoteName('databases'));
             $globalDbCount = $stmt->fetchColumn();
 
-            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key = 'show_welcome_banner'");
+            $qKey = Database::getInstance()->getAdapter()->quoteName('key');
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE $qKey = 'show_welcome_banner'");
             $stmt->execute();
             $val = $stmt->fetchColumn();
             $showWelcomeBanner = ($val === false) ? 1 : (int) $val;
@@ -261,11 +262,18 @@ class DashboardController extends BaseController
         ];
 
         // 6a. Activity (System logs - Last 7 days)
-        // Note: activity_logs is in the system DB (SQLite usually), so generic SQL is fine if system DB is SQLite.
-        // If system DB is migrated to MySQL/PgSQL, this query might need adjustment (date function), 
-        // but currently system DB is likely SQLite based on codebase context. 
-        // We will assume system DB is SQLite for now or uses compatible syntax.
-        $stmt = $db->prepare("SELECT date(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= date('now', '-6 days') GROUP BY day ORDER BY day ASC");
+        $adapter = Database::getInstance()->getAdapter();
+        $dbType = $adapter->getType();
+
+        if ($dbType === 'mysql') {
+            $sql = "SELECT DATE(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY day ORDER BY day ASC";
+        } elseif ($dbType === 'pgsql') {
+            $sql = "SELECT created_at::date as day, COUNT(*) as count FROM activity_logs WHERE created_at >= current_date - INTERVAL '6 days' GROUP BY day ORDER BY day ASC";
+        } else {
+            // SQLite default
+            $sql = "SELECT date(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= date('now', '-6 days') GROUP BY day ORDER BY day ASC";
+        }
+        $stmt = $db->prepare($sql);
         $stmt->execute();
         $activityDays = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

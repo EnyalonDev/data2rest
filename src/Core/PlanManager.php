@@ -65,7 +65,7 @@ class PlanManager
         $start = $activationDate ?: Auth::getCurrentTime();
         $next = self::calculateNextBillingDate($start, $newPlanType);
 
-        $stmt = $db->prepare("INSERT OR REPLACE INTO project_plans (project_id, plan_type, start_date, next_billing_date, status) 
+        $stmt = $db->prepare("REPLACE INTO project_plans (project_id, plan_type, start_date, next_billing_date, status) 
                              VALUES (?, ?, ?, ?, 'active')");
         $stmt->execute([$projectId, $newPlanType, $start, $next]);
     }

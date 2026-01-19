@@ -75,11 +75,11 @@ class ProjectController extends BaseController
      * Ensures that only authenticated users can access
      * project management functionality.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -102,11 +102,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -144,11 +144,11 @@ class ProjectController extends BaseController
     /**
      * Renders project creation form.
      */
-/**
- * form method
- *
- * @return void
- */
+    /**
+     * form method
+     *
+     * @return void
+     */
     public function form()
     {
         Auth::requireAdmin();
@@ -219,11 +219,11 @@ class ProjectController extends BaseController
      * POST /admin/projects/save
      * Body: name=Project&user_ids[]=1&services[0][service_id]=1
      */
-/**
- * save method
- *
- * @return void
- */
+    /**
+     * save method
+     *
+     * @return void
+     */
     public function save()
     {
         Auth::requireAdmin();
@@ -377,11 +377,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects/select
      */
-/**
- * select method
- *
- * @return void
- */
+    /**
+     * select method
+     *
+     * @return void
+     */
     public function select()
     {
         Auth::requireLogin();
@@ -420,11 +420,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects/switch?id=5
      */
-/**
- * switch method
- *
- * @return void
- */
+    /**
+     * switch method
+     *
+     * @return void
+     */
     public function switch()
     {
         $id = $_GET['id'] ?? null;
@@ -439,11 +439,11 @@ class ProjectController extends BaseController
     /**
      * Updates only the plan for a project.
      */
-/**
- * updatePlan method
- *
- * @return void
- */
+    /**
+     * updatePlan method
+     *
+     * @return void
+     */
     public function updatePlan()
     {
         Auth::requireAdmin();
@@ -484,11 +484,11 @@ class ProjectController extends BaseController
      * @example
      * GET /admin/projects/delete?id=5
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         Auth::requireAdmin();
@@ -503,7 +503,7 @@ class ProjectController extends BaseController
             // Sanitize project name for filename
             $safeProjectName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $projectName);
 
-            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ?");
+            $stmt = $db->prepare("SELECT * FROM `databases` WHERE project_id = ?");
             $stmt->execute([$id]);
             $databases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -538,7 +538,7 @@ class ProjectController extends BaseController
                 // Delete field configs for this DB
                 $db->prepare("DELETE FROM fields_config WHERE db_id = ?")->execute([$database['id']]);
                 // Delete DB record
-                $db->prepare("DELETE FROM databases WHERE id = ?")->execute([$database['id']]);
+                $db->prepare("DELETE FROM `databases` WHERE id = ?")->execute([$database['id']]);
             }
 
             // 4. Delete Project Associations

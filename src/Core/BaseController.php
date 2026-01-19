@@ -88,9 +88,25 @@ class BaseController
      */
     protected function json($data, $code = 200)
     {
+        // Capture any output before this point if buffering was accidentally off
+        if (ob_get_level() === 0) {
+            ob_start();
+        }
+
+        // Aggressively clear all output buffers to ensure valid JSON
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         http_response_code($code);
         header('Content-Type: application/json');
-        echo json_encode($data);
+
+        $json = json_encode($data);
+        if ($json === false) {
+            $json = json_encode(['success' => false, 'message' => 'JSON Encoding Error: ' . json_last_error_msg()]);
+        }
+
+        echo $json;
         exit;
     }
 
@@ -163,7 +179,7 @@ class BaseController
     {
         if ($dbId) {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $stmt = $db->prepare("SELECT project_id FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
             $stmt->execute([$dbId]);
             $projectId = $stmt->fetchColumn();
             if ($projectId)

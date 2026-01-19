@@ -47,7 +47,7 @@ class Auth
         // Fetch user with their role and group permissions
         $stmt = $db->prepare("SELECT u.*, r.permissions as role_perms, g.permissions as group_perms FROM users u 
                              LEFT JOIN roles r ON u.role_id = r.id 
-                             LEFT JOIN groups g ON u.group_id = g.id
+                             LEFT JOIN " . Database::getInstance()->getAdapter()->quoteName('groups') . " g ON u.group_id = g.id
                              WHERE u.username = ? AND u.status = 1");
         $stmt->execute([$username]);
         $user = $stmt->fetch();
