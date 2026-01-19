@@ -625,11 +625,22 @@ class Installer
      */
     private static function seedDefaults($db)
     {
+        // Helper to get or create role
+        $getOrCreateRole = function ($name, $desc, $perms) use ($db) {
+            $stmt = $db->prepare("SELECT id FROM roles WHERE name = ?");
+            $stmt->execute([$name]);
+            $id = $stmt->fetchColumn();
+            if (!$id) {
+                $db->prepare("INSERT INTO roles (name, description, permissions) VALUES (?, ?, ?)")
+                    ->execute([$name, $desc, $perms]);
+                return $db->lastInsertId();
+            }
+            return $id;
+        };
+
         // 1. Default Admin Role
         $adminPermissions = json_encode(['all' => true]);
-        $stmt = $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Administrator', 'Full system access', ?)");
-        $stmt->execute([$adminPermissions]);
-        $adminRoleId = $db->lastInsertId();
+        $adminRoleId = $getOrCreateRole('Administrator', 'Full system access', $adminPermissions);
 
         // 2. Project Director Role (Editor)
         $directorPermissions = json_encode([
@@ -641,9 +652,7 @@ class Installer
                 'billing' => ['view']
             ]
         ]);
-        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Director de Proyecto', 'Can manage projects and contents', ?)")
-            ->execute([$directorPermissions]);
-        $directorRoleId = $db->lastInsertId();
+        $directorRoleId = $getOrCreateRole('Director de Proyecto', 'Can manage projects and contents', $directorPermissions);
 
         // 3. Client Role
         $clientPermissions = json_encode([
@@ -653,55 +662,72 @@ class Installer
                 'billing' => ['view']
             ]
         ]);
-        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Cliente', 'Limited access to assigned projects', ?)")
-            ->execute([$clientPermissions]);
-        $clientRoleId = $db->lastInsertId();
+        $clientRoleId = $getOrCreateRole('Cliente', 'Limited access to assigned projects', $clientPermissions);
 
         // 4. Default User Role (Empty permissions)
         $userPermissions = json_encode(['all' => false, 'modules' => []]);
-        $db->prepare("INSERT INTO roles (name, description, permissions) VALUES ('Usuario', 'No access by default', ?)")
-            ->execute([$userPermissions]);
-        $userRoleId = $db->lastInsertId();
+        $userRoleId = $getOrCreateRole('Usuario', 'No access by default', $userPermissions);
 
-        // --- USERS ---
+        // --- USERS (IDEMPOTENT) ---
+
+        $createSystemUser = function ($username, $password, $roleId, $publicName) use ($db) {
+            $stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            $id = $stmt->fetchColumn();
+            if (!$id) {
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES (?, ?, ?, ?)")
+                    ->execute([$username, $hash, $roleId, $publicName]);
+                return $db->lastInsertId();
+            }
+            return $id;
+        };
 
         // 1. Super Admin (admin / admin123)
-        $password = password_hash('admin123', PASSWORD_DEFAULT);
-        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('admin', ?, ?, 'Super Admin')")
-            ->execute([$password, $adminRoleId]);
-        $adminUserId = $db->lastInsertId();
+        $adminUserId = $createSystemUser('admin', 'admin123', $adminRoleId, 'Super Admin');
 
         // 2. Editor (editor / director123) - Rol Director de Proyecto
-        $directorPass = password_hash('director123', PASSWORD_DEFAULT);
-        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('editor', ?, ?, 'Director Proyecto')")
-            ->execute([$directorPass, $directorRoleId]);
-        $editorUserId = $db->lastInsertId();
+        $editorUserId = $createSystemUser('editor', 'director123', $directorRoleId, 'Director Proyecto');
 
         // 3. Cliente (cliente / cliente123) - Rol Cliente
-        $clientPass = password_hash('cliente123', PASSWORD_DEFAULT);
-        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('cliente', ?, ?, 'Cliente Principal')")
-            ->execute([$clientPass, $clientRoleId]);
-        $clientUserId = $db->lastInsertId();
+        $clientUserId = $createSystemUser('cliente', 'cliente123', $clientRoleId, 'Cliente Principal');
 
         // 4. Usuario (usuario / usuario123) - Rol Usuario
-        $userPass = password_hash('usuario123', PASSWORD_DEFAULT);
-        $db->prepare("INSERT INTO users (username, password, role_id, public_name) VALUES ('usuario', ?, ?, 'Usuario Estándar')")
-            ->execute([$userPass, $userRoleId]);
+        $userUserId = $createSystemUser('usuario', 'usuario123', $userRoleId, 'Usuario Estándar');
 
         // --- DEFAULT PROJECT ---
 
-        $db->prepare("INSERT INTO projects (name, description, status, storage_quota, client_id) VALUES ('Data2Rest', 'Proyecto base por defecto', 'active', 500, ?)")
-            ->execute([$clientUserId]);
-        $defaultProjectId = $db->lastInsertId();
+        $stmt = $db->prepare("SELECT id FROM projects WHERE name = 'Data2Rest'");
+        $stmt->execute();
+        $defaultProjectId = $stmt->fetchColumn();
+
+        if (!$defaultProjectId) {
+            $db->prepare("INSERT INTO projects (name, description, status, storage_quota, client_id) VALUES ('Data2Rest', 'Proyecto base por defecto', 'active', 500, ?)")
+                ->execute([$clientUserId]);
+            $defaultProjectId = $db->lastInsertId();
+        }
 
         // Assign users to default project
         // Admin gets access via 'all' permission, but explicit assignment is good for filtering
+        // Assign users to default project (Idempotent)
+        // Admin gets access via 'all' permission, but explicit assignment is good for filtering
         $assignStmt = $db->prepare("INSERT INTO project_users (project_id, user_id, permissions) VALUES (?, ?, ?)");
+        $checkAssign = $db->prepare("SELECT COUNT(*) FROM project_users WHERE project_id = ? AND user_id = ?");
+
         $fullAccess = json_encode(['all' => true]);
 
-        $assignStmt->execute([$defaultProjectId, $adminUserId, $fullAccess]);
-        $assignStmt->execute([$defaultProjectId, $editorUserId, $fullAccess]); // Director has full project access
-        $assignStmt->execute([$defaultProjectId, $clientUserId, json_encode(['view_only' => true])]); // Client typically read-only or limited logic
+        $assignments = [
+            [$adminUserId, $fullAccess],
+            [$editorUserId, $fullAccess],
+            [$clientUserId, json_encode(['view_only' => true])]
+        ];
+
+        foreach ($assignments as $assign) {
+            $checkAssign->execute([$defaultProjectId, $assign[0]]);
+            if ($checkAssign->fetchColumn() == 0) {
+                $assignStmt->execute([$defaultProjectId, $assign[0], $assign[1]]);
+            }
+        }
 
         // Default Settings
         $settings = [
