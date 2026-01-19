@@ -62,22 +62,49 @@ class SystemDatabaseController extends BaseController
     public function index()
     {
         $db = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $type = $adapter->getType();
 
-        // Get database size
-        $dbSize = file_exists($this->systemDbPath) ? filesize($this->systemDbPath) : 0;
-        $dbSizeFormatted = $this->formatBytes($dbSize);
+        // 1. Get Database Size
+        $dbSizeFormatted = 'N/A';
+        try {
+            if ($type === 'sqlite') {
+                $dbSize = file_exists($this->systemDbPath) ? filesize($this->systemDbPath) : 0;
+                $dbSizeFormatted = $this->formatBytes($dbSize);
+            } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                $dbSize = $db->query("SELECT pg_database_size(current_database())")->fetchColumn();
+                $dbSizeFormatted = $this->formatBytes($dbSize);
+            } elseif ($type === 'mysql') {
+                $stmt = $db->query("SELECT SUM(data_length + index_length) FROM information_schema.tables WHERE table_schema = DATABASE()");
+                $dbSize = $stmt->fetchColumn();
+                $dbSizeFormatted = $this->formatBytes($dbSize);
+            }
+        } catch (\Exception $e) { /* Ignore size error */
+        }
 
-        // Get total tables
-        $stmt = $db->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        $totalTables = $stmt->fetchColumn();
+        // 2. Get Tables
+        $tables = [];
+        try {
+            if ($type === 'sqlite') {
+                $stmt = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                $stmt = $db->query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } elseif ($type === 'mysql') {
+                $stmt = $db->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+        } catch (\Exception $e) { /* Ignore table list error */
+        }
 
-        // Get total records across all tables
-        $stmt = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $totalTables = count($tables);
         $totalRecords = 0;
+
         foreach ($tables as $table) {
             try {
-                $count = $db->query("SELECT COUNT(*) FROM $table")->fetchColumn();
+                $qTable = $adapter->quoteName($table);
+                $count = $db->query("SELECT COUNT(*) FROM $qTable")->fetchColumn();
                 $totalRecords += $count;
             } catch (Exception $e) {
                 // Skip tables with errors
@@ -88,11 +115,16 @@ class SystemDatabaseController extends BaseController
         $backups = $this->getBackupsList();
         $lastBackup = !empty($backups) ? $backups[0] : null;
 
-        // Get disk space
-        $diskFree = disk_free_space(dirname($this->systemDbPath));
-        $diskTotal = disk_total_space(dirname($this->systemDbPath));
-        $diskUsed = $diskTotal - $diskFree;
-        $diskUsedPercent = round(($diskUsed / $diskTotal) * 100, 2);
+        // Get disk space (Only relevant if local)
+        $diskFree = 0;
+        $diskTotal = 0;
+        $diskUsedPercent = 0;
+        if (file_exists(dirname($this->systemDbPath))) {
+            $diskFree = disk_free_space(dirname($this->systemDbPath));
+            $diskTotal = disk_total_space(dirname($this->systemDbPath));
+            $diskUsed = $diskTotal - $diskFree;
+            $diskUsedPercent = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 2) : 0;
+        }
 
         $this->view('admin/system_database/index', [
             'title' => Lang::get('system_database.title'),
@@ -120,24 +152,43 @@ class SystemDatabaseController extends BaseController
     public function tables()
     {
         $db = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $type = $adapter->getType();
 
-        $stmt = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
-        $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $tableNames = [];
+        if ($type === 'sqlite') {
+            $stmt = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+            $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } elseif ($type === 'pgsql' || $type === 'postgresql') {
+            $stmt = $db->query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' ORDER BY tablename");
+            $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } elseif ($type === 'mysql') {
+            $stmt = $db->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name");
+            $tableNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
 
         $tables = [];
         foreach ($tableNames as $tableName) {
             try {
-                $count = $db->query("SELECT COUNT(*) FROM $tableName")->fetchColumn();
+                $qTable = $adapter->quoteName($tableName);
+                $count = $db->query("SELECT COUNT(*) FROM $qTable")->fetchColumn();
 
                 // Get table size (approximate)
-                $stmt = $db->prepare("SELECT SUM(pgsize) FROM dbstat WHERE name = ?");
-                $stmt->execute([$tableName]);
-                $size = $stmt->fetchColumn() ?: 0;
+                $size = 0;
+                if ($type === 'sqlite') {
+                    // dbstat might not be enabled
+                    try {
+                        $stmt = $db->prepare("SELECT SUM(pgsize) FROM dbstat WHERE name = ?");
+                        $stmt->execute([$tableName]);
+                        $size = $stmt->fetchColumn() ?: 0;
+                    } catch (Exception $e) {
+                    }
+                }
 
                 $tables[] = [
                     'name' => $tableName,
                     'records' => $count,
-                    'size' => $this->formatBytes($size)
+                    'size' => $size ? $this->formatBytes($size) : 'N/A'
                 ];
             } catch (Exception $e) {
                 $tables[] = [
@@ -174,18 +225,63 @@ class SystemDatabaseController extends BaseController
             $this->redirect('admin/system-database/tables');
         }
 
-        // Sanitize table name
+        // Sanitize table name (basic)
         $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $tableName);
 
         $db = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $type = $adapter->getType();
 
-        // Get table structure
-        $stmt = $db->query("PRAGMA table_info($tableName)");
-        $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Get table structure & indexes abstraction
+        $columns = [];
+        $indexes = [];
 
-        // Get indexes
-        $stmt = $db->query("PRAGMA index_list($tableName)");
-        $indexes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            if ($type === 'sqlite') {
+                $columns = $db->query("PRAGMA table_info($tableName)")->fetchAll(PDO::FETCH_ASSOC);
+                $indexes = $db->query("PRAGMA index_list($tableName)")->fetchAll(PDO::FETCH_ASSOC);
+            } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                // Postgres Columns
+                $stmt = $db->prepare("SELECT column_name as name, data_type as type, 
+                                       CASE WHEN is_nullable='YES' THEN 0 ELSE 1 END as notnull, 
+                                       column_default as dflt_value 
+                                       FROM information_schema.columns WHERE table_name = ?");
+                $stmt->execute([$tableName]);
+                $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Postgres Indexes
+                $stmt = $db->prepare("SELECT indexname as name FROM pg_indexes WHERE tablename = ?");
+                $stmt->execute([$tableName]);
+                $indexes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } elseif ($type === 'mysql') {
+                // MySQL Columns
+                $stmt = $db->query("DESCRIBE `$tableName`");
+                $rawCols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                // Normalize to SQLite-ish structure for View compatibility
+                foreach ($rawCols as $c) {
+                    $columns[] = [
+                        'name' => $c['Field'],
+                        'type' => $c['Type'],
+                        'notnull' => ($c['Null'] === 'NO') ? 1 : 0,
+                        'dflt_value' => $c['Default'],
+                        'pk' => ($c['Key'] === 'PRI') ? 1 : 0
+                    ];
+                }
+
+                // MySQL Indexes
+                $stmt = $db->query("SHOW INDEX FROM `$tableName`");
+                $rawIdx = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $seen = [];
+                foreach ($rawIdx as $idx) {
+                    if (!in_array($idx['Key_name'], $seen)) {
+                        $indexes[] = ['name' => $idx['Key_name']];
+                        $seen[] = $idx['Key_name'];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Auth::setFlashError("Could not inspect table: " . $e->getMessage());
+        }
 
         // Get sample data (first 10 records)
         try {
