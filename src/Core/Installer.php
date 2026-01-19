@@ -714,17 +714,31 @@ class Installer
             'media_optimize_priority' => 'webp',
             'media_optimize_quality' => '85'
         ];
-        $stmt = $db->prepare("INSERT INTO system_settings (`key`, value) VALUES (?, ?)");
+        // Ensure quotes via adapter or explicit double quotes for Postgres
+        $stmt = $db->prepare("INSERT INTO system_settings (" . Database::getInstance()->getAdapter()->quoteName('key') . ", value) VALUES (?, ?)");
+
+        // Only insert settings if they don't exist
         foreach ($settings as $k => $v) {
-            $stmt->execute([$k, $v]);
+            $check = $db->prepare("SELECT COUNT(*) FROM system_settings WHERE " . Database::getInstance()->getAdapter()->quoteName('key') . " = ?");
+            $check->execute([$k]);
+            if ($check->fetchColumn() == 0) {
+                $stmt->execute([$k, $v]);
+            }
         }
 
-        // Default Payment Plans
-        $db->prepare("INSERT INTO payment_plans (name, frequency, installments, description) VALUES (?, ?, ?, ?)")
-            ->execute(['Plan Mensual', 'monthly', 12, 'Plan de pago mensual con 12 cuotas']);
-
-        $db->prepare("INSERT INTO payment_plans (name, frequency, installments, description) VALUES (?, ?, ?, ?)")
-            ->execute(['Plan Anual', 'yearly', 1, 'Plan de pago anual con 1 cuota']);
+        // Default Payment Plans (Check existence to avoid duplicates)
+        $plans = [
+            ['Plan Mensual', 'monthly', 12, 'Plan de pago mensual con 12 cuotas'],
+            ['Plan Anual', 'yearly', 1, 'Plan de pago anual con 1 cuota']
+        ];
+        foreach ($plans as $plan) {
+            $stmt = $db->prepare("SELECT COUNT(*) FROM payment_plans WHERE name = ?");
+            $stmt->execute([$plan[0]]);
+            if ($stmt->fetchColumn() == 0) {
+                $db->prepare("INSERT INTO payment_plans (name, frequency, installments, description) VALUES (?, ?, ?, ?)")
+                    ->execute($plan);
+            }
+        }
 
         // Default Task Statuses for Kanban Board
         $taskStatuses = [
@@ -734,9 +748,14 @@ class Installer
             ['name' => 'Validación Cliente', 'slug' => 'client_validation', 'color' => '#8b5cf6', 'position' => 4],
             ['name' => 'Finalizado', 'slug' => 'done', 'color' => '#10b981', 'position' => 5]
         ];
-        $stmt = $db->prepare("INSERT INTO task_statuses (name, slug, color, position) VALUES (?, ?, ?, ?)");
-        foreach ($taskStatuses as $status) {
-            $stmt->execute([$status['name'], $status['slug'], $status['color'], $status['position']]);
+
+        // This is safe to run only if table is empty or check individual, doing bulk check
+        $stmtStatusCheck = $db->query("SELECT COUNT(*) FROM task_statuses");
+        if ($stmtStatusCheck->fetchColumn() == 0) {
+            $stmt = $db->prepare("INSERT INTO task_statuses (name, slug, color, position) VALUES (?, ?, ?, ?)");
+            foreach ($taskStatuses as $status) {
+                $stmt->execute([$status['name'], $status['slug'], $status['color'], $status['position']]);
+            }
         }
 
         // Default Services (as per requirements) and their templates
@@ -784,13 +803,28 @@ class Installer
 
         // Insert Services and Templates
         foreach ($services as $name => $templates) {
-            $stmt = $db->prepare("INSERT INTO billing_services (name, status) VALUES (?, 'active')");
+            // Check if service exists
+            $stmt = $db->prepare("SELECT id FROM billing_services WHERE name = ?");
             $stmt->execute([$name]);
-            $serviceId = $db->lastInsertId();
+            $existingId = $stmt->fetchColumn();
 
-            $tplStmt = $db->prepare("INSERT INTO billing_service_templates (service_id, title, priority) VALUES (?, ?, ?)");
-            foreach ($templates as $t) {
-                $tplStmt->execute([$serviceId, $t['title'], $t['priority']]);
+            if (!$existingId) {
+                // Insert Service
+                $stmt = $db->prepare("INSERT INTO billing_services (name, status) VALUES (?, 'active')");
+                $stmt->execute([$name]);
+                $serviceId = $db->lastInsertId();
+            } else {
+                $serviceId = $existingId;
+            }
+
+            // Insert Templates (check duplicates)
+            foreach ($templates as $tmpl) {
+                $check = $db->prepare("SELECT COUNT(*) FROM billing_service_templates WHERE service_id = ? AND title = ?");
+                $check->execute([$serviceId, $tmpl['title']]);
+                if ($check->fetchColumn() == 0) {
+                    $db->prepare("INSERT INTO billing_service_templates (service_id, title, priority) VALUES (?, ?, ?)")
+                        ->execute([$serviceId, $tmpl['title'], $tmpl['priority']]);
+                }
             }
         }
 
