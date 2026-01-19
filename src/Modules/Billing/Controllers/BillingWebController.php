@@ -55,11 +55,11 @@ class BillingWebController extends BaseController
      *
      * @return void
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -80,11 +80,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.index` view.
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         // Verificar permisos
@@ -135,11 +135,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.clients` view.
      */
-/**
- * clients method
- *
- * @return void
- */
+    /**
+     * clients method
+     *
+     * @return void
+     */
     public function clients()
     {
         if (!Auth::isAdmin()) {
@@ -182,11 +182,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.projects` view.
      */
-/**
- * projects method
- *
- * @return void
- */
+    /**
+     * projects method
+     *
+     * @return void
+     */
     public function projects()
     {
         if (!Auth::isAdmin()) {
@@ -239,11 +239,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.installments` view.
      */
-/**
- * installments method
- *
- * @return void
- */
+    /**
+     * installments method
+     *
+     * @return void
+     */
     public function installments()
     {
         if (!Auth::isAdmin() && $_SESSION['role_id'] != 4) {
@@ -275,7 +275,9 @@ class BillingWebController extends BaseController
         }
 
         if ($filter === 'upcoming') {
-            $sql .= " AND i.status = 'pendiente' AND i.due_date BETWEEN DATE('now') AND DATE('now', '+30 days')";
+            $today = date('Y-m-d');
+            $nextMonth = date('Y-m-d', strtotime('+30 days'));
+            $sql .= " AND i.status = 'pendiente' AND i.due_date BETWEEN '$today' AND '$nextMonth'";
         } elseif ($filter === 'overdue') {
             $sql .= " AND i.status = 'vencida'";
         } elseif ($filter === 'paid') {
@@ -319,11 +321,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.plans` view.
      */
-/**
- * plans method
- *
- * @return void
- */
+    /**
+     * plans method
+     *
+     * @return void
+     */
     public function plans()
     {
         if (!Auth::isAdmin()) {
@@ -360,11 +362,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.reports` view.
      */
-/**
- * reports method
- *
- * @return void
- */
+    /**
+     * reports method
+     *
+     * @return void
+     */
     public function reports()
     {
         if (!Auth::isAdmin()) {
@@ -408,11 +410,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.payments` view.
      */
-/**
- * payments method
- *
- * @return void
- */
+    /**
+     * payments method
+     *
+     * @return void
+     */
     public function payments()
     {
         if (!Auth::isAdmin() && $_SESSION['role_id'] != 4) {
@@ -497,6 +499,7 @@ class BillingWebController extends BaseController
     private function getUpcomingInstallments($days = 30)
     {
         $targetDate = date('Y-m-d', strtotime("+{$days} days"));
+        $today = date('Y-m-d');
 
         $stmt = $this->db->prepare("
             SELECT i.*, p.name as project_name, COALESCE(u.public_name, u.username) as client_name
@@ -504,11 +507,11 @@ class BillingWebController extends BaseController
             INNER JOIN projects p ON i.project_id = p.id
             LEFT JOIN users u ON p.billing_user_id = u.id
             WHERE i.status = 'pendiente'
-            AND i.due_date BETWEEN DATE('now') AND ?
+            AND i.due_date BETWEEN ? AND ?
             ORDER BY i.due_date ASC
             LIMIT 10
         ");
-        $stmt->execute([$targetDate]);
+        $stmt->execute([$today, $targetDate]);
 
         return $stmt->fetchAll();
     }
@@ -518,9 +521,18 @@ class BillingWebController extends BaseController
      */
     private function getOverdueInstallments()
     {
+        $type = Database::getInstance()->getAdapter()->getType();
+
+        $daysOverdueSql = "JULIANDAY('now') - JULIANDAY(i.due_date)"; // Default SQLite
+        if ($type === 'pgsql') {
+            $daysOverdueSql = "DATE_PART('day', NOW() - i.due_date)";
+        } elseif ($type === 'mysql') {
+            $daysOverdueSql = "DATEDIFF(NOW(), i.due_date)";
+        }
+
         $stmt = $this->db->query("
             SELECT i.*, p.name as project_name, COALESCE(u.public_name, u.username) as client_name,
-                   JULIANDAY('now') - JULIANDAY(i.due_date) as days_overdue
+                   $daysOverdueSql as days_overdue
             FROM installments i
             INNER JOIN projects p ON i.project_id = p.id
             LEFT JOIN users u ON p.billing_user_id = u.id
@@ -562,16 +574,28 @@ class BillingWebController extends BaseController
      */
     private function getChartData()
     {
+        $type = Database::getInstance()->getAdapter()->getType();
+
+        $monthSql = "strftime('%Y-%m', payment_date)";
+        if ($type === 'pgsql')
+            $monthSql = "TO_CHAR(payment_date, 'YYYY-MM')";
+        if ($type === 'mysql')
+            $monthSql = "DATE_FORMAT(payment_date, '%Y-%m')";
+
+        $sixMonthsAgo = date('Y-m-d', strtotime('-6 months'));
+
         // Ingresos por mes (últimos 6 meses)
-        $incomeByMonth = $this->db->query("
+        $stmt = $this->db->prepare("
             SELECT 
-                strftime('%Y-%m', payment_date) as month,
+                $monthSql as month,
                 SUM(amount) as total
             FROM payments
-            WHERE payment_date >= DATE('now', '-6 months')
+            WHERE payment_date >= ?
             GROUP BY month
             ORDER BY month ASC
-        ")->fetchAll();
+        ");
+        $stmt->execute([$sixMonthsAgo]);
+        $incomeByMonth = $stmt->fetchAll();
 
         // Cuotas por estado
         $installmentsByStatus = $this->db->query("
@@ -619,12 +643,25 @@ class BillingWebController extends BaseController
         $currentYearData = [];
         $previousYearData = [];
 
+        $type = Database::getInstance()->getAdapter()->getType();
+
+        $yearSql = "strftime('%Y', payment_date)";
+        $monthSql = "strftime('%m', payment_date)";
+
+        if ($type === 'pgsql') {
+            $yearSql = "TO_CHAR(payment_date, 'YYYY')";
+            $monthSql = "TO_CHAR(payment_date, 'MM')";
+        } elseif ($type === 'mysql') {
+            $yearSql = "DATE_FORMAT(payment_date, '%Y')";
+            $monthSql = "DATE_FORMAT(payment_date, '%m')";
+        }
+
         for ($month = 1; $month <= 12; $month++) {
             // Año actual
             $stmt = $this->db->prepare("
                 SELECT COALESCE(SUM(amount), 0) as total
                 FROM payments
-                WHERE strftime('%Y', payment_date) = ? AND strftime('%m', payment_date) = ?
+                WHERE $yearSql = ? AND $monthSql = ?
             ");
             $stmt->execute([$currentYear, sprintf('%02d', $month)]);
             $currentYearData[] = (float) $stmt->fetchColumn();
@@ -671,6 +708,13 @@ class BillingWebController extends BaseController
         $labels = [];
         $amounts = [];
 
+        $type = Database::getInstance()->getAdapter()->getType();
+        $dateSql = "strftime('%Y-%m', due_date)";
+        if ($type === 'pgsql')
+            $dateSql = "TO_CHAR(due_date, 'YYYY-MM')";
+        if ($type === 'mysql')
+            $dateSql = "DATE_FORMAT(due_date, '%Y-%m')";
+
         for ($i = 0; $i < $months; $i++) {
             $date = date('Y-m', strtotime("+{$i} months"));
             $labels[] = date('M Y', strtotime("+{$i} months"));
@@ -678,7 +722,7 @@ class BillingWebController extends BaseController
             $stmt = $this->db->prepare("
                 SELECT COALESCE(SUM(amount), 0) as total
                 FROM installments
-                WHERE strftime('%Y-%m', due_date) = ? AND status = 'pendiente'
+                WHERE $dateSql = ? AND status = 'pendiente'
             ");
             $stmt->execute([$date]);
             $amounts[] = (float) $stmt->fetchColumn();
@@ -703,11 +747,11 @@ class BillingWebController extends BaseController
      *
      * @return void Renders the `admin.billing.services` view.
      */
-/**
- * services method
- *
- * @return void
- */
+    /**
+     * services method
+     *
+     * @return void
+     */
     public function services()
     {
         if (!Auth::isAdmin()) {
