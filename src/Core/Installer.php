@@ -554,12 +554,12 @@ class Installer
                 }
             }
 
-            // 2. Data Initialization (Only if it was new)
-            if ($isNew) {
-                error_log("Installer: Seeding default data...");
-                self::seedDefaults($db);
-                error_log("Installer: Seeding completed.");
-            }
+            // 2. Data Initialization
+            // We run this every time because seedDefaults is now idempotent (checks before inserting).
+            // This ensures missing default data (admin user, services, plans) is restored if deleted or missing.
+            error_log("Installer: Verifying default data...");
+            self::seedDefaults($db);
+            error_log("Installer: Data verification completed.");
 
             // 3. Maintenance / Dynamic checks
             self::runHealthChecks($db);
