@@ -59,8 +59,8 @@ class Router
 
         // CSRF Protection
         if (in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'])) {
-            // Exclude API routes from CSRF check (they use API Keys)
-            if (strpos($uri, '/api/') !== 0) {
+            // Exclude API and Install routes from CSRF check
+            if (strpos($uri, '/api/') !== 0 && strpos($uri, '/install') !== 0) {
                 $token = $_POST['_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
                 if (!\App\Core\Csrf::verify($token)) {
                     http_response_code(403);

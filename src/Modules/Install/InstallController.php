@@ -25,7 +25,7 @@ class InstallController extends BaseController
 
     public function install()
     {
-        // Start session for CSRF token generation (needed by BaseController::json)
+        // Start session (CSRF is excluded for the installation module)
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
