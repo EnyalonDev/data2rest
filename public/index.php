@@ -1,4 +1,5 @@
 <?php
+ob_start();
 
 // DEBUG MODE: FORCE DISPLAY ERRORS
 ini_set('display_errors', 1);
@@ -15,25 +16,31 @@ require_once __DIR__ . '/../src/autoload.php';
 // Load ENV variables
 Config::loadEnv();
 
-// Check for installation - system needs installation ONLY if BOTH config and database don't exist
-// This prevents the installer from showing up when updating an existing installation
+// Only show installer if config doesn't exist.
 $configExists = file_exists(__DIR__ . '/../data/config.json');
-$dbExists = file_exists(__DIR__ . '/../data/system.sqlite');
+$needsInstallation = !$configExists;
 
-// Only show installer if NEITHER config NOR database exist (fresh installation)
-$needsInstallation = !$configExists && !$dbExists;
+$uri = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+$basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+
+// Normalize URI
+$normalizedUri = $uri;
+if ($basePath !== '' && strpos($normalizedUri, $basePath) === 0) {
+    $normalizedUri = substr($normalizedUri, strlen($basePath));
+}
+// Strip index.php if present
+if (strpos($normalizedUri, '/index.php') === 0) {
+    $normalizedUri = substr($normalizedUri, 10);
+}
+if ($normalizedUri === '')
+    $normalizedUri = '/';
 
 if ($needsInstallation) {
-    // Basic Installation Router
-    $uri = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-    $basePath = str_replace('/index.php', '', $_SERVER['SCRIPT_NAME']);
-    // Normalize URI
-    if ($basePath !== '/' && strpos($uri, $basePath) === 0) {
-        $uri = substr($uri, strlen($basePath));
+    if (ob_get_level() > 0) {
+        ob_clean();
     }
-
     // Simple router for installation
-    if ($uri === '/install' || $uri === '/install/' || strpos($uri, '/install') === 0) {
+    if ($normalizedUri === '/install' || $normalizedUri === '/install/' || strpos($normalizedUri, '/install/') === 0) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (new \App\Modules\Install\InstallController())->install();
         } else {
@@ -41,10 +48,16 @@ if ($needsInstallation) {
         }
         exit;
     } else {
-        // Redirect to install
-        header("Location: " . $basePath . ($basePath === '/' ? 'install' : '/install'));
+        // Redirect to /install
+        $target = $basePath . '/install';
+        header("Location: $target");
         exit;
     }
+} elseif ($normalizedUri === '/install' || $normalizedUri === '/install/' || strpos($normalizedUri, '/install/') === 0) {
+    // Already installed, but hitting /install - redirect to dashboard
+    $target = $basePath . '/';
+    header("Location: $target");
+    exit;
 }
 
 Installer::check();

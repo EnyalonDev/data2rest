@@ -58,11 +58,11 @@ class GroupController extends BaseController
      * Ensures that only users with appropriate permissions
      * can access group management.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requirePermission('module:users.view_users');
@@ -82,17 +82,17 @@ class GroupController extends BaseController
      * @example
      * GET /admin/groups
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
         $groups = $db->query("
             SELECT g.*, COUNT(u.id) as user_count 
-            FROM groups g 
+            FROM " . Database::getInstance()->getAdapter()->quoteName('groups') . " g 
             LEFT JOIN users u ON u.group_id = g.id 
             GROUP BY g.id 
             ORDER BY g.name ASC
@@ -125,11 +125,11 @@ class GroupController extends BaseController
      * GET /admin/groups/form (new group)
      * GET /admin/groups/form?id=2 (edit group)
      */
-/**
- * form method
- *
- * @return void
- */
+    /**
+     * form method
+     *
+     * @return void
+     */
     public function form()
     {
         Auth::requirePermission('module:users.manage_groups');
@@ -138,7 +138,7 @@ class GroupController extends BaseController
         $db = Database::getInstance()->getConnection();
 
         if ($id) {
-            $stmt = $db->prepare("SELECT * FROM groups WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('groups') . " WHERE id = ?");
             $stmt->execute([$id]);
             $group = $stmt->fetch();
             $group['permissions'] = json_decode($group['permissions'] ?? '[]', true);
@@ -171,11 +171,11 @@ class GroupController extends BaseController
      * POST /admin/groups/save
      * Body: name=Marketing&description=Team&modules[module:databases.view_tables]=on
      */
-/**
- * save method
- *
- * @return void
- */
+    /**
+     * save method
+     *
+     * @return void
+     */
     public function save()
     {
         Auth::requirePermission('module:users.manage_groups');
@@ -192,10 +192,10 @@ class GroupController extends BaseController
         $permsJson = json_encode($permissions);
 
         if ($id) {
-            $stmt = $db->prepare("UPDATE groups SET name = ?, description = ?, permissions = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('groups') . " SET name = ?, description = ?, permissions = ? WHERE id = ?");
             $stmt->execute([$name, $description, $permsJson, $id]);
         } else {
-            $stmt = $db->prepare("INSERT INTO groups (name, description, permissions) VALUES (?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO " . Database::getInstance()->getAdapter()->quoteName('groups') . " (name, description, permissions) VALUES (?, ?, ?)");
             $stmt->execute([$name, $description, $permsJson]);
         }
 
@@ -217,18 +217,18 @@ class GroupController extends BaseController
      * @example
      * GET /admin/groups/delete?id=3
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         Auth::requirePermission('module:users.manage_groups');
         $id = $_GET['id'] ?? null;
         if ($id) {
             $db = Database::getInstance()->getConnection();
-            $db->prepare("DELETE FROM groups WHERE id = ?")->execute([$id]);
+            $db->prepare("DELETE FROM " . Database::getInstance()->getAdapter()->quoteName('groups') . " WHERE id = ?")->execute([$id]);
             // Optional: Set users in this group to null group_id
             $db->prepare("UPDATE users SET group_id = NULL WHERE group_id = ?")->execute([$id]);
         }

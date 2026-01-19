@@ -101,7 +101,7 @@ class DatabaseController extends BaseController
             $databases = []; // Should ideally redirect to project select
         } else {
             // Scope ALL queries to the active project
-            $sql = "SELECT * FROM databases WHERE project_id = ? ORDER BY id DESC";
+            $sql = "SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE project_id = ? ORDER BY id DESC";
             $params = [$projectId];
 
             // If admin has no project selected, he sees nothing (or should see all? User said "everything related to project")
@@ -111,7 +111,7 @@ class DatabaseController extends BaseController
 
             if (Auth::isAdmin() && !$projectId) {
                 // Fallback for global admin view if needed, but per request: "project determined access"
-                $sql = "SELECT * FROM databases ORDER BY id DESC";
+                $sql = "SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " ORDER BY id DESC";
                 $params = [];
             }
 
@@ -130,6 +130,12 @@ class DatabaseController extends BaseController
         if (count($databases) === 1 && !Auth::isAdmin()) {
             $dbId = $databases[0]['id'];
             $this->redirect('admin/databases/view?id=' . $dbId);
+        }
+
+        // Decorate databases with type from config
+        foreach ($databases as &$dbItem) {
+            $cfg = json_decode($dbItem['config'] ?? '{}', true);
+            $dbItem['type'] = $cfg['type'] ?? 'sqlite';
         }
 
         $this->view('admin/databases/index', [
@@ -182,7 +188,7 @@ class DatabaseController extends BaseController
             $db = Database::getInstance()->getConnection();
             $projectId = Auth::getActiveProject();
 
-            $stmt = $db->prepare("INSERT INTO databases (name, path, project_id) VALUES (?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO " . Database::getInstance()->getAdapter()->quoteName('databases') . " (name, path, project_id) VALUES (?, ?, ?)");
             $stmt->execute([$name, $path, $projectId]);
             Logger::log('CREATE_DATABASE', ['name' => $name, 'path' => $path], $projectId);
 
@@ -359,10 +365,10 @@ class DatabaseController extends BaseController
 
         // Get all databases with their types
         if ($projectId) {
-            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ? ORDER BY id DESC");
+            $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE project_id = ? ORDER BY id DESC");
             $stmt->execute([$projectId]);
         } else if (Auth::isAdmin()) {
-            $stmt = $db->query("SELECT * FROM databases ORDER BY id DESC");
+            $stmt = $db->query("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " ORDER BY id DESC");
         } else {
             $databases = [];
         }
@@ -450,19 +456,76 @@ class DatabaseController extends BaseController
         $id = $_GET['id'] ?? null;
         if ($id) {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT path FROM databases WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
             $stmt->execute([$id]);
             $database = $stmt->fetch();
 
             if ($database) {
-                $stmt = $db->prepare("DELETE FROM databases WHERE id = ?");
-                $stmt->execute([$id]);
-                $stmt = $db->prepare("DELETE FROM fields_config WHERE db_id = ?");
-                $stmt->execute([$id]);
-                Logger::log('DELETE_DATABASE', ['id' => $id, 'path' => $database['path']]);
-                if (file_exists($database['path'])) {
-                    unlink($database['path']);
+                // 1. Attempt to Drop Remote Database (if applicable)
+                $config = json_decode($database['config'] ?? '{}', true);
+                if (!empty($config['type']) && in_array($config['type'], ['mysql', 'pgsql', 'postgresql'])) {
+                    try {
+                        // We need to connect to a maintenance DB to drop the target
+                        $dropConfig = $config;
+                        $targetDbName = $config['database'];
+
+                        // Connect to maintenance DB
+                        $dropConfig['database'] = ($config['type'] === 'mysql') ? 'information_schema' : 'postgres';
+
+                        $adapter = \App\Core\DatabaseFactory::create($dropConfig);
+                        $conn = $adapter->getConnection();
+
+                        $quotedDbName = $adapter->quoteName($targetDbName);
+
+                        // Terminate active connections (PostgreSQL)
+                        if ($config['type'] === 'pgsql' || $config['type'] === 'postgresql') {
+                            $safeTargetName = str_replace("'", "''", $targetDbName);
+                            // Log termination attempt
+                            Logger::log('DB_DROP_ATTEMPT', ['msg' => "Terminating connections for $targetDbName"]);
+                            $conn->query("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{$safeTargetName}' AND pid <> pg_backend_pid()");
+                            // Small pause to ensure backends are gone
+                            usleep(200000); // 200ms
+                        }
+
+                        $conn->exec("DROP DATABASE IF EXISTS $quotedDbName");
+
+                    } catch (\Exception $e) {
+                        // ABORT DELETION if we can't drop the DB
+                        // This ensures consistency between list and engine
+                        Logger::log('DELETE_DATABASE_FAIL', ['message' => $e->getMessage()]);
+                        Auth::setFlashError("Could not delete from Database Engine: " . $e->getMessage());
+                        header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+                        exit;
+                    }
                 }
+
+                // 2. Delete Dependencies
+                $db->beginTransaction();
+                try {
+                    $db->prepare("DELETE FROM fields_config WHERE db_id = ?")->execute([$id]);
+                    $db->prepare("DELETE FROM table_metadata WHERE db_id = ?")->execute([$id]);
+                    $db->prepare("DELETE FROM data_versions WHERE database_id = ?")->execute([$id]);
+
+                    // 3. Delete Parent Record
+                    $stmt = $db->prepare("DELETE FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
+                    $stmt->execute([$id]);
+
+                    $db->commit();
+                } catch (\Exception $e) {
+                    $db->rollBack();
+                    Auth::setFlashError("System Error during deletion: " . $e->getMessage());
+                    header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
+                    exit;
+                }
+
+                Logger::log('DELETE_DATABASE', ['id' => $id, 'path' => $database['path']]);
+
+                // 4. Delete SQLite File (if applicable)
+                if (($config['type'] ?? 'sqlite') === 'sqlite' && $database['path'] && file_exists($database['path'])) {
+                    @unlink($database['path']);
+                }
+
+                Auth::setFlashError("Database deleted successfully.", "success");
             }
         }
         header('Location: ' . Auth::getBaseUrl() . 'admin/databases');
@@ -481,7 +544,7 @@ class DatabaseController extends BaseController
         Auth::requirePermission('module:databases.edit_db');
         $id = $_GET['id'] ?? null;
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$id]);
         $database = $stmt->fetch();
 
@@ -531,7 +594,7 @@ class DatabaseController extends BaseController
         $configJson = json_encode($config);
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("UPDATE databases SET config = ? WHERE id = ?");
+        $stmt = $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('databases') . " SET config = ? WHERE id = ?");
         $stmt->execute([$configJson, $id]);
 
         Auth::setFlashError("Configuración guardada correctamente.", 'success');
@@ -550,7 +613,7 @@ class DatabaseController extends BaseController
 
         try {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
             $stmt->execute([$id]);
             $database = $stmt->fetch();
 
@@ -636,7 +699,7 @@ class DatabaseController extends BaseController
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -672,7 +735,7 @@ class DatabaseController extends BaseController
             Logger::log('CREATE_TABLE', ['database_id' => $db_id, 'table' => $table_name, 'type' => $dbType], $db_id);
 
             // Update DB last edit
-            $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
+            $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('databases') . " SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
 
             Auth::setFlashError("Table '$table_name' created successfully in $dbType database!", 'success');
             header('Location: ' . Auth::getBaseUrl() . 'admin/databases/view?id=' . $db_id);
@@ -700,7 +763,7 @@ class DatabaseController extends BaseController
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -722,7 +785,7 @@ class DatabaseController extends BaseController
             $connection->exec($sql_code);
 
             // Update DB last edit
-            $db->prepare("UPDATE databases SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
+            $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('databases') . " SET last_edit_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$db_id]);
 
             Auth::setFlashError("Table created successfully via SQL in $dbType database. Syncing structure...", 'success');
             Logger::log('CREATE_TABLE_SQL', ['database_id' => $db_id, 'type' => $dbType], $db_id);
@@ -754,7 +817,7 @@ class DatabaseController extends BaseController
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -803,7 +866,7 @@ class DatabaseController extends BaseController
         $table_name = $_GET['table'] ?? null;
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -878,7 +941,7 @@ class DatabaseController extends BaseController
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -951,7 +1014,7 @@ class DatabaseController extends BaseController
         Logger::log('DELETE_FIELD', ['database_id' => $db_id, 'table' => $table_name, 'field' => $field_name], $db_id);
 
         // Attempt to Drop Column from Structure
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1032,7 +1095,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.edit_table');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$id]);
         $database = $stmt->fetch();
 
@@ -1211,7 +1274,7 @@ WHERE id = ?");
             // 3. Register in system
             $db = Database::getInstance()->getConnection();
             $projectId = Auth::getActiveProject();
-            $stmt = $db->prepare("INSERT INTO databases (name, path, project_id) VALUES (?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO " . Database::getInstance()->getAdapter()->quoteName('databases') . " (name, path, project_id) VALUES (?, ?, ?)");
             $stmt->execute([$name, $path, $projectId]);
             $dbId = $db->lastInsertId();
 
@@ -1243,7 +1306,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.create_db');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$id]);
         $database = $stmt->fetch();
 
@@ -1312,7 +1375,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.export_data');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1374,7 +1437,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.export_data');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1434,7 +1497,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.export_data');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1486,7 +1549,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.export_data');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1547,7 +1610,7 @@ WHERE id = ?");
         Auth::requirePermission('module:databases.export_data');
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1612,7 +1675,7 @@ WHERE id = ?");
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1665,7 +1728,7 @@ WHERE id = ?");
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1727,7 +1790,7 @@ WHERE id = ?");
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
@@ -1825,7 +1888,7 @@ WHERE id = ?");
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 

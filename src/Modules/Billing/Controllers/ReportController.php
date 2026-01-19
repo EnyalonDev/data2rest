@@ -24,11 +24,11 @@ class ReportController extends BaseController
 {
     private $db;
 
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -38,11 +38,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/financial-summary
      * Resumen financiero general
      */
-/**
- * financialSummary method
- *
- * @return void
- */
+    /**
+     * financialSummary method
+     *
+     * @return void
+     */
     public function financialSummary()
     {
         // Ingresos totales (cuotas pagadas)
@@ -108,11 +108,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/income-comparison
      * Comparación de ingresos reales vs proyectados
      */
-/**
- * incomeComparison method
- *
- * @return void
- */
+    /**
+     * incomeComparison method
+     *
+     * @return void
+     */
     public function incomeComparison()
     {
         $startDate = $_GET['start_date'] ?? date('Y-m-01'); // Primer día del mes actual
@@ -171,11 +171,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/upcoming-installments
      * Cuotas próximas a vencer (calendario de cobranzas)
      */
-/**
- * upcomingInstallments method
- *
- * @return void
- */
+    /**
+     * upcomingInstallments method
+     *
+     * @return void
+     */
     public function upcomingInstallments()
     {
         $days = $_GET['days'] ?? 30;
@@ -196,7 +196,7 @@ class ReportController extends BaseController
             LEFT JOIN users u ON p.billing_user_id = u.id
             LEFT JOIN payment_plans pp ON i.plan_id = pp.id
             WHERE i.status = 'pendiente'
-            AND i.due_date BETWEEN DATE('now') AND ?
+            AND i.due_date BETWEEN CURRENT_DATE AND ?
             ORDER BY i.due_date ASC
         ");
         $stmt->execute([$targetDate]);
@@ -246,11 +246,11 @@ class ReportController extends BaseController
      * GET /api/billing/reports/client-summary/{clientId}
      * Resumen financiero de un cliente específico
      */
-/**
- * clientSummary method
- *
- * @return void
- */
+    /**
+     * clientSummary method
+     *
+     * @return void
+     */
     public function clientSummary($clientId)
     {
         // Verificar que el cliente (usuario) existe

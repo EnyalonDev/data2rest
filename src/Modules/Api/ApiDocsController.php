@@ -91,11 +91,11 @@ class ApiDocsController extends BaseController
 
         // Scope databases list to project
         if ($projectId) {
-            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ? ORDER BY name ASC");
+            $stmt = $db->prepare("SELECT * FROM `databases` WHERE project_id = ? ORDER BY name ASC");
             $stmt->execute([$projectId]);
             $databases = $stmt->fetchAll();
         } else if (Auth::isAdmin()) {
-            $databases = $db->query("SELECT * FROM databases ORDER BY name ASC")->fetchAll();
+            $databases = $db->query("SELECT * FROM `databases` ORDER BY name ASC")->fetchAll();
         } else {
             $databases = [];
         }
@@ -192,7 +192,7 @@ class ApiDocsController extends BaseController
         // We really just need to know if the DB is in the active project.
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM `databases` WHERE id = ?");
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 

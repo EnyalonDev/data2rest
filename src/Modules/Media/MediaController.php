@@ -72,11 +72,11 @@ class MediaController extends BaseController
      * Ensures that only authenticated users can access
      * media management functionality.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         Auth::requireLogin();
@@ -95,11 +95,11 @@ class MediaController extends BaseController
     /**
      * Renders the main media manager UI.
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         Auth::requirePermission('module:media.view_files');
@@ -130,11 +130,11 @@ class MediaController extends BaseController
      * GET /admin/media/list?db_id=1&path=images/products
      * Response: {"current_path": "...", "items": [...], "breadcrumbs": [...]}
      */
-/**
- * list method
- *
- * @return void
- */
+    /**
+     * list method
+     *
+     * @return void
+     */
     public function list()
     {
         Auth::requirePermission('module:media.view_files');
@@ -236,11 +236,11 @@ class MediaController extends BaseController
      * GET /admin/media/usage?url=https://example.com/uploads/image.jpg
      * Response: {"usage": [{"database": "...", "table": "...", "row_ids": [...]}]}
      */
-/**
- * usage method
- *
- * @return void
- */
+    /**
+     * usage method
+     *
+     * @return void
+     */
     public function usage()
     {
         $fileUrl = $_GET['url'] ?? '';
@@ -253,14 +253,14 @@ class MediaController extends BaseController
 
         $projectId = Auth::getActiveProject();
         if (Auth::isAdmin() && !$projectId) {
-            $stmt = $systemDb->query("SELECT * FROM databases");
+            $stmt = $systemDb->query("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . "");
             $allDbs = $stmt->fetchAll();
         } else {
             if (!$projectId) {
                 $this->json(['usage' => []]);
                 return;
             }
-            $stmt = $systemDb->prepare("SELECT * FROM databases WHERE project_id = ?");
+            $stmt = $systemDb->prepare("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('databases') . " WHERE project_id = ?");
             $stmt->execute([$projectId]);
             $allDbs = $stmt->fetchAll();
         }
@@ -343,11 +343,11 @@ class MediaController extends BaseController
      * Body: path=products&db_id=1
      * Response: {"success": true, "name": "image.jpg", "url": "..."}
      */
-/**
- * upload method
- *
- * @return void
- */
+    /**
+     * upload method
+     *
+     * @return void
+     */
     public function upload()
     {
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -437,11 +437,11 @@ class MediaController extends BaseController
      * Body: path=images/old-photo.jpg&db_id=1
      * Response: {"success": true}
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         Auth::requirePermission('module:media.delete_files');
@@ -474,11 +474,11 @@ class MediaController extends BaseController
     /**
      * Bulk deletes multiple files/folders.
      */
-/**
- * bulkDelete method
- *
- * @return void
- */
+    /**
+     * bulkDelete method
+     *
+     * @return void
+     */
     public function bulkDelete()
     {
         Auth::requirePermission('module:media.delete_files');
@@ -531,11 +531,11 @@ class MediaController extends BaseController
     /**
      * Bulk moves files/folders to a target directory.
      */
-/**
- * bulkMove method
- *
- * @return void
- */
+    /**
+     * bulkMove method
+     *
+     * @return void
+     */
     public function bulkMove()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -593,11 +593,11 @@ class MediaController extends BaseController
     /**
      * Renames or moves a file/folder.
      */
-/**
- * rename method
- *
- * @return void
- */
+    /**
+     * rename method
+     *
+     * @return void
+     */
     public function rename()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -636,11 +636,11 @@ class MediaController extends BaseController
     /**
      * Updates media settings.
      */
-/**
- * updateSettings method
- *
- * @return void
- */
+    /**
+     * updateSettings method
+     *
+     * @return void
+     */
     public function updateSettings()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -659,7 +659,7 @@ class MediaController extends BaseController
         ];
 
         foreach ($settings as $key => $value) {
-            $stmt = $db->prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)");
+            $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES (?, ?)");
             $stmt->execute([$key, $value]);
         }
 
@@ -669,11 +669,11 @@ class MediaController extends BaseController
     /**
      * Restores a file from the trash to its original location.
      */
-/**
- * restore method
- *
- * @return void
- */
+    /**
+     * restore method
+     *
+     * @return void
+     */
     public function restore()
     {
         $trashPath = $_POST['trash_path'] ?? '';
@@ -717,11 +717,11 @@ class MediaController extends BaseController
     /**
      * Permanently deletes a file from the trash.
      */
-/**
- * purge method
- *
- * @return void
- */
+    /**
+     * purge method
+     *
+     * @return void
+     */
     public function purge()
     {
         $trashPath = $_POST['trash_path'] ?? '';
@@ -748,11 +748,11 @@ class MediaController extends BaseController
     /**
      * Handles image editing operations (crop, resize, filters, optimization).
      */
-/**
- * edit method
- *
- * @return void
- */
+    /**
+     * edit method
+     *
+     * @return void
+     */
     public function edit()
     {
         Auth::requirePermission('module:media.edit_files');
@@ -969,7 +969,7 @@ class MediaController extends BaseController
     private function getMediaSettings()
     {
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT key, value FROM system_settings WHERE key LIKE 'media_%'");
+        $stmt = $db->query("SELECT `key`, value FROM system_settings WHERE `key` LIKE 'media_%'");
         $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         return [
@@ -988,9 +988,11 @@ class MediaController extends BaseController
         $settings = $this->getMediaSettings();
         $days = (int) $settings['trash_retention'];
 
+        $cutoff = date('Y-m-d H:i:s', strtotime("-$days days"));
+
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM media_trash WHERE deleted_at < DATETIME('now', ?)");
-        $stmt->execute(["-$days days"]);
+        $stmt = $db->prepare("SELECT * FROM media_trash WHERE deleted_at < ?");
+        $stmt->execute([$cutoff]);
         $expired = $stmt->fetchAll();
 
         $uploadBase = Config::get('upload_dir');
@@ -1021,11 +1023,11 @@ class MediaController extends BaseController
     /**
      * Legacy media list for compatibility with CRUD forms.
      */
-/**
- * mediaList method
- *
- * @return void
- */
+    /**
+     * mediaList method
+     *
+     * @return void
+     */
     public function mediaList()
     {
         $uploadBase = Config::get('upload_dir');
@@ -1084,11 +1086,11 @@ class MediaController extends BaseController
     /**
      * Legacy media upload for compatibility with CRUD forms.
      */
-/**
- * mediaUpload method
- *
- * @return void
- */
+    /**
+     * mediaUpload method
+     *
+     * @return void
+     */
     public function mediaUpload()
     {
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -1183,11 +1185,11 @@ class MediaController extends BaseController
     /**
      * Creates a new folder.
      */
-/**
- * createFolder method
- *
- * @return void
- */
+    /**
+     * createFolder method
+     *
+     * @return void
+     */
     public function createFolder()
     {
         $name = $_POST['name'] ?? null;

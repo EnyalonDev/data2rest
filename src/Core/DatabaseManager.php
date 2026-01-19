@@ -71,7 +71,7 @@ class DatabaseManager
         // Fetch from system database
         try {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM `databases` WHERE id = ?");
             $stmt->execute([$databaseId]);
             $database = $stmt->fetch();
 
@@ -162,23 +162,27 @@ class DatabaseManager
             }
 
             // Insert into databases table
+            $now = date('Y-m-d H:i:s');
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
             $stmt = $db->prepare(
-                "INSERT INTO databases (name, path, type, config, project_id, created_at, last_edit_at) 
-                 VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))"
+                "INSERT INTO $qDatabases (name, path, config, project_id, created_at, last_edit_at) 
+                 VALUES (?, ?, ?, ?, ?, ?)"
             );
 
             $stmt->execute([
                 $name,
                 $config['path'] ?? null,
-                $config['type'] ?? 'sqlite',
                 json_encode($config),
-                $projectId
+                $projectId,
+                $now,
+                $now
             ]);
 
             $id = $db->lastInsertId();
 
             // Fetch and return the created record
-            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM `databases` WHERE id = ?");
             $stmt->execute([$id]);
             return $stmt->fetch();
 

@@ -43,7 +43,7 @@ class SystemController extends BaseController
     public function info()
     {
         $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'time_offset_total' ");
+        $stmt = $db->query("SELECT value FROM system_settings WHERE `key` = 'time_offset_total' ");
         $offset = (int) ($stmt->fetchColumn() ?: 0);
 
         $now = new \DateTime();
@@ -93,7 +93,7 @@ class SystemController extends BaseController
         }
 
         $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->prepare("REPLACE INTO system_settings (key, value) VALUES ('time_offset_total', ?)");
+        $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES ('time_offset_total', ?)");
         $stmt->execute([$totalMinutes]);
 
         header('Content-Type: application/json');
@@ -113,11 +113,11 @@ class SystemController extends BaseController
     {
         Auth::requireAdmin();
         $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'dev_mode'");
+        $stmt = $db->query("SELECT value FROM system_settings WHERE `key` = 'dev_mode'");
         $current = $stmt->fetchColumn();
         $newValue = ($current === 'on') ? 'off' : 'on';
 
-        $stmt = $db->prepare("UPDATE system_settings SET value = ? WHERE key = 'dev_mode'");
+        $stmt = $db->prepare("UPDATE system_settings SET value = ? WHERE `key` = 'dev_mode'");
         $stmt->execute([$newValue]);
 
         header('Content-Type: application/json');
@@ -198,7 +198,7 @@ class SystemController extends BaseController
         Auth::requireAdmin();
         $db = \App\Core\Database::getInstance()->getConnection();
 
-        $stmt = $db->prepare("REPLACE INTO system_settings (key, value) VALUES ('show_welcome_banner', '0')");
+        $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES ('show_welcome_banner', '0')");
         $stmt->execute();
 
         header('Content-Type: application/json');

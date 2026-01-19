@@ -63,11 +63,11 @@ class UserController extends BaseController
      * Enforces that only users with 'module:users.view_users'
      * permission can access user management functionality.
      */
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         // Allow anyone with view access to enter
@@ -92,11 +92,11 @@ class UserController extends BaseController
      * GET /admin/users
      * GET /admin/users?group_id=1&search=john
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         $db = Database::getInstance()->getConnection();
@@ -107,7 +107,7 @@ class UserController extends BaseController
 
             $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
                     LEFT JOIN roles r ON u.role_id = r.id 
-                    LEFT JOIN groups g ON u.group_id = g.id";
+                    LEFT JOIN " . Database::getInstance()->getAdapter()->quoteName('groups') . " g ON u.group_id = g.id";
             $params = [];
             $where = [];
 
@@ -142,7 +142,7 @@ class UserController extends BaseController
                 // Let's show only self to be safe.
                 $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
                         LEFT JOIN roles r ON u.role_id = r.id 
-                        LEFT JOIN groups g ON u.group_id = g.id
+                        LEFT JOIN " . Database::getInstance()->getAdapter()->quoteName('groups') . " g ON u.group_id = g.id
                         WHERE u.id = ?";
                 $stmt = $db->prepare($sql);
                 $stmt->execute([$_SESSION['user_id']]);
@@ -150,7 +150,7 @@ class UserController extends BaseController
             } else {
                 $sql = "SELECT u.*, r.name as role_name, g.name as group_name FROM users u 
                         LEFT JOIN roles r ON u.role_id = r.id 
-                        LEFT JOIN groups g ON u.group_id = g.id
+                        LEFT JOIN " . Database::getInstance()->getAdapter()->quoteName('groups') . " g ON u.group_id = g.id
                         WHERE u.group_id = ?
                         ORDER BY u.username ASC";
                 $stmt = $db->prepare($sql);
@@ -188,11 +188,11 @@ class UserController extends BaseController
      * GET /admin/users/form (new user)
      * GET /admin/users/form?id=5 (edit user)
      */
-/**
- * form method
- *
- * @return void
- */
+    /**
+     * form method
+     *
+     * @return void
+     */
     public function form()
     {
         $id = $_GET['id'] ?? null;
@@ -213,7 +213,7 @@ class UserController extends BaseController
 
         // Fetch available roles and groups for selection in the form
         $roles = $db->query("SELECT * FROM roles ORDER BY id ASC")->fetchAll();
-        $groups = $db->query("SELECT * FROM groups ORDER BY name ASC")->fetchAll();
+        $groups = $db->query("SELECT * FROM " . Database::getInstance()->getAdapter()->quoteName('groups') . " ORDER BY name ASC")->fetchAll();
 
         $this->view('admin/users/form', [
             'user' => $user,
@@ -249,11 +249,11 @@ class UserController extends BaseController
      * POST /admin/users/save
      * Body: username=john_doe&password=secret&role_id=2&group_id=1
      */
-/**
- * save method
- *
- * @return void
- */
+    /**
+     * save method
+     *
+     * @return void
+     */
     public function save()
     {
         $id = $_POST['id'] ?? null;
@@ -319,11 +319,11 @@ class UserController extends BaseController
      * @example
      * GET /admin/users/delete?id=5
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete()
     {
         Auth::requirePermission('module:users.delete_users');
