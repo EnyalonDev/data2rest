@@ -878,4 +878,126 @@ class RestController extends BaseController
             ], 500);
         }
     }
+
+    /**
+     * Override json response to log analytics (Phase 3)
+     */
+    protected function json($data, $status = 200)
+    {
+        // Calculate response time
+        $start = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
+        $time = microtime(true) - $start;
+
+        // Log to api_access_logs if we have API key context
+        if (!empty($this->apiKeyData)) {
+            try {
+                $db = Database::getInstance()->getConnection();
+                $stmt = $db->prepare("INSERT INTO api_access_logs (api_key_id, method, endpoint, status_code, ip_address, response_time_ms, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+                // Truncate URI if too long
+                $uri = $_SERVER['REQUEST_URI'] ?? '/';
+                if (strlen($uri) > 255)
+                    $uri = substr($uri, 0, 255);
+
+                $stmt->execute([
+                    $this->apiKeyData['id'] ?? null,
+                    $_SERVER['REQUEST_METHOD'] ?? 'GET',
+                    $uri,
+                    $status,
+                    $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0',
+                    round($time * 1000, 2),
+                    $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+                ]);
+            } catch (\Exception $e) {
+                // Ignore logging errors to prevent API failure
+            }
+        }
+
+        // CSV/Excel Export (Phase 3)
+        if (isset($_GET['format']) && $status == 200 && isset($data['data'])) {
+            $format = strtolower($_GET['format']);
+            if ($format === 'csv') {
+                $this->exportCsv($data['data']);
+                return;
+            }
+            if ($format === 'xlsx' || $format === 'excel') {
+                $this->exportExcel($data['data']);
+                return;
+            }
+        }
+
+        parent::json($data, $status);
+    }
+
+    /**
+     * Export data to CSV
+     */
+    private function exportCsv($data)
+    {
+        if (empty($data)) {
+            parent::json(['error' => 'No data to export'], 404);
+            return;
+        }
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="export_' . date('Y-m-d_His') . '.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+
+        // Header row
+        if (isset($data[0])) {
+            fputcsv($out, array_keys($data[0]));
+        }
+
+        foreach ($data as $row) {
+            // Flatten arrays if any
+            $flatRow = array_map(function ($item) {
+                return is_array($item) ? json_encode($item) : $item;
+            }, $row);
+            fputcsv($out, $flatRow);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    /**
+     * Export data to XML Excel (Simple)
+     */
+    private function exportExcel($data)
+    {
+        if (empty($data)) {
+            parent::json(['error' => 'No data to export'], 404);
+            return;
+        }
+
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment; filename="export_' . date('Y-m-d_His') . '.xls"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        echo '<table border="1">';
+
+        // Header
+        if (isset($data[0])) {
+            echo '<tr>';
+            foreach (array_keys($data[0]) as $key) {
+                echo '<th>' . htmlspecialchars($key) . '</th>';
+            }
+            echo '</tr>';
+        }
+
+        foreach ($data as $row) {
+            echo '<tr>';
+            foreach ($row as $cell) {
+                $val = is_array($cell) ? json_encode($cell) : $cell;
+                echo '<td>' . htmlspecialchars($val) . '</td>';
+            }
+            echo '</tr>';
+        }
+        echo '</table>';
+        exit;
+    }
 }

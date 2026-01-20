@@ -418,6 +418,33 @@ class Installer
                 FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
                 FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
                 )"
+        ],
+        'api_access_logs' => [
+            'sql' => "CREATE TABLE api_access_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                api_key_id INTEGER,
+                method TEXT,
+                endpoint TEXT,
+                status_code INTEGER,
+                ip_address TEXT,
+                response_time_ms FLOAT,
+                user_agent TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )"
+        ],
+        'webhook_queue' => [
+            'sql' => "CREATE TABLE webhook_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER,
+                url TEXT,
+                event TEXT,
+                payload TEXT,
+                attempts INTEGER DEFAULT 0,
+                next_attempt_at DATETIME,
+                status TEXT DEFAULT 'pending',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_error TEXT
+                )"
         ]
     ];
 
