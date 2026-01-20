@@ -7,6 +7,9 @@ use App\Core\Config;
 use App\Core\Auth;
 use App\Core\BaseController;
 use App\Core\Logger;
+use App\Core\RateLimiter;
+use App\Core\ApiPermissionManager;
+use App\Core\QueryFilterBuilder;
 use App\Modules\Webhooks\WebhookDispatcher;
 use App\Modules\Media\ImageService;
 use PDO;
@@ -139,6 +142,26 @@ class RestController extends BaseController
     {
         $this->apiKeyData = $this->authenticate();
 
+        // Phase 1: Rate Limiting
+        if ($this->apiKeyData['key_value'] !== 'internal') {
+            $rateLimiter = new RateLimiter();
+            $endpoint = "db_{$db_id}_table_{$table}";
+
+            // Get custom limit from API key or use default
+            $limit = $this->apiKeyData['rate_limit'] ?? RateLimiter::DEFAULT_LIMIT;
+            $limitInfo = $rateLimiter->checkLimit($this->apiKeyData['id'], $endpoint, $limit);
+
+            // Set rate limit headers
+            $rateLimiter->setHeaders($limitInfo);
+
+            if (!$limitInfo['allowed']) {
+                $this->json([
+                    'error' => 'Rate limit exceeded',
+                    'message' => "You have exceeded the rate limit of {$limitInfo['limit']} requests per hour",
+                    'retry_after' => $limitInfo['reset'] - time()
+                ], 429);
+            }
+        }
 
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
 
@@ -150,6 +173,54 @@ class RestController extends BaseController
 
         if (!$database) {
             $this->json(['error' => "Database container '$db_id' not found"], 404);
+        }
+
+        // Phase 1: Permission Check & IP Whitelisting
+        if ($this->apiKeyData['key_value'] !== 'internal') {
+            $permManager = new ApiPermissionManager();
+
+            // Check IP whitelist
+            $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+            if (!$permManager->checkIpWhitelist($this->apiKeyData['id'], $clientIp)) {
+                Logger::log('API_BLOCKED_IP', [
+                    'api_key' => $this->apiKeyData['name'],
+                    'ip' => $clientIp,
+                    'database' => $database['name'],
+                    'table' => $table
+                ]);
+                $this->json([
+                    'error' => 'Access denied',
+                    'message' => 'Your IP address is not whitelisted for this API key'
+                ], 403);
+            }
+
+            // Determine operation from HTTP method
+            $method = $_SERVER['REQUEST_METHOD'];
+            if ($method === 'POST' && isset($_POST['_method'])) {
+                $method = strtoupper($_POST['_method']);
+            }
+
+            $operation = match ($method) {
+                'GET' => 'read',
+                'POST' => 'create',
+                'PUT', 'PATCH' => 'update',
+                'DELETE' => 'delete',
+                default => 'read'
+            };
+
+            // Check table-level permission
+            if (!$permManager->hasPermission($this->apiKeyData['id'], $database['id'], $table, $operation)) {
+                Logger::log('API_PERMISSION_DENIED', [
+                    'api_key' => $this->apiKeyData['name'],
+                    'database' => $database['name'],
+                    'table' => $table,
+                    'operation' => $operation
+                ]);
+                $this->json([
+                    'error' => 'Permission denied',
+                    'message' => "API key does not have '$operation' permission for table '$table'"
+                ], 403);
+            }
         }
 
         try {
@@ -281,37 +352,30 @@ class RestController extends BaseController
             // Pagination
             $limit = (int) ($params['limit'] ?? 50);
             $offset = (int) ($params['offset'] ?? 0);
-            unset($params['limit'], $params['offset']);
-
-            // Filters
-            $where = [];
-            $values = [];
 
             // Validate columns for filtering
             $validCols = $this->getDbColumns($targetDb, $table, $adapter);
 
-            foreach ($params as $key => $val) {
-                if (is_string($val)) {
-                    $val = trim($val);
-                }
-
-                if (in_array($key, $validCols)) {
-                    $qKey = $adapter->quoteName($key);
-                    if (strpos($val, '%') !== false) {
-                        $where[] = "t.$qKey LIKE ?";
-                    } else {
-                        $where[] = "t.$qKey = ?";
-                    }
-                    $values[] = $val;
-                }
-            }
+            // Phase 1: Advanced Filtering
+            $filterResult = QueryFilterBuilder::buildFilters($params, $validCols, $adapter);
+            $where = $filterResult['where'];
+            $values = $filterResult['values'];
 
             $qTable = $adapter->quoteName($table);
             $sql = "SELECT $sqlSelect FROM $qTable t $sqlJoins";
             if (!empty($where)) {
                 $sql .= " WHERE " . implode(' AND ', $where);
             }
-            $sql .= " ORDER BY t.id DESC LIMIT ? OFFSET ?";
+
+            // Phase 1: Advanced Sorting
+            $sortClause = QueryFilterBuilder::buildSort($params['sort'] ?? null, $validCols, $adapter);
+            if ($sortClause) {
+                $sql .= $sortClause;
+            } else {
+                $sql .= " ORDER BY t.id DESC";
+            }
+
+            $sql .= " LIMIT ? OFFSET ?";
             $values[] = $limit;
             $values[] = $offset;
 

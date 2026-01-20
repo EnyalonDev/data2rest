@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Config;
 use App\Core\BaseController;
+use App\Core\Logger;
 use PDO;
 
 /**
@@ -126,11 +127,15 @@ class ApiDocsController extends BaseController
         Auth::requirePermission('module:api.create_keys');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_POST['name'] ?? 'New Key';
+            $description = $_POST['description'] ?? '';
+            $rateLimit = (int) ($_POST['rate_limit'] ?? 1000);
             $key = bin2hex(random_bytes(32));
             $db = Database::getInstance()->getConnection();
             $userId = $_SESSION['user_id'] ?? null;
-            $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, user_id, status) VALUES (?, ?, ?, 1)");
-            $stmt->execute([$key, $name, $userId]);
+            $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, description, rate_limit, user_id, status) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->execute([$key, $name, $description, $rateLimit, $userId]);
+
+            Logger::log('API_KEY_CREATED', ['name' => $name, 'rate_limit' => $rateLimit]);
         }
         $this->redirect('admin/api');
     }

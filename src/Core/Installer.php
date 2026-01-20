@@ -88,7 +88,7 @@ class Installer
                 name TEXT,
                 permissions TEXT,
                 status INTEGER DEFAULT 1
-                , project_id INTEGER, user_id INTEGER)"
+                , project_id INTEGER, user_id INTEGER, rate_limit INTEGER DEFAULT 1000, description TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
         ],
         'api_endpoints' => [
             'sql' => "CREATE TABLE api_endpoints (
@@ -390,6 +390,33 @@ class Installer
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 FOREIGN KEY(old_status_id) REFERENCES task_statuses(id),
                 FOREIGN KEY(new_status_id) REFERENCES task_statuses(id)
+                )"
+        ],
+        'api_rate_limits' => [
+            'sql' => "CREATE TABLE api_rate_limits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                api_key_id INTEGER NOT NULL,
+                endpoint TEXT NOT NULL,
+                request_count INTEGER DEFAULT 0,
+                window_start DATETIME NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE
+                )"
+        ],
+        'api_key_permissions' => [
+            'sql' => "CREATE TABLE api_key_permissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                api_key_id INTEGER NOT NULL,
+                database_id INTEGER,
+                table_name TEXT,
+                can_read INTEGER DEFAULT 0,
+                can_create INTEGER DEFAULT 0,
+                can_update INTEGER DEFAULT 0,
+                can_delete INTEGER DEFAULT 0,
+                allowed_ips TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
+                FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
                 )"
         ]
     ];
