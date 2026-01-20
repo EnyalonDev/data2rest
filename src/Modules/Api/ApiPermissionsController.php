@@ -58,7 +58,14 @@ class ApiPermissionsController extends BaseController
 
         // Get rate limit stats
         $rateLimiter = new \App\Core\RateLimiter();
-        $stats = $rateLimiter->getStats($apiKeyId);
+        $rawStats = $rateLimiter->getStats($apiKeyId);
+
+        // Ensure defaults to prevent view errors
+        $stats = array_merge([
+            'requests' => 0,
+            'remaining' => $apiKey['rate_limit'],
+            'remaining_time' => 'N/A'
+        ], $rawStats ?: []);
 
         $this->view('admin/api/permissions', [
             'title' => 'API Permissions - ' . $apiKey['name'],
@@ -111,7 +118,7 @@ class ApiPermissionsController extends BaseController
                 'table' => $tableName,
                 'permissions' => $permissions
             ]);
-            Auth::setFlashMessage('Permissions saved successfully');
+            Auth::setFlashError('Permissions saved successfully', 'success');
         } else {
             Auth::setFlashError('Failed to save permissions');
         }
