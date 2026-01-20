@@ -39,17 +39,30 @@ class SwaggerController extends BaseController
      */
     public function spec()
     {
-        $dbId = $_GET['db_id'] ?? null;
-
-        if (!$dbId) {
-            $this->json(['error' => 'Database ID required'], 400);
-        }
-
-        $generator = new OpenApiGenerator();
-        $spec = $generator->generateSpec($dbId);
-
+        // Disable html errors to ensure JSON response
+        ini_set('display_errors', 0);
         header('Content-Type: application/json');
-        echo json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        try {
+            $dbId = $_GET['db_id'] ?? null;
+
+            if (!$dbId) {
+                throw new \Exception('Database ID required');
+            }
+
+            $generator = new \App\Core\OpenApiGenerator();
+            $spec = $generator->generateSpec($dbId);
+
+            echo json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+        }
         exit;
     }
 }

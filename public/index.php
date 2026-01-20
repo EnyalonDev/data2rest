@@ -226,7 +226,20 @@ $router->add('POST', '/admin/media/upload', 'Media\\MediaController@mediaUpload'
 $router->add('GET', '/admin/api', 'Api\\ApiDocsController@index');
 $router->add('POST', '/admin/api/keys/create', 'Api\\ApiDocsController@createKey');
 $router->add('GET', '/admin/api/keys/delete', 'Api\\ApiDocsController@deleteKey');
-$router->add('GET', '/admin/api/docs', 'Api\\ApiDocsController@docs');
+$router->add('GET', '/admin/api/docs', 'Api\\ApiDocsController@docs'); // Legacy Docs
+
+// API Analytics (Phase 3)
+$router->add('GET', '/admin/api/analytics', 'Api\\ApiAnalyticsController@index');
+
+// API Permissions & Limits (Phase 1)
+$router->add('GET', '/admin/api/permissions', 'Api\\ApiPermissionsController@manage');
+$router->add('POST', '/admin/api/permissions/save', 'Api\\ApiPermissionsController@save');
+$router->add('POST', '/admin/api/permissions/delete', 'Api\\ApiPermissionsController@delete');
+$router->add('POST', '/admin/api/permissions/rate-limit', 'Api\\ApiPermissionsController@updateRateLimit');
+
+// API Swagger UI (Phase 2)
+$router->add('GET', '/admin/api/swagger', 'Api\\SwaggerController@index');
+$router->add('GET', '/admin/api/swagger/spec', 'Api\\SwaggerController@spec');
 
 // --- Module: User & Role Management ---
 $router->add('GET', '/admin/profile', 'Auth\\ProfileController@index');
