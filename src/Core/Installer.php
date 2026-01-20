@@ -601,10 +601,8 @@ class Installer
                     }
                 } else {
                     // Synchronize columns for existing tables
-                    // Only for SQLite for now as regex is fragile
-                    if ($adapter->getType() === 'sqlite') {
-                        self::syncColumns($db, $tableName, $definition['sql']);
-                    }
+                    // Now supports MySQL and Postgres too
+                    self::syncColumns($db, $tableName, $definition['sql']);
                 }
             }
 
@@ -641,33 +639,66 @@ class Installer
      */
     private static function syncColumns($db, $tableName, $createSql)
     {
+        $adapter = Database::getInstance()->getAdapter();
+        $type = $adapter->getType();
+
         // Extract column names from the SQL definition (Regex for SQLite CREATE TABLE content)
-        // Matches "col_name type..." and handles leading commas
         preg_match_all('/(?:,|\()\s*([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)/i', $createSql, $matches);
         $expectedColumns = $matches[1];
-        $columnTypes = $matches[2];
 
-        // Get current columns
-        $stmt = $db->query("PRAGMA table_info($tableName)");
-        $currentColumns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+        // 1. Get Current Columns
+        $currentColumns = [];
+        try {
+            if ($type === 'sqlite') {
+                $stmt = $db->query("PRAGMA table_info($tableName)");
+                $currentColumns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+            } elseif ($type === 'mysql') {
+                // MySQL requires backticks usually, but safe table name helps
+                $stmt = $db->query("SHOW COLUMNS FROM `$tableName`");
+                $currentColumns = $stmt->fetchAll(PDO::FETCH_COLUMN, 0); // Field is first column
+            } elseif ($type === 'pgsql') {
+                // Postgres info schema
+                $stmt = $db->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = ?");
+                $stmt->execute([strtolower($tableName)]);
+                $currentColumns = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+            }
+        } catch (\Exception $e) {
+            return; // Cannot inspect table, skip
+        }
 
-        foreach ($expectedColumns as $index => $col) {
+        foreach ($expectedColumns as $col) {
             // Ignore SQL keywords that might be caught
-            if (in_array(strtoupper($col), ['PRIMARY', 'FOREIGN', 'CONSTRAINT', 'UNIQUE', 'CHECK']))
+            if (in_array(strtoupper($col), ['PRIMARY', 'FOREIGN', 'CONSTRAINT', 'UNIQUE', 'CHECK', 'KEY']))
                 continue;
 
             if (!in_array($col, $currentColumns)) {
-                // Find the full definition for this column in the original SQL
-                // Look for column name followed by its type and constraints
+                // Find definition in the original SQL
                 if (preg_match('/(?:\(|\,)\s*' . $col . '\s+([^,)]+)/i', $createSql, $defMatch)) {
                     $colDef = trim($defMatch[1]);
-                    // Only add if it's not a COMPLEX constraint (SQLite has limits on ALTER TABLE)
-                    if (strpos(strtoupper($colDef), 'PRIMARY KEY') === false) {
-                        try {
-                            $db->exec("ALTER TABLE $tableName ADD COLUMN $col $colDef");
-                        } catch (PDOException $e) {
-                            // Column might exist or SQLite limitation
+
+                    // Only add if it's not a COMPLEX constraint
+                    if (strpos(strtoupper($colDef), 'PRIMARY KEY') !== false)
+                        continue;
+
+                    // Adapt Column Type for Target DB
+                    if ($type === 'mysql') {
+                        $colDef = str_replace('AUTOINCREMENT', 'AUTO_INCREMENT', $colDef);
+                        $colDef = str_replace('STRING', 'VARCHAR(255)', $colDef);
+                        // Fix MySQL TEXT DEFAULT limitation
+                        if (stripos($colDef, 'TEXT') !== false && stripos($colDef, 'DEFAULT') !== false) {
+                            $colDef = str_replace('TEXT', 'VARCHAR(255)', $colDef);
                         }
+                    } elseif ($type === 'pgsql') {
+                        $colDef = str_replace('DATETIME', 'TIMESTAMP', $colDef);
+                        $colDef = str_replace('INT DEFAULT', 'INTEGER DEFAULT', $colDef);
+                    }
+
+                    try {
+                        $alterSql = "ALTER TABLE " . $adapter->quoteName($tableName) . " ADD COLUMN " . $adapter->quoteName($col) . " $colDef";
+                        $db->exec($alterSql);
+                        error_log("Installer: Added column [$col] to table [$tableName]");
+                    } catch (\Exception $e) {
+                        error_log("Installer: Failed to add column [$col] to [$tableName]: " . $e->getMessage());
                     }
                 }
             }
