@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-    private static $SCHEMA = [
+        private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +53,7 @@ class Installer
                 name TEXT,
                 path TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                , project_id INTEGER, last_edit_at DATETIME, config TEXT)"
+                , project_id INTEGER, last_edit_at DATETIME, config TEXT, type TEXT DEFAULT 'sqlite')"
         ],
         'fields_config' => [
             'sql' => "CREATE TABLE fields_config (
@@ -88,7 +88,7 @@ class Installer
                 name TEXT,
                 permissions TEXT,
                 status INTEGER DEFAULT 1
-                , project_id INTEGER, user_id INTEGER, rate_limit INTEGER DEFAULT 1000, description TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
+                , project_id INTEGER, user_id INTEGER, rate_limit INTEGER DEFAULT 1000, description TEXT)"
         ],
         'api_endpoints' => [
             'sql' => "CREATE TABLE api_endpoints (
@@ -314,26 +314,17 @@ class Installer
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 , price REAL DEFAULT 0, price_monthly REAL DEFAULT 0, price_yearly REAL DEFAULT 0, price_one_time REAL DEFAULT 0)"
         ],
-        'billing_service_templates' => [
-            'sql' => "CREATE TABLE billing_service_templates (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                service_id INTEGER NOT NULL REFERENCES billing_services(id) ON DELETE CASCADE,
-                title TEXT NOT NULL,
-                description TEXT,
-                priority TEXT DEFAULT 'medium',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )"
-        ],
         'project_services' => [
             'sql' => "CREATE TABLE project_services (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id INTEGER NOT NULL REFERENCES projects(id),
                 service_id INTEGER NOT NULL REFERENCES billing_services(id),
-                custom_price REAL,
-                billing_period TEXT,
+                custom_price REAL, -- If null, use the service price
+                billing_period TEXT, -- 'monthly', 'yearly', 'one_time'
                 quantity INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )"
+                , use the service price
+                billing_period TEXT)"
         ],
         'task_statuses' => [
             'sql' => "CREATE TABLE task_statuses (
@@ -357,23 +348,11 @@ class Installer
                 created_by INTEGER NOT NULL,
                 position INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                service_id INTEGER REFERENCES billing_services(id),
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, service_id INTEGER REFERENCES billing_services(id),
                 FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
                 FOREIGN KEY(status_id) REFERENCES task_statuses(id),
                 FOREIGN KEY(assigned_to) REFERENCES users(id),
                 FOREIGN KEY(created_by) REFERENCES users(id)
-                )"
-        ],
-        'task_comments' => [
-            'sql' => "CREATE TABLE task_comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                task_id INTEGER NOT NULL,
-                user_id INTEGER NOT NULL,
-                comment TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-                FOREIGN KEY(user_id) REFERENCES users(id)
                 )"
         ],
         'task_history' => [
@@ -390,6 +369,27 @@ class Installer
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 FOREIGN KEY(old_status_id) REFERENCES task_statuses(id),
                 FOREIGN KEY(new_status_id) REFERENCES task_statuses(id)
+                )"
+        ],
+        'billing_service_templates' => [
+            'sql' => "CREATE TABLE billing_service_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                service_id INTEGER NOT NULL REFERENCES billing_services(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                description TEXT,
+                priority TEXT DEFAULT 'medium',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )"
+        ],
+        'task_comments' => [
+            'sql' => "CREATE TABLE task_comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                comment TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                FOREIGN KEY(user_id) REFERENCES users(id)
                 )"
         ],
         'api_rate_limits' => [
@@ -417,6 +417,14 @@ class Installer
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
                 FOREIGN KEY(database_id) REFERENCES databases(id) ON DELETE CASCADE
+                )"
+        ],
+        'api_cache' => [
+            'sql' => "CREATE TABLE api_cache (
+                cache_key TEXT PRIMARY KEY,
+                data TEXT NOT NULL,
+                expires_at DATETIME NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )"
         ],
         'api_access_logs' => [
