@@ -10,6 +10,9 @@ use App\Core\Logger;
 use App\Core\RateLimiter;
 use App\Core\ApiPermissionManager;
 use App\Core\QueryFilterBuilder;
+use App\Core\ApiCacheManager;
+use App\Core\ApiVersionManager;
+use App\Core\BulkOperationsManager;
 use App\Modules\Webhooks\WebhookDispatcher;
 use App\Modules\Media\ImageService;
 use PDO;
@@ -294,8 +297,30 @@ class RestController extends BaseController
 
     private function handleGetRequest($targetDb, $table, $id, $fieldsConfig, $db_id, $adapter)
     {
+        // Request parameters
         $params = $_GET;
         unset($params['api_key']);
+
+        // Phase 2: Version Manager
+        $versionManager = new ApiVersionManager();
+        $versionManager->setVersionHeaders();
+
+        // Phase 2: Cache Check (Only for GET)
+        $cacheManager = new ApiCacheManager();
+        $endpoint = "db_{$db_id}_table_{$table}" . ($id ? "_id_{$id}" : "_list");
+        $cacheKey = $cacheManager->getCacheKey($endpoint, $params);
+        $cachedResponse = $cacheManager->get($cacheKey);
+
+        if ($cachedResponse) {
+            $etag = $cacheManager->generateETag($cachedResponse);
+            if ($cacheManager->isClientCacheValid($etag)) {
+                $cacheManager->send304NotModified();
+            }
+            $cacheManager->setCacheHeaders($etag);
+            // Ensure response is consistent with version
+            $this->json($versionManager->transformResponse($cachedResponse));
+            return;
+        }
 
         // 1. Base Select and Joins
         $selectFields = ["t.*"];
@@ -347,10 +372,20 @@ class RestController extends BaseController
             $result = $stmt->fetch();
             if (!$result)
                 $this->json(['error' => 'Record not found'], 404);
-            $this->json($result);
+
+            // Phase 2: Save to Cache
+            $cacheManager->store($cacheKey, $result);
+            $etag = $cacheManager->generateETag($result);
+            $cacheManager->setCacheHeaders($etag);
+
+            $this->json($versionManager->transformResponse($result));
         } else {
+            // Check max limit based on version
+            $maxLimit = $versionManager->getVersionConfig('max_limit', 100);
+
             // Pagination
-            $limit = (int) ($params['limit'] ?? 50);
+            $limit = (int) ($params['limit'] ?? $versionManager->getVersionConfig('default_limit', 50));
+            $limit = min($limit, $maxLimit);
             $offset = (int) ($params['offset'] ?? 0);
 
             // Validate columns for filtering
@@ -389,10 +424,12 @@ class RestController extends BaseController
             if (!empty($where))
                 $countSql .= " WHERE " . implode(' AND ', $where);
             $total = $targetDb->prepare($countSql);
-            $total->execute(array_slice($values, 0, count($where)));
+            // Only use filter values for count
+            $filterValues = array_slice($values, 0, count(QueryFilterBuilder::buildFilters($params, $validCols, $adapter)['values']));
+            $total->execute($filterValues);
             $totalCount = $total->fetchColumn();
 
-            $this->json([
+            $response = [
                 'metadata' => [
                     'total_records' => (int) $totalCount,
                     'limit' => $limit,
@@ -400,8 +437,16 @@ class RestController extends BaseController
                     'count' => count($results)
                 ],
                 'data' => $results
-            ]);
+            ];
+
+            // Phase 2: Save to Cache
+            $cacheManager->store($cacheKey, $response);
+            $etag = $cacheManager->generateETag($response);
+            $cacheManager->setCacheHeaders($etag);
+
+            $this->json($versionManager->transformResponse($response));
         }
+
     }
 
     private function getDisplayField($targetDb, $db_id, $tableName, $preferredField = null)
@@ -518,6 +563,10 @@ class RestController extends BaseController
             // Ignore webhook failures
         }
 
+        // Phase 2: Invalidate Cache
+        $cacheManager = new ApiCacheManager();
+        $cacheManager->invalidate("db_{$db_id}_table_{$table}");
+
         $this->json(['success' => true, 'id' => $newId], 201);
     }
 
@@ -608,6 +657,10 @@ class RestController extends BaseController
         } catch (\Exception $e) {
         }
 
+        // Phase 2: Invalidate Cache
+        $cacheManager = new ApiCacheManager();
+        $cacheManager->invalidate("db_{$db_id}_table_{$table}");
+
         $this->json(['success' => true]);
     }
 
@@ -671,6 +724,10 @@ class RestController extends BaseController
         } catch (\Exception $e) {
         }
 
+        // Phase 2: Invalidate Cache
+        $cacheManager = new ApiCacheManager();
+        $cacheManager->invalidate("db_{$db_id}_table_{$table}");
+
         $this->json(['success' => true]);
     }
 
@@ -729,5 +786,96 @@ class RestController extends BaseController
             }
         }
         return $data;
+    }
+
+    /**
+     * Handle bulk operations (Phase 2)
+     * 
+     * POST /api/db/{db_id}/{table}/bulk
+     * 
+     * @param int $db_id Database ID
+     * @param string $table Table name
+     * @return void
+     */
+    public function handleBulk($db_id, $table)
+    {
+        $this->apiKeyData = $this->authenticate();
+
+        // Check API version supports bulk
+        $versionManager = new ApiVersionManager();
+        if (!$versionManager->getVersionConfig('supports_bulk', false)) {
+            $this->json([
+                'error' => 'Bulk operations not supported in this API version',
+                'message' => 'Please use API v2 or higher for bulk operations'
+            ], 400);
+        }
+
+        // Rate limiting
+        if ($this->apiKeyData['key_value'] !== 'internal') {
+            $rateLimiter = new RateLimiter();
+            $endpoint = "db_{$db_id}_table_{$table}_bulk";
+            $limit = $this->apiKeyData['rate_limit'] ?? RateLimiter::DEFAULT_LIMIT;
+            $limitInfo = $rateLimiter->checkLimit($this->apiKeyData['id'], $endpoint, $limit);
+            $rateLimiter->setHeaders($limitInfo);
+
+            if (!$limitInfo['allowed']) {
+                $this->json([
+                    'error' => 'Rate limit exceeded',
+                    'retry_after' => $limitInfo['reset'] - time()
+                ], 429);
+            }
+        }
+
+        $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+
+        // Get database
+        $sysDb = Database::getInstance()->getConnection();
+        $stmt = $sysDb->prepare("SELECT * FROM `databases` WHERE id = ? OR name = ?");
+        $stmt->execute([$db_id, $db_id]);
+        $database = $stmt->fetch();
+
+        if (!$database) {
+            $this->json(['error' => "Database '$db_id' not found"], 404);
+        }
+
+        // Get request body
+        $input = file_get_contents('php://input');
+        $requestData = json_decode($input, true);
+
+        if (!isset($requestData['operations']) || !is_array($requestData['operations'])) {
+            $this->json([
+                'error' => 'Invalid request format',
+                'message' => 'Expected JSON with "operations" array'
+            ], 400);
+        }
+
+        try {
+            $adapter = \App\Core\DatabaseManager::getAdapter($database);
+            $targetDb = $adapter->getConnection();
+
+            $bulkManager = new BulkOperationsManager($targetDb);
+            $result = $bulkManager->execute($requestData['operations'], $table, $adapter);
+
+            // Invalidate cache for this table
+            $cacheManager = new ApiCacheManager();
+            $cacheManager->invalidate("db_{$db_id}_table_{$table}");
+
+            Logger::log('API_BULK_OPERATION', [
+                'database' => $database['name'],
+                'table' => $table,
+                'operations_count' => count($requestData['operations']),
+                'success_count' => $result['summary']['success'],
+                'failed_count' => $result['summary']['failed']
+            ]);
+
+            $statusCode = $result['success'] ? 200 : 207; // 207 = Multi-Status
+            $this->json($result, $statusCode);
+
+        } catch (\Exception $e) {
+            $this->json([
+                'error' => 'Bulk operation failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
