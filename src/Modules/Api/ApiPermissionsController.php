@@ -50,7 +50,9 @@ class ApiPermissionsController extends BaseController
         }
 
         // Get all databases
-        $databases = $db->query("SELECT id, name FROM databases ORDER BY name")->fetchAll();
+        $adapter = Database::getInstance()->getAdapter();
+        $tableDatabases = $adapter->quoteName('databases');
+        $databases = $db->query("SELECT id, name FROM $tableDatabases ORDER BY name")->fetchAll();
 
         // Get current permissions
         $permManager = new ApiPermissionManager();

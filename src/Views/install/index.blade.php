@@ -248,14 +248,58 @@
             const form = e.target;
             const btn = document.getElementById('btn-submit');
             const errorDiv = document.getElementById('error-msg');
+            const type = document.getElementById('input-type').value || 'sqlite';
 
             // Loading state
             btn.disabled = true;
-            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ' + window.I18N.installing;
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Verificando conexión...';
             errorDiv.classList.add('hidden');
+            errorDiv.className = "hidden text-sm text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-900/50"; // Reset classes
+
+            const formData = new FormData(form);
+
+            // Step 1: Check Connection if not SQLite
+            if (type !== 'sqlite') {
+                try {
+                    const checkRes = await fetch('{{ $baseUrl }}install/check', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const checkData = await checkRes.json();
+
+                    if (checkData.status === 'error') {
+                        throw new Error(checkData.message + (checkData.debug ? '<br><span class="text-xs opacity-75 font-mono">' + checkData.debug + '</span>' : ''));
+                    }
+
+                    // Success logic
+                    const infoDiv = document.getElementById('error-msg'); // Reuse container for info
+                    infoDiv.classList.remove('hidden');
+
+                    if (checkData.status === 'exists') {
+                        infoDiv.className = "text-sm text-green-400 bg-green-900/20 p-3 rounded-lg border border-green-900/50";
+                        infoDiv.innerHTML = `✅ ${checkData.message}<br>Continuando instalación en 3 segundos...`;
+
+                        await new Promise(r => setTimeout(r, 3000));
+                    } else if (checkData.status === 'can_create') {
+                        infoDiv.className = "text-sm text-blue-400 bg-blue-900/20 p-3 rounded-lg border border-blue-900/50";
+                        infoDiv.innerHTML = `ℹ️ ${checkData.message}<br>Intentando crear la estructura...`;
+                        // Short pause for readability
+                        await new Promise(r => setTimeout(r, 1500));
+                    }
+
+                } catch (err) {
+                    errorDiv.innerHTML = '<strong>Error de Conexión:</strong><br>' + err.message;
+                    errorDiv.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.textContent = window.I18N.retry;
+                    return; // Stop here
+                }
+            }
+
+            // Step 2: Install
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ' + window.I18N.installing;
 
             try {
-                const formData = new FormData(form);
                 const response = await fetch('{{ $baseUrl }}install', {
                     method: 'POST',
                     body: formData
@@ -266,10 +310,11 @@
                 if (result.success) {
                     window.location.href = result.redirect;
                 } else {
-                    throw new Error(result.message || 'Error desconocido');
+                    throw new Error(result.message || 'Error desconocido durante la instalación.');
                 }
             } catch (err) {
-                errorDiv.textContent = 'Error: ' + err.message;
+                errorDiv.className = "text-sm text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-900/50";
+                errorDiv.innerHTML = 'Error Instalación: ' + err.message;
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
                 btn.textContent = window.I18N.retry;

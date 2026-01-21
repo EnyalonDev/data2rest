@@ -15,7 +15,7 @@ class Installer
      * The Master Schema definition.
      * This is the "Truth" of how the database should look.
      */
-        private static $SCHEMA = [
+    private static $SCHEMA = [
         'roles' => [
             'sql' => "CREATE TABLE roles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -319,12 +319,11 @@ class Installer
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id INTEGER NOT NULL REFERENCES projects(id),
                 service_id INTEGER NOT NULL REFERENCES billing_services(id),
-                custom_price REAL, -- If null, use the service price
-                billing_period TEXT, -- 'monthly', 'yearly', 'one_time'
+                custom_price REAL,
+                billing_period TEXT,
                 quantity INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                , use the service price
-                billing_period TEXT)"
+                )"
         ],
         'task_statuses' => [
             'sql' => "CREATE TABLE task_statuses (
@@ -592,7 +591,10 @@ class Installer
                         // "users" is also reserved in Postgres
                         $sql = str_replace('CREATE TABLE users', 'CREATE TABLE "users"', $sql);
                         $sql = str_replace('from users', 'from "users"', $sql); // regex might be safer
-                        $sql = str_replace('key TEXT PRIMARY KEY', '"key" TEXT PRIMARY KEY', $sql);
+                        // Fix for 'key' column which is reserved, but ONLY exact match
+                        // The previous replace was capturing 'cache_key' -> 'cache_"key"' which is wrong.
+                        // We use word boundaries or look for spaces.
+                        $sql = preg_replace('/\bkey\s+TEXT\s+PRIMARY\s+KEY/i', '"key" TEXT PRIMARY KEY', $sql);
 
                         // Generic quoting for Postgres
                         $sql = preg_replace('/CREATE TABLE ([a-z_]+)/i', 'CREATE TABLE "$1"', $sql);
@@ -626,6 +628,7 @@ class Installer
 
         } catch (\Throwable $e) {
             error_log("Database Sync Error: " . $e->getMessage());
+
             // In PostgreSQL, error details are often crucial
             if (Config::get('dev_mode')) {
                 // If it fails during schema creation, it might be due to partial queries.
