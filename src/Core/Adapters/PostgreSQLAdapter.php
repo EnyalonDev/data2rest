@@ -44,6 +44,7 @@ class PostgreSQLAdapter extends DatabaseAdapter
      */
     public function connect(): PDO
     {
+        error_log("PostgreSQLAdapter: connect() called");
         if ($this->connection !== null) {
             return $this->connection;
         }
@@ -55,7 +56,9 @@ class PostgreSQLAdapter extends DatabaseAdapter
         $password = $this->config['password'] ?? '';
         $charset = $this->config['charset'] ?? 'utf8';
 
-        $dsn = "pgsql:host={$host};port={$port};dbname={$database};options='--client_encoding={$charset}'";
+        // Simplify DSN to avoid parsing issues with options/quotes
+        $dsn = "pgsql:host={$host};port={$port};dbname={$database};connect_timeout=10";
+        error_log("PostgreSQLAdapter: Attempting DSN: $dsn");
 
         try {
             $this->connection = new PDO($dsn, $username, $password, [
@@ -63,6 +66,10 @@ class PostgreSQLAdapter extends DatabaseAdapter
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
+            error_log("PostgreSQLAdapter: PDO created successfully");
+
+            // Set encoding safely after connection
+            $this->connection->exec("SET client_encoding TO '{$charset}'");
 
             return $this->connection;
         } catch (PDOException $e) {
@@ -469,7 +476,7 @@ class PostgreSQLAdapter extends DatabaseAdapter
             $user = $this->config['username'] ?? 'postgres';
             $pass = $this->config['password'] ?? '';
 
-            $dsn = "pgsql:host={$host};port={$port};dbname=postgres";
+            $dsn = "pgsql:host={$host};port={$port};dbname=postgres;connect_timeout=10";
             $pdo = new PDO($dsn, $user, $pass, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
             ]);

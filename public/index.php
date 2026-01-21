@@ -41,7 +41,9 @@ if ($needsInstallation) {
     }
     // Simple router for installation
     if ($normalizedUri === '/install' || $normalizedUri === '/install/' || strpos($normalizedUri, '/install/') === 0) {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($normalizedUri === '/install/check') {
+            (new \App\Modules\Install\InstallController())->checkConnection();
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (new \App\Modules\Install\InstallController())->install();
         } else {
             (new \App\Modules\Install\InstallController())->index();
