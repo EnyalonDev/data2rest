@@ -182,7 +182,7 @@ class DatabaseManager
             $id = $db->lastInsertId();
 
             // Fetch and return the created record
-            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM $qDatabases WHERE id = ?");
             $stmt->execute([$id]);
             $result = $stmt->fetch();
             return $result ?: null;
