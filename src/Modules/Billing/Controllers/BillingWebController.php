@@ -40,7 +40,7 @@ use PDO;
  *
  * Security: Requires login, permission checks as implemented.
  *
- * @package App\Modules\
+ * @package App\Modules
  * @author DATA2REST Development Team
  * @version 1.0.0
  */
@@ -124,54 +124,6 @@ class BillingWebController extends BaseController
     }
 
     /**
-     * Vista de clientes (unificada con usuarios)
-     *
-     * Shows a list of users with the client role (role_id = 4) along with
-     * aggregated billing statistics such as project count, total paid, pending,
-     * and overdue amounts.
-     *
-     * Access Control:
-     * - Only admin users can access this view.
-     *
-     * @return void Renders the `admin.billing.clients` view.
-     */
-    /**
-     * clients method
-     *
-     * @return void
-     */
-    public function clients()
-    {
-        if (!Auth::isAdmin()) {
-            Auth::setFlashError('No tienes permisos para acceder a esta sección', 'error');
-            $this->redirect('/admin/dashboard');
-            return;
-        }
-
-        // Buscamos solo usuarios que tengan el rol de cliente (ID 4)
-        $stmt = $this->db->query("
-        SELECT u.*,\
-               COALESCE(u.public_name, u.username) as name,\
-               COUNT(DISTINCT p.id) as projects_count,\
-               SUM(CASE WHEN i.status = 'pagada' THEN i.amount ELSE 0 END) as total_paid,\
-               SUM(CASE WHEN i.status = 'pendiente' THEN i.amount ELSE 0 END) as total_pending,\
-               SUM(CASE WHEN i.status = 'vencida' THEN i.amount ELSE 0 END) as total_overdue\
-        FROM users u\
-        LEFT JOIN projects p ON u.id = p.billing_user_id\
-        LEFT JOIN installments i ON p.id = i.project_id\
-        WHERE u.role_id = 4\
-        GROUP BY u.id\
-        ORDER BY name ASC\
-    ");
-        $clients = $stmt->fetchAll();
-
-        $this->view('admin.billing.clients', [
-            'title' => 'Gestión de Clientes (Usuarios)',
-            'clients' => $clients
-        ]);
-    }
-
-    /**
      * Vista de proyectos con billing
      *
      * Displays projects that have an associated billing plan, including client
@@ -196,24 +148,24 @@ class BillingWebController extends BaseController
         }
 
         $stmt = $this->db->query("
-        SELECT p.*,\
-               COALESCE(u.public_name, u.username) as client_name,\
-               u.email as client_email,\
-               u.phone as client_phone,\
-               u.tax_id as client_tax_id,\
-               pp.name as plan_name,\
-               pp.frequency as plan_frequency,\
-               COUNT(i.id) as total_installments,\
-               SUM(CASE WHEN i.status = 'pagada' THEN 1 ELSE 0 END) as paid_installments,\
-               SUM(CASE WHEN i.status = 'pendiente' THEN 1 ELSE 0 END) as pending_installments,\
-               SUM(CASE WHEN i.status = 'vencida' THEN 1 ELSE 0 END) as overdue_installments\
-        FROM projects p\
-        LEFT JOIN users u ON p.billing_user_id = u.id\
-        LEFT JOIN payment_plans pp ON p.current_plan_id = pp.id\
-        LEFT JOIN installments i ON p.id = i.project_id\
-        WHERE p.current_plan_id IS NOT NULL\
-        GROUP BY p.id\
-        ORDER BY p.created_at DESC\
+        SELECT p.*,
+               COALESCE(u.public_name, u.username) as client_name,
+               u.email as client_email,
+               u.phone as client_phone,
+               u.tax_id as client_tax_id,
+               pp.name as plan_name,
+               pp.frequency as plan_frequency,
+               COUNT(i.id) as total_installments,
+               SUM(CASE WHEN i.status = 'pagada' THEN 1 ELSE 0 END) as paid_installments,
+               SUM(CASE WHEN i.status = 'pendiente' THEN 1 ELSE 0 END) as pending_installments,
+               SUM(CASE WHEN i.status = 'vencida' THEN 1 ELSE 0 END) as overdue_installments
+        FROM projects p
+        LEFT JOIN users u ON p.billing_user_id = u.id
+        LEFT JOIN payment_plans pp ON p.current_plan_id = pp.id
+        LEFT JOIN installments i ON p.id = i.project_id
+        WHERE p.current_plan_id IS NOT NULL
+        GROUP BY p.id, u.id, u.public_name, u.username, u.email, u.phone, u.tax_id, pp.id, pp.name, pp.frequency
+        ORDER BY p.created_at DESC
     ");
         $projects = $stmt->fetchAll();
 
@@ -336,12 +288,12 @@ class BillingWebController extends BaseController
 
         // Obtener todos los planes con conteo de proyectos
         $stmt = $this->db->query("
-        SELECT pp.*,\
-               COUNT(p.id) as projects_count\
-        FROM payment_plans pp\
-        LEFT JOIN projects p ON pp.id = p.current_plan_id\
-        GROUP BY pp.id\
-        ORDER BY pp.status DESC, pp.name ASC\
+        SELECT pp.*,
+               COUNT(p.id) as projects_count
+        FROM payment_plans pp
+        LEFT JOIN projects p ON pp.id = p.current_plan_id
+        GROUP BY pp.id
+        ORDER BY pp.status DESC, pp.name ASC
     ");
         $plans = $stmt->fetchAll();
 
@@ -427,16 +379,16 @@ class BillingWebController extends BaseController
         $isAdmin = Auth::isAdmin();
 
         $sql = "
-        SELECT pay.*,\
-               i.installment_number,\
-               p.name as project_name,\
-               COALESCE(u.public_name, u.username) as client_name,\
-               u.id as client_id\
-        FROM payments pay\
-        INNER JOIN installments i ON pay.installment_id = i.id\
-        INNER JOIN projects p ON i.project_id = p.id\
-        LEFT JOIN users u ON p.billing_user_id = u.id\
-        WHERE 1=1\
+        SELECT pay.*,
+               i.installment_number,
+               p.name as project_name,
+               COALESCE(u.public_name, u.username) as client_name,
+               u.id as client_id
+        FROM payments pay
+        INNER JOIN installments i ON pay.installment_id = i.id
+        INNER JOIN projects p ON i.project_id = p.id
+        LEFT JOIN users u ON p.billing_user_id = u.id
+        WHERE 1=1
     ";
 
         if (!$isAdmin) {
@@ -449,15 +401,15 @@ class BillingWebController extends BaseController
 
         // Resumen de pagos
         $summaryStmt = $this->db->query("
-        SELECT \
-            COUNT(*) as total_payments,\
-            SUM(amount) as total_received,\
-            AVG(amount) as average_payment,\
-            (SELECT COUNT(*) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_payments,\
-            (SELECT SUM(amount) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_received,\
-            (SELECT payment_date FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_date,\
-            (SELECT amount FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_amount\
-        FROM payments\
+        SELECT 
+            COUNT(*) as total_payments,
+            SUM(amount) as total_received,
+            AVG(amount) as average_payment,
+            (SELECT COUNT(*) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_payments,
+            (SELECT SUM(amount) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_received,
+            (SELECT payment_date FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_date,
+            (SELECT amount FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_amount
+        FROM payments
     ");
         $summary = $summaryStmt->fetch();
 
@@ -684,14 +636,16 @@ class BillingWebController extends BaseController
     private function getTopClients($limit = 10)
     {
         $stmt = $this->db->prepare("
-            SELECT c.*,
+            SELECT u.*,
+                   COALESCE(u.public_name, u.username) as name,
                    COUNT(DISTINCT p.id) as projects_count,
                    SUM(CASE WHEN i.status = 'pagada' THEN i.amount ELSE 0 END) as total_paid,
                    SUM(CASE WHEN i.status = 'pendiente' THEN i.amount ELSE 0 END) as total_pending
-            FROM clients c
-            LEFT JOIN projects p ON c.id = p.client_id
+            FROM users u
+            LEFT JOIN projects p ON u.id = p.billing_user_id
             LEFT JOIN installments i ON p.id = i.project_id
-            GROUP BY c.id
+            WHERE u.role_id = 3
+            GROUP BY u.id
             ORDER BY (total_paid + total_pending) DESC
             LIMIT ?
         ");

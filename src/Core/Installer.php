@@ -952,16 +952,22 @@ class Installer
 
         // Pack Todo en Uno (Clone A, B, E)
         $packName = 'Pack "Todo en Uno"';
-        $stmt = $db->prepare("INSERT INTO billing_services (name, status) VALUES (?, 'active')");
+        $stmt = $db->prepare("SELECT id FROM billing_services WHERE name = ?");
         $stmt->execute([$packName]);
-        $packId = $db->lastInsertId();
+        $packId = $stmt->fetchColumn();
 
-        // Clone templates from Web Básica, Dominio Propio, Correos Corporativos
-        $db->exec("INSERT INTO billing_service_templates (service_id, title, priority)
-                   SELECT $packId, title, priority FROM billing_service_templates 
-                   WHERE service_id IN (
-                       SELECT id FROM billing_services WHERE name IN ('Web Básica', 'Dominio Propio', 'Correos Corporativos')
-                   )");
+        if (!$packId) {
+            $stmt = $db->prepare("INSERT INTO billing_services (name, status) VALUES (?, 'active')");
+            $stmt->execute([$packName]);
+            $packId = $db->lastInsertId();
+
+            // Clone templates from Web Básica, Dominio Propio, Correos Corporativos
+            $db->exec("INSERT INTO billing_service_templates (service_id, title, priority)
+                       SELECT $packId, title, priority FROM billing_service_templates 
+                       WHERE service_id IN (
+                           SELECT id FROM billing_services WHERE name IN ('Web Básica', 'Dominio Propio', 'Correos Corporativos')
+                       )");
+        }
     }
 
     /**

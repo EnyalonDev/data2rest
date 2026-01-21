@@ -71,7 +71,7 @@ class DatabaseManager
         // Fetch from system database
         try {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT * FROM `databases` WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
             $stmt->execute([$databaseId]);
             $database = $stmt->fetch();
 
@@ -182,7 +182,7 @@ class DatabaseManager
             $id = $db->lastInsertId();
 
             // Fetch and return the created record
-            $stmt = $db->prepare("SELECT * FROM `databases` WHERE id = ?");
+            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
             $stmt->execute([$id]);
             return $stmt->fetch();
 

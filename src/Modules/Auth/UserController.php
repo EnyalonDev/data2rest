@@ -334,5 +334,68 @@ class UserController extends BaseController
         }
         $this->redirect('admin/users');
     }
+
+    /**
+     * Display list of client users with billing statistics
+     * 
+     * Shows all users with the "Cliente" role (role_id = 3) along with
+     * their billing statistics including project count, payments, and outstanding amounts.
+     * 
+     * Features:
+     * - List all client users
+     * - Show billing statistics per client
+     * - Link to projects and installments
+     * - Search functionality
+     * 
+     * @return void Renders client users list view
+     * 
+     * @example
+     * GET /admin/users/clients
+     * GET /admin/users/clients?search=john
+     */
+    public function clients()
+    {
+        Auth::requirePermission('module:users.view_users');
+
+        $db = Database::getInstance()->getConnection();
+        $search = $_GET['search'] ?? null;
+
+        $sql = "
+            SELECT u.*,
+                   COALESCE(u.public_name, u.username) as name,
+                   COUNT(DISTINCT p.id) as projects_count,
+                   SUM(CASE WHEN i.status = 'pagada' THEN i.amount ELSE 0 END) as total_paid,
+                   SUM(CASE WHEN i.status = 'pendiente' THEN i.amount ELSE 0 END) as total_pending,
+                   SUM(CASE WHEN i.status = 'vencida' THEN i.amount ELSE 0 END) as total_overdue
+            FROM users u
+            LEFT JOIN projects p ON u.id = p.billing_user_id
+            LEFT JOIN installments i ON p.id = i.project_id
+            WHERE u.role_id = 3
+        ";
+
+        $params = [];
+
+        if ($search) {
+            $sql .= " AND (u.username LIKE ? OR u.public_name LIKE ? OR u.email LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $sql .= " GROUP BY u.id ORDER BY name ASC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $clients = $stmt->fetchAll();
+
+        $this->view('admin/users/clients', [
+            'clients' => $clients,
+            'title' => 'Client Users - Billing Overview',
+            'breadcrumbs' => [
+                \App\Core\Lang::get('common.team') => 'admin/users',
+                'Client Users' => null
+            ]
+        ]);
+    }
 }
 

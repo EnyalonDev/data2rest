@@ -247,6 +247,7 @@ $router->add('GET', '/admin/api/swagger/spec', 'Api\\SwaggerController@spec');
 $router->add('GET', '/admin/profile', 'Auth\\ProfileController@index');
 $router->add('POST', '/admin/profile/save', 'Auth\\ProfileController@save');
 $router->add('GET', '/admin/users', 'Auth\\UserController@index');
+$router->add('GET', '/admin/users/clients', 'Auth\\UserController@clients');
 $router->add('GET', '/admin/users/new', 'Auth\\UserController@form');
 $router->add('GET', '/admin/users/edit', 'Auth\\UserController@form');
 $router->add('POST', '/admin/users/save', 'Auth\\UserController@save');
@@ -318,12 +319,7 @@ $router->add('OPTIONS', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('OPTIONS', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
 
 // --- Billing Module API ---
-// Clients
-$router->add('GET', '/api/billing/clients', 'Billing\\Controllers\\ClientController@index');
-$router->add('POST', '/api/billing/clients', 'Billing\\Controllers\\ClientController@create');
-$router->add('GET', '/api/billing/clients/{id}', 'Billing\\Controllers\\ClientController@getById');
-$router->add('PUT', '/api/billing/clients/{id}', 'Billing\\Controllers\\ClientController@update');
-$router->add('DELETE', '/api/billing/clients/{id}', 'Billing\\Controllers\\ClientController@delete');
+// NOTE: Client management has been moved to the Users module (users with role_id = 4)
 
 // Projects with Billing
 $router->add('POST', '/api/billing/projects', 'Billing\\Controllers\\ProjectController@create');
@@ -374,7 +370,7 @@ $router->add('GET', '/api/billing/reports/client-summary/{id}', 'Billing\\Contro
 
 // --- Billing Module Web Views ---
 $router->add('GET', '/admin/billing', 'Billing\\Controllers\\BillingWebController@index');
-$router->add('GET', '/admin/billing/clients', 'Billing\\Controllers\\BillingWebController@clients');
+// NOTE: Client management removed - use Users module instead
 $router->add('GET', '/admin/billing/projects', 'Billing\\Controllers\\BillingWebController@projects');
 $router->add('GET', '/admin/billing/installments', 'Billing\\Controllers\\BillingWebController@installments');
 $router->add('GET', '/admin/billing/plans', 'Billing\\Controllers\\BillingWebController@plans');

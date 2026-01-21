@@ -56,7 +56,7 @@
                 <button type="submit"
                     class="group relative w-full bg-primary text-dark font-black py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/20 uppercase tracking-widest text-sm mt-4 overflow-hidden">
                     <span class="relative z-10 flex items-center justify-center gap-2">
-                        AUTHENTICATE CLUSTER <span class="group-hover:translate-x-1 transition-transform">&rarr;</span>
+                        Ingresar <span class="group-hover:translate-x-1 transition-transform">&rarr;</span>
                     </span>
                     <div
                         class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
@@ -77,8 +77,8 @@
 
         <footer class="mt-12 text-center opacity-40 hover:opacity-100 transition-opacity">
             <p class="text-[10px] font-black text-p-muted uppercase tracking-[0.2em]">
-                © 2026 EnyalonDev Framework | <a href="https://nestorovallos.com" target="_blank"
-                    class="text-primary hover:underline">Support Node</a>
+                © 2026 EnyalonDev Framework By Néstor Ovallos Cañasz <br /> <a href="https://nestorovallos.com"
+                    target="_blank" class="text-primary hover:underline">Support Node</a>
             </p>
         </footer>
     </div>

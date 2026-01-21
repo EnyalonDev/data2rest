@@ -42,8 +42,12 @@ class SystemController extends BaseController
      */
     public function info()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT value FROM system_settings WHERE `key` = 'time_offset_total' ");
+        $adapter = \App\Core\Database::getInstance()->getAdapter();
+        $keyCol = $adapter->quoteName('key');
+        $stmt = $db->query("SELECT value FROM system_settings WHERE $keyCol = 'time_offset_total' ");
         $offset = (int) ($stmt->fetchColumn() ?: 0);
 
         $now = new \DateTime();
@@ -81,6 +85,8 @@ class SystemController extends BaseController
      */
     public function updateTimeOffset()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         Auth::requireAdmin();
         $hours = (int) ($_POST['hours'] ?? 0);
         $minutes = (int) ($_POST['minutes'] ?? 0);
@@ -93,8 +99,11 @@ class SystemController extends BaseController
         }
 
         $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES ('time_offset_total', ?)");
-        $stmt->execute([$totalMinutes]);
+        $adapter = \App\Core\Database::getInstance()->getAdapter();
+
+        $sql = $adapter->getUpsertSQL('system_settings', ['key' => 'time_offset_total', 'value' => $totalMinutes], 'key');
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['time_offset_total', $totalMinutes]);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'new_offset' => $totalMinutes]);
@@ -111,13 +120,17 @@ class SystemController extends BaseController
      */
     public function toggleDevMode()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         Auth::requireAdmin();
         $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT value FROM system_settings WHERE `key` = 'dev_mode'");
+        $adapter = \App\Core\Database::getInstance()->getAdapter();
+        $keyCol = $adapter->quoteName('key');
+        $stmt = $db->query("SELECT value FROM system_settings WHERE $keyCol = 'dev_mode'");
         $current = $stmt->fetchColumn();
         $newValue = ($current === 'on') ? 'off' : 'on';
 
-        $stmt = $db->prepare("UPDATE system_settings SET value = ? WHERE `key` = 'dev_mode'");
+        $stmt = $db->prepare("UPDATE system_settings SET value = ? WHERE $keyCol = 'dev_mode'");
         $stmt->execute([$newValue]);
 
         header('Content-Type: application/json');
@@ -135,6 +148,10 @@ class SystemController extends BaseController
      */
     public function clearCache()
     {
+        // Prevent accidental output (like newlines) from breaking JSON
+        while (ob_get_level())
+            ob_end_clean();
+
         Auth::requireAdmin();
         // Since sqlite doesn't have internal cache to clear via PHP, 
         // we'll focus on opcache and potentially temp files.
@@ -167,6 +184,10 @@ class SystemController extends BaseController
      */
     public function clearSessions()
     {
+        // Prevent accidental output (like newlines) from breaking JSON
+        while (ob_get_level())
+            ob_end_clean();
+
         Auth::requireAdmin();
         $sessionDir = session_save_path();
         if (empty($sessionDir)) {
@@ -195,11 +216,15 @@ class SystemController extends BaseController
      */
     public function dismissBanner()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         Auth::requireAdmin();
         $db = \App\Core\Database::getInstance()->getConnection();
+        $adapter = \App\Core\Database::getInstance()->getAdapter();
 
-        $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES ('show_welcome_banner', '0')");
-        $stmt->execute();
+        $sql = $adapter->getUpsertSQL('system_settings', ['key' => 'show_welcome_banner', 'value' => '0'], 'key');
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['show_welcome_banner', '0']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);

@@ -503,7 +503,7 @@ class ProjectController extends BaseController
             // Sanitize project name for filename
             $safeProjectName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $projectName);
 
-            $stmt = $db->prepare("SELECT * FROM `databases` WHERE project_id = ?");
+            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ?");
             $stmt->execute([$id]);
             $databases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -538,7 +538,7 @@ class ProjectController extends BaseController
                 // Delete field configs for this DB
                 $db->prepare("DELETE FROM fields_config WHERE db_id = ?")->execute([$database['id']]);
                 // Delete DB record
-                $db->prepare("DELETE FROM `databases` WHERE id = ?")->execute([$database['id']]);
+                $db->prepare("DELETE FROM databases WHERE id = ?")->execute([$database['id']]);
             }
 
             // 4. Delete Project Associations

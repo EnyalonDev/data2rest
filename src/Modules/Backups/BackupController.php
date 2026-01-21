@@ -273,8 +273,11 @@ class BackupController extends BaseController
     {
         $url = $_POST['cloud_url'] ?? '';
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES ('backup_cloud_url', ?)");
-        $stmt->execute([$url]);
+        $adapter = Database::getInstance()->getAdapter();
+
+        $sql = $adapter->getUpsertSQL('system_settings', ['key' => 'backup_cloud_url', 'value' => $url], 'key');
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['backup_cloud_url', $url]);
 
         $this->redirect('admin/backups');
     }
@@ -382,7 +385,9 @@ class BackupController extends BaseController
         // ensure table exists? configured in basic installer. But system_settings is standard.
         // Let's assume system_settings exists or handle it.
         try {
-            $stmt = $db->prepare("SELECT value FROM system_settings WHERE `key` = 'backup_cloud_url'");
+            $adapter = Database::getInstance()->getAdapter();
+            $keyCol = $adapter->quoteName('key');
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE $keyCol = 'backup_cloud_url'");
             $stmt->execute();
             return $stmt->fetchColumn();
         } catch (\Exception $e) {

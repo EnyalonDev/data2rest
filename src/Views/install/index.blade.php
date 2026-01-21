@@ -163,7 +163,7 @@
                             <div>
                                 <label
                                     class="block text-xs font-medium text-slate-400 mb-1">{{ $lang['install']['db_host'] }}</label>
-                                <input type="text" name="host" value="localhost"
+                                <input type="text" name="host" id="input-host" value="localhost"
                                     class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                             </div>
                             <div>
@@ -223,6 +223,7 @@
             const dbFields = document.getElementById('db-fields');
             const sqliteFields = document.getElementById('sqlite-fields');
             const portInput = document.getElementById('input-port');
+            const hostInput = document.getElementById('input-host');
             const title = document.getElementById('form-title');
 
             if (type === 'sqlite') {
@@ -234,6 +235,8 @@
                 dbFields.classList.remove('hidden');
                 sqliteFields.classList.add('hidden');
                 portInput.value = type === 'mysql' ? '3306' : '5432';
+                // Update default host logic: MySQL -> localhost, PGSQL -> /tmp
+                hostInput.value = type === 'mysql' ? 'localhost' : '/tmp';
             }
         }
 

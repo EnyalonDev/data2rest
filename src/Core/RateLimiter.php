@@ -51,15 +51,23 @@ class RateLimiter
         $now = time();
         $windowStart = date('Y-m-d H:i:s', $now - $window);
 
-        // Get or create rate limit record
-        $stmt = $this->db->prepare("
-            SELECT id, request_count, window_start 
-            FROM api_rate_limits 
-            WHERE api_key_id = ? AND endpoint = ? 
-            AND datetime(window_start) > datetime(?)
-            ORDER BY window_start DESC 
-            LIMIT 1
-        ");
+        // Detect DB Driver for Date Functions
+        $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        $sql = "SELECT id, request_count, window_start 
+                FROM api_rate_limits 
+                WHERE api_key_id = ? AND endpoint = ? ";
+
+        if ($driver === 'sqlite') {
+            $sql .= "AND datetime(window_start) > datetime(?)";
+        } else {
+            // MySQL & PostgreSQL support standard string comparison for ISO dates
+            $sql .= "AND window_start > ?";
+        }
+
+        $sql .= " ORDER BY window_start DESC LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$apiKeyId, $endpoint, $windowStart]);
         $record = $stmt->fetch();
 
@@ -144,6 +152,15 @@ class RateLimiter
      */
     public function getStats($apiKeyId)
     {
+        $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $timeCondition = ($driver === 'sqlite')
+            ? "datetime(window_start) > datetime('now', '-24 hours')"
+            : "window_start > NOW() - INTERVAL '24 hours'"; // Postgres/MySQL standard
+
+        if ($driver === 'mysql') {
+            $timeCondition = "window_start > DATE_SUB(NOW(), INTERVAL 24 HOUR)";
+        }
+
         $stmt = $this->db->prepare("
             SELECT 
                 endpoint,
@@ -152,7 +169,7 @@ class RateLimiter
                 MAX(window_start) as last_request
             FROM api_rate_limits 
             WHERE api_key_id = ? 
-            AND datetime(window_start) > datetime('now', '-24 hours')
+            AND $timeCondition
             GROUP BY endpoint
         ");
         $stmt->execute([$apiKeyId]);

@@ -260,6 +260,49 @@ abstract class DatabaseAdapter
     abstract public function quoteName(string $name): string;
 
     /**
+     * Generate UPSERT SQL (INSERT or UPDATE if exists)
+     * Handles database-specific syntax for REPLACE/UPSERT operations
+     * 
+     * @param string $table Table name
+     * @param array $data Associative array of column => value
+     * @param string|array $conflictColumns Column(s) that determine uniqueness
+     * @return string SQL statement
+     */
+    public function getUpsertSQL(string $table, array $data, $conflictColumns): string
+    {
+        $quotedTable = $this->quoteName($table);
+        $columns = array_keys($data);
+        $quotedColumns = array_map([$this, 'quoteName'], $columns);
+        $placeholders = array_fill(0, count($columns), '?');
+
+        if ($this->type === 'pgsql' || $this->type === 'postgresql') {
+            // PostgreSQL: INSERT ... ON CONFLICT ... DO UPDATE
+            $conflictCols = is_array($conflictColumns) ? $conflictColumns : [$conflictColumns];
+            $quotedConflictCols = array_map([$this, 'quoteName'], $conflictCols);
+            $conflictStr = implode(', ', $quotedConflictCols);
+
+            $updateParts = [];
+            foreach ($columns as $col) {
+                if (!in_array($col, $conflictCols)) {
+                    $qCol = $this->quoteName($col);
+                    $updateParts[] = "$qCol = EXCLUDED.$qCol";
+                }
+            }
+
+            $sql = "INSERT INTO $quotedTable (" . implode(', ', $quotedColumns) . ") " .
+                "VALUES (" . implode(', ', $placeholders) . ") " .
+                "ON CONFLICT ($conflictStr) DO UPDATE SET " . implode(', ', $updateParts);
+
+        } else {
+            // MySQL and SQLite: REPLACE INTO
+            $sql = "REPLACE INTO $quotedTable (" . implode(', ', $quotedColumns) . ") " .
+                "VALUES (" . implode(', ', $placeholders) . ")";
+        }
+
+        return $sql;
+    }
+
+    /**
      * Quote a value for use in a query
      * 
      * @param mixed $value Value to quote

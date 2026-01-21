@@ -292,8 +292,16 @@ class DatabaseController extends BaseController
                     'id' => $database['id']
                 ], $projectId);
 
+                // Success! Redirect to Sync
                 Auth::setFlashError("Database created successfully!", 'success');
-                header('Location: ' . Auth::getBaseUrl() . 'admin/databases/sync?id=' . $database['id']);
+                $redirectUrl = Auth::getBaseUrl() . 'admin/databases/sync?id=' . $database['id'];
+
+                // Force redirect
+                if (!headers_sent()) {
+                    header('Location: ' . $redirectUrl);
+                } else {
+                    echo "<script>window.location.href='" . $redirectUrl . "';</script>";
+                }
                 exit;
             } else {
                 throw new \Exception("Failed to create database");
@@ -301,7 +309,7 @@ class DatabaseController extends BaseController
 
         } catch (\Exception $e) {
             Auth::setFlashError("Error creating database: " . $e->getMessage());
-            header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
+            $this->redirect('admin/databases/create-form'); // Use framework redirect
             exit;
         }
     }

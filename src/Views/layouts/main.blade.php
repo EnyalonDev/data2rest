@@ -459,42 +459,83 @@
                     </button>
                 </div>
                 <script>
-                    function devClearCache() {
+                    window.devClearCache = function() {
                         fetch('{{ $baseUrl }}admin/system/clear-cache', {
                             method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
+                            headers: { 
+                                'X-CSRF-TOKEN': '{{ $csrf_token ?? "" }}',
+                                'Content-Type': 'application/json'
+                            }
                         })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.success) {
+                        .then(res => {
+                            if (!res.ok) throw new Error('Network response was not ok');
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                if (typeof showModal === 'function') {
                                     showModal({
-                                        title: '{{ $lang['dashboard']['cache_modal_title'] }}',
-                                        message: '{{ $lang['dashboard']['cache_modal_msg'] }}',
+                                        title: '{{ $lang['dashboard']['cache_modal_title'] ?? 'Cache Cleared' }}',
+                                        message: '{{ $lang['dashboard']['cache_modal_msg'] ?? 'System cache has been successfully cleared.' }}',
                                         type: 'success'
                                     });
+                                } else {
+                                    alert('{{ $lang['dashboard']['cache_modal_msg'] ?? 'System cache has been successfully cleared.' }}');
                                 }
-                            });
-                    }
-                    function devClearSessions() {
-                        showModal({
-                            title: '{{ $lang['dashboard']['sessions_modal_title'] }}',
-                            message: '{{ $lang['dashboard']['sessions_modal_msg'] }}',
-                            type: 'confirm',
-                            onConfirm: () => {
-                                fetch('{{ $baseUrl }}admin/system/clear-sessions', {
-                                    method: 'POST',
-                                    headers: { 'X-CSRF-TOKEN': '{{ $csrf_token }}' }
-                                })
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            const msg = '{{ $lang['dashboard']['sessions_cleared_msg'] }}'.replace(':count', data.cleared);
-                                            showModal({ title: '{{ $lang['dashboard']['sessions_modal_title'] }}', message: msg, type: 'success' });
-                                        }
-                                    });
+                            } else {
+                                alert('Error clearing cache: ' + (data.message || 'Unknown error'));
                             }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Error: ' + err.message);
                         });
-                    }
+                    };
+
+                    window.devClearSessions = function() {
+                        const confirmAction = () => {
+                            fetch('{{ $baseUrl }}admin/system/clear-sessions', {
+                                method: 'POST',
+                                headers: { 
+                                    'X-CSRF-TOKEN': '{{ $csrf_token ?? "" }}',
+                                    'Content-Type': 'application/json' 
+                                }
+                            })
+                            .then(res => {
+                                if (!res.ok) throw new Error('Network response was not ok');
+                                return res.json();
+                            })
+                            .then(data => {
+                                if (data.success) {
+                                    const msg = '{{ $lang['dashboard']['sessions_cleared_msg'] ?? ':count sessions cleared' }}'.replace(':count', data.cleared);
+                                    if (typeof showModal === 'function') {
+                                        showModal({ title: 'Sessions Cleared', message: msg, type: 'success' });
+                                    } else {
+                                        alert(msg);
+                                    }
+                                } else {
+                                    alert('Error clearing sessions: ' + (data.message || 'Unknown error'));
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                alert('Error: ' + err.message);
+                            });
+                        };
+
+                        if (typeof showModal === 'function') {
+                            showModal({
+                                title: '{{ $lang['dashboard']['sessions_modal_title'] ?? 'Clear Sessions' }}',
+                                message: '{{ $lang['dashboard']['sessions_modal_msg'] ?? 'Are you sure you want to clear all active sessions? This will log out all users.' }}',
+                                type: 'confirm',
+                                onConfirm: confirmAction
+                            });
+                        } else {
+                            if (confirm('{{ $lang['dashboard']['sessions_modal_msg'] ?? 'Are you sure?' }}')) {
+                                confirmAction();
+                            }
+                        }
+                    };
                 </script>
 
 
