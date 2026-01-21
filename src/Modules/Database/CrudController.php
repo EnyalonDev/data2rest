@@ -704,7 +704,7 @@ LIMIT 1");
         $db->prepare("UPDATE " . Database::getInstance()->getAdapter()->quoteName('databases') . " SET last_edit_at = ? WHERE id = ?")->execute([$now, $db_id]);
 
         // Update or Initialize table metadata
-        if ($type === 'sqlite') {
+        if ($type === 'sqlite' || $type === 'pgsql' || $type === 'postgresql') {
             $sql = "INSERT INTO table_metadata (db_id, table_name, last_edit_at) 
                      VALUES (?, ?, ?) 
                      ON CONFLICT(db_id, table_name) DO UPDATE SET last_edit_at = excluded.last_edit_at";

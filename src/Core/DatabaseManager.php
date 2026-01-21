@@ -184,7 +184,8 @@ class DatabaseManager
             // Fetch and return the created record
             $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
             $stmt->execute([$id]);
-            return $stmt->fetch();
+            $result = $stmt->fetch();
+            return $result ?: null;
 
         } catch (\Exception $e) {
             error_log("Failed to create database: " . $e->getMessage());

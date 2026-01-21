@@ -48,10 +48,13 @@ class ApiPermissionManager
             return false;
         }
 
+        $adapter = Database::getInstance()->getAdapter();
+        $table = $adapter->quoteName('api_key_permissions');
+
         // Check for specific table permission
         $stmt = $this->db->prepare("
             SELECT $permissionColumn 
-            FROM api_key_permissions 
+            FROM $table 
             WHERE api_key_id = ? 
             AND database_id = ? 
             AND (table_name = ? OR table_name IS NULL)
@@ -65,7 +68,7 @@ class ApiPermissionManager
         if ($result === false) {
             $stmt = $this->db->prepare("
                 SELECT $permissionColumn 
-                FROM api_key_permissions 
+                FROM $table 
                 WHERE api_key_id = ? 
                 AND database_id = ? 
                 AND table_name IS NULL
@@ -87,9 +90,12 @@ class ApiPermissionManager
      */
     public function checkIpWhitelist($apiKeyId, $ip)
     {
+        $adapter = Database::getInstance()->getAdapter();
+        $table = $adapter->quoteName('api_key_permissions');
+
         $stmt = $this->db->prepare("
             SELECT allowed_ips 
-            FROM api_key_permissions 
+            FROM $table 
             WHERE api_key_id = ? 
             AND allowed_ips IS NOT NULL 
             AND allowed_ips != ''
@@ -133,10 +139,13 @@ class ApiPermissionManager
      */
     public function setPermissions($apiKeyId, $databaseId, $tableName, $permissions, $allowedIps = null)
     {
+        $adapter = Database::getInstance()->getAdapter();
+        $table = $adapter->quoteName('api_key_permissions');
+
         // Check if permission already exists
         // Use COALESCE to handle NULL comparison properly for PostgreSQL
         $stmt = $this->db->prepare("
-            SELECT id FROM api_key_permissions 
+            SELECT id FROM $table 
             WHERE api_key_id = ? AND database_id = ? 
             AND COALESCE(table_name, '') = COALESCE(?, '')
         ");
@@ -151,7 +160,7 @@ class ApiPermissionManager
         if ($existing) {
             // Update existing
             $stmt = $this->db->prepare("
-                UPDATE api_key_permissions 
+                UPDATE $table 
                 SET can_read = ?, can_create = ?, can_update = ?, can_delete = ?, allowed_ips = ?
                 WHERE id = ?
             ");
@@ -159,7 +168,7 @@ class ApiPermissionManager
         } else {
             // Insert new
             $stmt = $this->db->prepare("
-                INSERT INTO api_key_permissions 
+                INSERT INTO $table 
                 (api_key_id, database_id, table_name, can_read, can_create, can_update, can_delete, allowed_ips) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
@@ -175,12 +184,16 @@ class ApiPermissionManager
      */
     public function getPermissions($apiKeyId)
     {
+        $adapter = Database::getInstance()->getAdapter();
+        $apiKeyPermissionsTable = $adapter->quoteName('api_key_permissions');
+        $databasesTable = $adapter->quoteName('databases');
+
         $stmt = $this->db->prepare("
             SELECT 
                 p.*,
                 d.name as database_name
-            FROM api_key_permissions p
-            LEFT JOIN databases d ON p.database_id = d.id
+            FROM $apiKeyPermissionsTable p
+            LEFT JOIN $databasesTable d ON p.database_id = d.id
             WHERE p.api_key_id = ?
             ORDER BY d.name, p.table_name
         ");
@@ -196,7 +209,10 @@ class ApiPermissionManager
      */
     public function deletePermissions($apiKeyId)
     {
-        $stmt = $this->db->prepare("DELETE FROM api_key_permissions WHERE api_key_id = ?");
+        $adapter = Database::getInstance()->getAdapter();
+        $table = $adapter->quoteName('api_key_permissions');
+
+        $stmt = $this->db->prepare("DELETE FROM $table WHERE api_key_id = ?");
         $stmt->execute([$apiKeyId]);
         return $stmt->rowCount();
     }

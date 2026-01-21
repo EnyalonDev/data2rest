@@ -617,11 +617,13 @@ class Installer
             }
 
             // 2. Data Initialization
-            // We run this every time because seedDefaults is now idempotent (checks before inserting).
-            // This ensures missing default data (admin user, services, plans) is restored if deleted or missing.
-            error_log("Installer: Verifying default data...");
-            self::seedDefaults($db);
-            error_log("Installer: Data verification completed.");
+            // This ensures missing default data (admin user, services, plans) is created once.
+            // We check a flag in system_settings to avoid re-running seeds on every request.
+            if (!Config::getSetting('system_seeded')) {
+                error_log("Installer: Initializing default data...");
+                self::seedDefaults($db);
+                error_log("Installer: Data initialization completed.");
+            }
 
             // 3. Maintenance / Dynamic checks
             self::runHealthChecks($db);
@@ -967,6 +969,19 @@ class Installer
                        WHERE service_id IN (
                            SELECT id FROM billing_services WHERE name IN ('Web Básica', 'Dominio Propio', 'Correos Corporativos')
                        )");
+        }
+
+        // Mark as seeded to avoid re-running on every request
+        $adapter = Database::getInstance()->getAdapter();
+        $tableName = $adapter->quoteName('system_settings');
+        $keyCol = $adapter->quoteName('key');
+
+        // Try to update or insert the flag
+        $stmt = $db->prepare("UPDATE $tableName SET value = '1' WHERE $keyCol = 'system_seeded'");
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            $stmt = $db->prepare("INSERT INTO $tableName ($keyCol, value) VALUES ('system_seeded', '1')");
+            $stmt->execute();
         }
     }
 

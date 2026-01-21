@@ -49,7 +49,7 @@
                                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                 </svg>
                             </button>
-                            <button onclick="editService({{ json_encode($service) }})"
+                            <button onclick="editService({{ htmlspecialchars(json_encode($service), ENT_QUOTES, 'UTF-8') }})"
                                 class="p-2 text-p-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                                 title="Editar">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +242,7 @@
         function openCreateModal() {
             document.getElementById('modalTitle').innerText = 'Nuevo Servicio';
             document.getElementById('service_id').value = '';
-            
+
             // Explicitly clear inputs
             const form = document.getElementById('serviceForm');
             form.reset();
@@ -253,15 +253,19 @@
         }
 
         function editService(service) {
+            console.log('Editing service:', service);
             document.getElementById('modalTitle').innerText = 'Editar Servicio';
-            document.getElementById('service_id').value = service.id;
+
+            // Handle both id and ID (Postgres sometimes returns uppercase)
+            const id = service.id || service.ID;
+            document.getElementById('service_id').value = id;
 
             const form = document.getElementById('serviceForm');
-            form.querySelector('[name="name"]').value = service.name;
-            form.querySelector('[name="description"]').value = service.description || '';
-            form.querySelector('[name="price_monthly"]').value = service.price_monthly;
-            form.querySelector('[name="price_yearly"]').value = service.price_yearly;
-            form.querySelector('[name="price_one_time"]').value = service.price_one_time;
+            form.querySelector('[name="name"]').value = service.name || service.NAME || '';
+            form.querySelector('[name="description"]').value = service.description || service.DESCRIPTION || '';
+            form.querySelector('[name="price_monthly"]').value = service.price_monthly || service.PRICE_MONTHLY || 0;
+            form.querySelector('[name="price_yearly"]').value = service.price_yearly || service.PRICE_YEARLY || 0;
+            form.querySelector('[name="price_one_time"]').value = service.price_one_time || service.PRICE_ONE_TIME || 0;
 
             document.getElementById('serviceModal').classList.remove('hidden');
             document.getElementById('serviceModal').classList.add('flex');
@@ -291,7 +295,14 @@
 
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
-            const serviceId = data.id;
+
+            // Debug logging to help identify why serviceId might be missing in PG
+            let serviceId = data.id || document.getElementById('service_id').value;
+
+            // Robust nullification: check for empty, undefined string, etc.
+            if (!serviceId || serviceId === '' || serviceId === 'undefined') {
+                serviceId = null;
+            }
 
             const url = serviceId
                 ? `{{ $baseUrl }}api/billing/services/${serviceId}`
@@ -463,28 +474,28 @@
             }
 
             list.innerHTML = `<div class="space-y-2">
-                                                    ${templates.map(t => `
-                                                        <div class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group hover:border-white/20 transition-all">
-                                                            <div class="flex-1">
-                                                                <div class="flex items-center gap-2 mb-1">
-                                                                    <span class="font-bold text-gray-200 text-sm">${t.title}</span>
-                                                                    <span class="text-xs uppercase px-1.5 py-0.5 rounded font-bold ${getPriorityClass(t.priority)}">${t.priority}</span>
-                                                                </div>
-                                                                ${t.description ? `<p class="text-xs text-gray-400">${t.description}</p>` : ''}
-                                                            </div>
-                                                            <div class="flex gap-1">
-                                                                <button onclick='editTemplate(${JSON.stringify(t)})' class="p-2 text-gray-500 hover:text-blue-500 transition-colors" title="Editar">
-                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                                                </button>
-                                                                <button onclick="deleteTemplate(${t.id})" class="p-2 text-gray-500 hover:text-red-500 transition-colors" title="Eliminar">
-                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    `).join('')}
-                                                </div>`;
+                                                                    ${templates.map(t => `
+                                                                        <div class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group hover:border-white/20 transition-all">
+                                                                            <div class="flex-1">
+                                                                                <div class="flex items-center gap-2 mb-1">
+                                                                                    <span class="font-bold text-gray-200 text-sm">${t.title}</span>
+                                                                                    <span class="text-xs uppercase px-1.5 py-0.5 rounded font-bold ${getPriorityClass(t.priority)}">${t.priority}</span>
+                                                                                </div>
+                                                                                ${t.description ? `<p class="text-xs text-gray-400">${t.description}</p>` : ''}
+                                                                            </div>
+                                                                            <div class="flex gap-1">
+                                                                                <button onclick='editTemplate(${JSON.stringify(t)})' class="p-2 text-gray-500 hover:text-blue-500 transition-colors" title="Editar">
+                                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                                                </button>
+                                                                                <button onclick="deleteTemplate(${t.id})" class="p-2 text-gray-500 hover:text-red-500 transition-colors" title="Eliminar">
+                                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                                    </svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    `).join('')}
+                                                                </div>`;
         }
 
         function getPriorityClass(p) {
@@ -573,12 +584,12 @@
                         Swal.fire({
                             title: 'Copiar Plantilla',
                             html: `
-                                            <p class="mb-4 text-p-muted">Copia el siguiente código JSON para guardarlo o importarlo en otro servicio.</p>
-                                            <div class="relative">
-                                                <textarea id="exportJsonArea" class="w-full h-64 bg-black/30 border border-gray-700 rounded-lg p-4 font-mono text-sm text-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent resize-none" readonly>${jsonContent}</textarea>
-                                                <button onclick="copyToClipboard()" class="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-xs text-white border border-gray-600">Copiar</button>
-                                            </div>
-                                        `,
+                                                            <p class="mb-4 text-p-muted">Copia el siguiente código JSON para guardarlo o importarlo en otro servicio.</p>
+                                                            <div class="relative">
+                                                                <textarea id="exportJsonArea" class="w-full h-64 bg-black/30 border border-gray-700 rounded-lg p-4 font-mono text-sm text-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent resize-none" readonly>${jsonContent}</textarea>
+                                                                <button onclick="copyToClipboard()" class="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-xs text-white border border-gray-600">Copiar</button>
+                                                            </div>
+                                                        `,
                             width: '600px',
                             showConfirmButton: false,
                             showCloseButton: true,
@@ -622,11 +633,11 @@
             Swal.fire({
                 title: 'Importar Plantilla',
                 html: `
-                                    <p class="mb-4 text-p-muted">Pega el código JSON de la plantilla que deseas importar.</p>
-                                    <div class="relative">
-                                        <textarea id="importJsonArea" class="w-full h-64 bg-black/30 border border-gray-700 rounded-lg p-4 font-mono text-sm text-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent resize-none" placeholder='[{"title":"Tarea ejemplo","priority":"medium","description":"Descripción"}]'></textarea>
-                                    </div>
-                                `,
+                                                    <p class="mb-4 text-p-muted">Pega el código JSON de la plantilla que deseas importar.</p>
+                                                    <div class="relative">
+                                                        <textarea id="importJsonArea" class="w-full h-64 bg-black/30 border border-gray-700 rounded-lg p-4 font-mono text-sm text-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent resize-none" placeholder='[{"title":"Tarea ejemplo","priority":"medium","description":"Descripción"}]'></textarea>
+                                                    </div>
+                                                `,
                 width: '600px',
                 showCancelButton: true,
                 confirmButtonText: 'Importar',

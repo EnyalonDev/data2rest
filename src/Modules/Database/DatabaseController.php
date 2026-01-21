@@ -261,7 +261,7 @@ class DatabaseController extends BaseController
 
                 if (empty($config['database'])) {
                     Auth::setFlashError("Database name is required for MySQL");
-                    header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
+                    $this->redirect('admin/databases/create-form');
                     exit;
                 }
             } elseif ($type === 'pgsql' || $type === 'postgresql') {
@@ -277,7 +277,7 @@ class DatabaseController extends BaseController
 
                 if (empty($config['database'])) {
                     Auth::setFlashError("Database name is required for PostgreSQL");
-                    header('Location: ' . Auth::getBaseUrl() . 'admin/databases/create-form');
+                    $this->redirect('admin/databases/create-form');
                     exit;
                 }
             }
@@ -307,7 +307,7 @@ class DatabaseController extends BaseController
                 throw new \Exception("Failed to create database");
             }
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Auth::setFlashError("Error creating database: " . $e->getMessage());
             $this->redirect('admin/databases/create-form'); // Use framework redirect
             exit;
