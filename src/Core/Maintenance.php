@@ -29,9 +29,11 @@ class Maintenance
 
         try {
             $db = Database::getInstance()->getConnection();
+            $adapter = Database::getInstance()->getAdapter();
+            $keyCol = $adapter->quoteName('key');
 
             // 1. Retention Policy: Data Versions (Audit Trail)
-            $stmtConf = $db->prepare("SELECT value FROM system_settings WHERE `key` = 'audit_retention_days'");
+            $stmtConf = $db->prepare("SELECT value FROM system_settings WHERE $keyCol = 'audit_retention_days'");
             $stmtConf->execute();
             $retentionDays = $stmtConf->fetchColumn() ?: 30;
 
@@ -40,7 +42,7 @@ class Maintenance
             $deletedVersions = $stmt->rowCount();
 
             // 2. Retention Policy: Activity Logs
-            $stmtLogConf = $db->prepare("SELECT value FROM system_settings WHERE `key` = 'log_retention_days'");
+            $stmtLogConf = $db->prepare("SELECT value FROM system_settings WHERE $keyCol = 'log_retention_days'");
             $stmtLogConf->execute();
             $logRetention = $stmtLogConf->fetchColumn() ?: 60;
 

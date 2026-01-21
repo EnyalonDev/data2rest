@@ -8,11 +8,18 @@ use PDO;
 
 /**
  * Controlador REST de Clientes
+ * 
+ * @deprecated This controller is deprecated. Client management has been moved to the Users module.
+ *             Clients are now represented as users with role_id = 4.
+ *             Use the Users module for client management instead.
+ *             This file will be removed in a future version.
  */
 /**
  * ClientController Controller
  *
- * Core Features: TODO
+ * @deprecated Use Users module instead (users with role_id = 4)
+ *
+ * Core Features: DEPRECATED - Client management moved to Users module
  *
  * Security: Requires login, permission checks as implemented.
  *
@@ -24,11 +31,11 @@ class ClientController extends BaseController
 {
     private $db;
 
-/**
- * __construct method
- *
- * @return void
- */
+    /**
+     * __construct method
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -38,11 +45,11 @@ class ClientController extends BaseController
      * GET /api/billing/clients
      * Lista todos los clientes
      */
-/**
- * index method
- *
- * @return void
- */
+    /**
+     * index method
+     *
+     * @return void
+     */
     public function index()
     {
         $status = $_GET['status'] ?? 'active';
@@ -73,11 +80,11 @@ class ClientController extends BaseController
      * POST /api/billing/clients
      * Crea un nuevo cliente
      */
-/**
- * create method
- *
- * @return void
- */
+    /**
+     * create method
+     *
+     * @return void
+     */
     public function create()
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -116,11 +123,11 @@ class ClientController extends BaseController
      * GET /api/billing/clients/{id}
      * Obtiene información de un cliente
      */
-/**
- * getById method
- *
- * @return void
- */
+    /**
+     * getById method
+     *
+     * @return void
+     */
     public function getById($id)
     {
         $stmt = $this->db->prepare("SELECT * FROM clients WHERE id = ?");
@@ -152,11 +159,11 @@ class ClientController extends BaseController
      * PUT /api/billing/clients/{id}
      * Actualiza un cliente
      */
-/**
- * update method
- *
- * @return void
- */
+    /**
+     * update method
+     *
+     * @return void
+     */
     public function update($id)
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -206,11 +213,11 @@ class ClientController extends BaseController
      * DELETE /api/billing/clients/{id}
      * Elimina (desactiva) un cliente
      */
-/**
- * delete method
- *
- * @return void
- */
+    /**
+     * delete method
+     *
+     * @return void
+     */
     public function delete($id)
     {
         // Verificar que no tenga proyectos activos

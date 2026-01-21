@@ -137,6 +137,8 @@ class MediaController extends BaseController
      */
     public function list()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         Auth::requirePermission('module:media.view_files');
         $uploadBase = Config::get('upload_dir');
 
@@ -243,6 +245,8 @@ class MediaController extends BaseController
      */
     public function usage()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         $fileUrl = $_GET['url'] ?? '';
         if (empty($fileUrl)) {
             $this->json(['error' => 'No URL provided'], 400);
@@ -350,6 +354,8 @@ class MediaController extends BaseController
      */
     public function upload()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             $this->json(['error' => 'No file uploaded or upload error'], 400);
         }
@@ -444,6 +450,8 @@ class MediaController extends BaseController
      */
     public function delete()
     {
+        while (ob_get_level())
+            ob_end_clean(); // Ensure clean output
         Auth::requirePermission('module:media.delete_files');
         $path = $_POST['path'] ?? '';
         if (empty($path))
@@ -658,8 +666,11 @@ class MediaController extends BaseController
             'media_optimize_quality' => $quality
         ];
 
+        $adapter = Database::getInstance()->getAdapter();
+
         foreach ($settings as $key => $value) {
-            $stmt = $db->prepare("REPLACE INTO system_settings (`key`, value) VALUES (?, ?)");
+            $sql = $adapter->getUpsertSQL('system_settings', ['key' => $key, 'value' => $value], 'key');
+            $stmt = $db->prepare($sql);
             $stmt->execute([$key, $value]);
         }
 
@@ -969,7 +980,9 @@ class MediaController extends BaseController
     private function getMediaSettings()
     {
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT `key`, value FROM system_settings WHERE `key` LIKE 'media_%'");
+        $adapter = Database::getInstance()->getAdapter();
+        $keyCol = $adapter->quoteName('key');
+        $stmt = $db->query("SELECT $keyCol, value FROM system_settings WHERE $keyCol LIKE 'media_%'");
         $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         return [

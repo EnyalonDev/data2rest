@@ -7,7 +7,8 @@
         <h1 class="text-5xl font-black text-p-title italic tracking-tighter uppercase">
             {{ $lang['databases']['new_node'] }}
         </h1>
-        <p class="text-p-muted font-medium tracking-tight">{{ $lang['databases']['create_subtitle'] ?? 'Setup a new database connection for your project' }}</p>
+        <p class="text-p-muted font-medium tracking-tight">
+            {{ $lang['databases']['create_subtitle'] ?? 'Setup a new database connection for your project' }}</p>
     </header>
 
     <div class="max-w-4xl mx-auto">
@@ -30,7 +31,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-p-title uppercase italic">{{ $lang['install']['sqlite_title'] }}</h3>
+                            <h3 class="text-xl font-bold text-p-title uppercase italic">
+                                {{ $lang['install']['sqlite_title'] }}</h3>
                             <p class="text-sm text-p-muted mt-1">{{ $lang['install']['sqlite_desc'] }}</p>
                         </div>
                         <div class="check-icon hidden absolute top-4 right-4 text-primary">
@@ -53,7 +55,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-p-title uppercase italic">{{ $lang['install']['mysql_title'] }}</h3>
+                            <h3 class="text-xl font-bold text-p-title uppercase italic">
+                                {{ $lang['install']['mysql_title'] }}</h3>
                             <p class="text-sm text-p-muted mt-1">{{ $lang['install']['mysql_desc'] }}</p>
                         </div>
                         <div class="check-icon hidden absolute top-4 right-4 text-primary">
@@ -76,7 +79,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-p-title uppercase italic">{{ $lang['install']['pgsql_title'] }}</h3>
+                            <h3 class="text-xl font-bold text-p-title uppercase italic">
+                                {{ $lang['install']['pgsql_title'] }}</h3>
                             <p class="text-sm text-p-muted mt-1">{{ $lang['install']['pgsql_desc'] }}</p>
                         </div>
                         <div class="check-icon hidden absolute top-4 right-4 text-primary">
@@ -91,9 +95,11 @@
             <!-- Common Fields -->
             <div class="space-y-4">
                 <div class="flex flex-col gap-2">
-                    <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_name'] }}
+                    <label
+                        class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_name'] }}
                         *</label>
-                    <input type="text" id="name" name="name" required placeholder="{{ $lang['databases']['node_placeholder'] }}"
+                    <input type="text" id="name" name="name" required
+                        placeholder="{{ $lang['databases']['node_placeholder'] }}"
                         class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary transition-colors">
                 </div>
             </div>
@@ -106,8 +112,11 @@
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                        <h4 class="font-bold text-blue-100">{{ $lang['databases']['sqlite_db_title'] ?? 'SQLite Database' }}</h4>
-                        <p class="text-sm text-blue-200 mt-1">{{ $lang['databases']['sqlite_auto_msg'] ?? 'The database file will be created automatically in the data directory. No additional configuration needed.' }}</p>
+                        <h4 class="font-bold text-blue-100">{{ $lang['databases']['sqlite_db_title'] ?? 'SQLite Database' }}
+                        </h4>
+                        <p class="text-sm text-blue-200 mt-1">
+                            {{ $lang['databases']['sqlite_auto_msg'] ?? 'The database file will be created automatically in the data directory. No additional configuration needed.' }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -115,36 +124,43 @@
             <!-- MySQL Config -->
             <div id="mysqlConfig" class="config-section hidden space-y-6">
                 <div class="border-t border-white/10 pt-6">
-                    <h3 class="text-lg font-bold text-p-title uppercase italic mb-6">{{ $lang['databases']['mysql_settings'] ?? 'MySQL Connection Settings' }}</h3>
+                    <h3 class="text-lg font-bold text-p-title uppercase italic mb-6">
+                        {{ $lang['databases']['mysql_settings'] ?? 'MySQL Connection Settings' }}</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_host'] }} *</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_host'] }}
+                                *</label>
                             <input type="text" id="mysql_host" name="mysql_host" value="localhost" placeholder="localhost"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_port'] }}</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_port'] }}</label>
                             <input type="number" id="mysql_port" name="mysql_port" value="3306" placeholder="3306"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_name'] }}
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_name'] }}
                                 *</label>
                             <input type="text" id="mysql_database" name="mysql_database" placeholder="my_database"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_charset'] }}</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_charset'] }}</label>
                             <input type="text" id="mysql_charset" name="mysql_charset" value="utf8mb4" placeholder="utf8mb4"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_user'] }}
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_user'] }}
                                 *</label>
                             <input type="text" id="mysql_username" name="mysql_username" value="root" placeholder="root"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
@@ -166,7 +182,8 @@
                     </button>
                     <div id="testResult" class="hidden px-4 py-2 rounded-lg text-sm font-medium"></div>
                     <p class="text-xs text-amber-400/80 mt-2 font-medium">
-                        <span class="font-bold">{{ $lang['databases']['note'] ?? 'Note' }}:</span> {{ $lang['databases']['test_fail_note'] ?? 'If the database does not exist, the Connection Test will fail. You can still proceed to "Create Database" and the system will attempt to create it automatically.' }}
+                        <span class="font-bold">{{ $lang['databases']['note'] ?? 'Note' }}:</span>
+                        {{ $lang['databases']['test_fail_note'] ?? 'If the database does not exist, the Connection Test will fail. You can still proceed to "Create Database" and the system will attempt to create it automatically.' }}
                     </p>
                 </div>
             </div>
@@ -174,36 +191,43 @@
             <!-- PostgreSQL Config -->
             <div id="pgsqlConfig" class="config-section hidden space-y-6">
                 <div class="border-t border-white/10 pt-6">
-                    <h3 class="text-lg font-bold text-p-title uppercase italic mb-6">{{ $lang['databases']['pgsql_settings'] ?? 'PostgreSQL Connection Settings' }}</h3>
+                    <h3 class="text-lg font-bold text-p-title uppercase italic mb-6">
+                        {{ $lang['databases']['pgsql_settings'] ?? 'PostgreSQL Connection Settings' }}</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_host'] }} *</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_host'] }}
+                                *</label>
                             <input type="text" id="pgsql_host" name="pgsql_host" value="localhost" placeholder="localhost"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_port'] }}</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_port'] }}</label>
                             <input type="number" id="pgsql_port" name="pgsql_port" value="5432" placeholder="5432"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_name'] }}
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_name'] }}
                                 *</label>
                             <input type="text" id="pgsql_database" name="pgsql_database" placeholder="my_database"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_schema'] }}</label>
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_schema'] }}</label>
                             <input type="text" id="pgsql_schema" name="pgsql_schema" value="public" placeholder="public"
                                 class="form-input w-full bg-white/5 border-white/10 text-p-title focus:border-primary">
                         </div>
 
                         <div class="flex flex-col gap-2">
-                            <label class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_user'] }}
+                            <label
+                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ $lang['install']['db_user'] }}
                                 *</label>
                             <input type="text" id="pgsql_username" name="pgsql_username" value="postgres"
                                 placeholder="postgres"
@@ -226,7 +250,8 @@
                     </button>
                     <div id="testResultPg" class="hidden px-4 py-2 rounded-lg text-sm font-medium"></div>
                     <p class="text-xs text-amber-400/80 mt-2 font-medium">
-                        <span class="font-bold">{{ $lang['databases']['note'] ?? 'Note' }}:</span> {{ $lang['databases']['test_fail_note'] ?? 'If the database does not exist, the Connection Test will fail. You can still proceed to "Create Database" and the system will attempt to create it automatically.' }}
+                        <span class="font-bold">{{ $lang['databases']['note'] ?? 'Note' }}:</span>
+                        {{ $lang['databases']['test_fail_note'] ?? 'If the database does not exist, the Connection Test will fail. You can still proceed to "Create Database" and the system will attempt to create it automatically.' }}
                     </p>
                 </div>
             </div>
@@ -283,8 +308,10 @@
                         sqliteConfig.classList.remove('hidden');
                     } else if (type === 'mysql') {
                         mysqlConfig.classList.remove('hidden');
+                        document.getElementById('mysql_host').value = 'localhost';
                     } else if (type === 'pgsql') {
                         pgsqlConfig.classList.remove('hidden');
+                        document.getElementById('pgsql_host').value = '/tmp';
                     }
                 });
             });

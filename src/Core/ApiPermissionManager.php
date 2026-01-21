@@ -134,12 +134,13 @@ class ApiPermissionManager
     public function setPermissions($apiKeyId, $databaseId, $tableName, $permissions, $allowedIps = null)
     {
         // Check if permission already exists
+        // Use COALESCE to handle NULL comparison properly for PostgreSQL
         $stmt = $this->db->prepare("
             SELECT id FROM api_key_permissions 
             WHERE api_key_id = ? AND database_id = ? 
-            AND (table_name = ? OR (table_name IS NULL AND ? IS NULL))
+            AND COALESCE(table_name, '') = COALESCE(?, '')
         ");
-        $stmt->execute([$apiKeyId, $databaseId, $tableName, $tableName]);
+        $stmt->execute([$apiKeyId, $databaseId, $tableName]);
         $existing = $stmt->fetchColumn();
 
         $canRead = (int) ($permissions['read'] ?? 0);
