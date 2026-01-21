@@ -3,6 +3,9 @@
 namespace App\Core;
 
 use PDO;
+use App\Core\Database;
+use App\Core\Config;
+use App\Core\Auth;
 
 /**
  * API Response Cache Manager
@@ -129,17 +132,18 @@ class ApiCacheManager
             // Create cache table if not exists
             $this->ensureCacheTable();
 
-            $stmt = $this->db->prepare("
-                INSERT OR REPLACE INTO api_cache 
-                (cache_key, data, expires_at, created_at) 
-                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            ");
+            $adapter = Database::getInstance()->getAdapter();
+            $record = [
+                'cache_key' => $cacheKey,
+                'data' => json_encode($data),
+                'expires_at' => $expiresAt,
+                'created_at' => Auth::getCurrentTime()
+            ];
 
-            return $stmt->execute([
-                $cacheKey,
-                json_encode($data),
-                $expiresAt
-            ]);
+            $sql = $adapter->getUpsertSQL('api_cache', $record, 'cache_key');
+            $stmt = $this->db->prepare($sql);
+
+            return $stmt->execute(array_values($record));
         } catch (\Exception $e) {
             error_log("Cache store error: " . $e->getMessage());
             return false;
@@ -163,9 +167,9 @@ class ApiCacheManager
                 SELECT data, expires_at 
                 FROM api_cache 
                 WHERE cache_key = ? 
-                AND datetime(expires_at) > datetime('now')
+                AND expires_at > ?
             ");
-            $stmt->execute([$cacheKey]);
+            $stmt->execute([$cacheKey, Auth::getCurrentTime()]);
             $result = $stmt->fetch();
 
             if ($result) {
@@ -207,10 +211,11 @@ class ApiCacheManager
     public function clearExpired()
     {
         try {
-            $stmt = $this->db->query("
+            $stmt = $this->db->prepare("
                 DELETE FROM api_cache 
-                WHERE datetime(expires_at) <= datetime('now')
+                WHERE expires_at <= ?
             ");
+            $stmt->execute([Auth::getCurrentTime()]);
             return $stmt->rowCount();
         } catch (\Exception $e) {
             error_log("Cache clear error: " . $e->getMessage());
@@ -226,13 +231,15 @@ class ApiCacheManager
     public function getStats()
     {
         try {
-            $stmt = $this->db->query("
+            $now = Auth::getCurrentTime();
+            $stmt = $this->db->prepare("
                 SELECT 
                     COUNT(*) as total_entries,
-                    COUNT(CASE WHEN datetime(expires_at) > datetime('now') THEN 1 END) as active_entries,
-                    COUNT(CASE WHEN datetime(expires_at) <= datetime('now') THEN 1 END) as expired_entries
+                    COUNT(CASE WHEN expires_at > ? THEN 1 END) as active_entries,
+                    COUNT(CASE WHEN expires_at <= ? THEN 1 END) as expired_entries
                 FROM api_cache
             ");
+            $stmt->execute([$now, $now]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
             return ['total_entries' => 0, 'active_entries' => 0, 'expired_entries' => 0];

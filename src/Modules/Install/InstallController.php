@@ -103,23 +103,30 @@ class InstallController extends BaseController
                 $factoryConfig = $config;
 
                 // For connection test/creation, we connect to system default DB
-                $factoryConfig['database'] = ($config['type'] === 'pgsql') ? 'postgres' : (($config['type'] === 'mysql') ? 'information_schema' : $config['database']);
+                $factoryConfig['database'] = ($config['type'] === 'pgsql' || $config['type'] === 'postgresql') ? 'postgres' : (($config['type'] === 'mysql') ? 'information_schema' : $config['database']);
 
                 // Create temp adapter just for DB creation
                 $tempAdapter = \App\Core\DatabaseFactory::create($factoryConfig);
 
                 // Create Database
-                $tempAdapter->createDatabase($config['database']);
+                // Ensure createDatabase is called on the adapter instance
+                if (method_exists($tempAdapter, 'createDatabase')) {
+                    $tempAdapter->createDatabase($config['database']);
+                }
 
             } catch (\Throwable $e) {
                 // Ignore if DB already exists or connection fails
+                error_log('Install: DB Creation attempt failed: ' . $e->getMessage());
             }
 
             // Re-try connection after creation attempt
-            $adapter = \App\Core\DatabaseFactory::create($config);
-            $adapter->getConnection();
-            $adapter = \App\Core\DatabaseFactory::create($config);
-            $adapter->getConnection();
+            try {
+                $adapter = \App\Core\DatabaseFactory::create($config);
+                $adapter->getConnection();
+            } catch (\Throwable $e) {
+                // Final failure
+                throw new \Exception("Could not create or connect to database: " . $e->getMessage());
+            }
         }
     }
 
@@ -169,17 +176,29 @@ class InstallController extends BaseController
                 return;
             }
 
-            // If error isn't "db does not exist", return error
-            // Postgres: "database ... does not exist"
+            // If error is "db does not exist", return success (can_create)
+            // Postgres: "database ... does not exist" or SQLSTATE[08006]
             // MySQL: Unknown database
-            if (strpos($e->getMessage(), 'does not exist') === false && strpos($e->getMessage(), 'Unknown database') === false) {
+            if (
+                strpos($e->getMessage(), 'does not exist') !== false ||
+                strpos($e->getMessage(), 'Unknown database') !== false ||
+                strpos($e->getMessage(), 'SQLSTATE[08006]') !== false
+            ) {
+
                 $this->json([
-                    'status' => 'error',
-                    'message' => 'Error de Conexión: ' . $e->getMessage(),
-                    'debug' => $e->getMessage()
+                    'status' => 'can_create',
+                    'message' => "La base de datos '$dbName' no existe. Podemos intentar crearla.",
+                    'can_create' => true
                 ]);
                 return;
             }
+
+            $this->json([
+                'status' => 'error',
+                'message' => 'Error de Conexión: ' . $e->getMessage(),
+                'debug' => $e->getMessage()
+            ]);
+            return;
         }
 
         // 2. If we are here, DB does not exist. Try connecting to Server to see if we can create it

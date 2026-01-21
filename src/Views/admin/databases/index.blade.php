@@ -13,79 +13,20 @@
             </div>
             @if(\App\Core\Auth::hasPermission('module:databases.create_db'))
                 <div class="flex gap-3">
-                    <a href="{{ $baseUrl }}admin/databases/connections"
-                        class="btn-primary !bg-blue-600 hover:!bg-blue-700 flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Connections
-                    </a>
                     <a href="{{ $baseUrl }}admin/databases/create-form"
                         class="btn-primary flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        New Database
+                        {{ \App\Core\Lang::get('databases.new_node') }}
                     </a>
                 </div>
             @endif
         </div>
     </header>
 
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-1 space-y-8">
-            @if(\App\Core\Auth::hasPermission('module:databases.create_db'))
-                <div class="glass-card">
-                    <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter">
-                        {{ \App\Core\Lang::get('databases.new_node') }}
-                    </h2>
-                    <form action="{{ $baseUrl }}admin/databases/create" method="POST" class="space-y-4">
-                        {!! $csrf_field !!}
-                        <div class="flex flex-col gap-2">
-                            <label
-                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.node_name') }}</label>
-                            <input type="text" name="name" placeholder="{{ \App\Core\Lang::get('databases.node_placeholder') }}"
-                                required class="form-input w-full">
-                        </div>
-                        <button type="submit"
-                            class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">{{ \App\Core\Lang::get('databases.create_node') }}</button>
-                    </form>
-                </div>
-
-                <div class="glass-card">
-                    <h2 class="text-xl font-bold text-p-title mb-6 uppercase italic tracking-tighter flex items-center gap-2">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                        {{ \App\Core\Lang::get('databases.import_sql_title') }}
-                    </h2>
-                    <form action="{{ $baseUrl }}admin/databases/import" method="POST" enctype="multipart/form-data"
-                        class="space-y-4">
-                        {!! $csrf_field !!}
-                        <div class="flex flex-col gap-2">
-                            <label
-                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_node_name') }}</label>
-                            <input type="text" name="name"
-                                placeholder="{{ \App\Core\Lang::get('databases.import_node_placeholder') }}" required
-                                class="form-input w-full">
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <label
-                                class="text-[10px] font-black text-p-muted uppercase tracking-widest ml-1">{{ \App\Core\Lang::get('databases.import_file') }}</label>
-                            <input type="file" name="sql_file" accept=".sql" required class="form-input w-full text-xs">
-                        </div>
-                        <button type="submit"
-                            class="btn-primary w-full mt-2 font-black uppercase tracking-widest text-xs">{{ \App\Core\Lang::get('databases.import_btn') }}</button>
-                        <p class="text-[9px] text-p-muted italic opacity-70">{{ \App\Core\Lang::get('databases.import_help') }}
-                        </p>
-                    </form>
-                </div>
-            @endif
-        </div>
-
-        <div class="lg:col-span-2 space-y-4">
+    <section class="w-full">
+        <div class="space-y-4">
             @foreach ($databases as $db)
                 <div class="glass-card flex flex-col group overflow-hidden relative">
                     <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>

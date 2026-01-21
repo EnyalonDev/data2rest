@@ -92,11 +92,13 @@ class ApiDocsController extends BaseController
 
         // Scope databases list to project
         if ($projectId) {
-            $stmt = $db->prepare("SELECT * FROM databases WHERE project_id = ? ORDER BY name ASC");
+            $dbName = Database::getInstance()->getAdapter()->quoteName('databases');
+            $stmt = $db->prepare("SELECT * FROM $dbName WHERE project_id = ? ORDER BY name ASC");
             $stmt->execute([$projectId]);
             $databases = $stmt->fetchAll();
         } else if (Auth::isAdmin()) {
-            $databases = $db->query("SELECT * FROM databases ORDER BY name ASC")->fetchAll();
+            $dbName = Database::getInstance()->getAdapter()->quoteName('databases');
+            $databases = $db->query("SELECT * FROM $dbName ORDER BY name ASC")->fetchAll();
         } else {
             $databases = [];
         }

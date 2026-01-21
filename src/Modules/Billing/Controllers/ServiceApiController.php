@@ -105,18 +105,15 @@ class ServiceApiController extends BaseController
      */
     public function create()
     {
-        $payload = file_get_contents('php://input');
-        $debugFile = sys_get_temp_dir() . '/debug_billing.log';
-        file_put_contents($debugFile, date('Y-m-d H:i:s') . " - CREATE START - Method: " . $_SERVER['REQUEST_METHOD'] . "\n", FILE_APPEND);
-        file_put_contents($debugFile, date('Y-m-d H:i:s') . " - PAYLOAD: " . $payload . "\n", FILE_APPEND);
-
-        $input = json_decode($payload, true);
-
-        if (empty($input['name'])) {
-            $this->json(['error' => 'Nombre es requerido'], 400);
-        }
-
         try {
+        try {
+            $payload = file_get_contents('php://input');
+            $input = json_decode($payload, true);
+
+            if (empty($input['name'])) {
+                $this->json(['error' => 'Nombre es requerido'], 400);
+            }
+
             $stmt = $this->db->prepare("
                 INSERT INTO billing_services (name, description, price_monthly, price_yearly, price_one_time, price)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -131,7 +128,6 @@ class ServiceApiController extends BaseController
             ]);
 
             $id = $this->db->lastInsertId();
-            file_put_contents($debugFile, date('Y-m-d H:i:s') . " - CREATE SUCCESS - ID: $id\n", FILE_APPEND);
 
             $this->json([
                 'success' => true,
@@ -139,7 +135,6 @@ class ServiceApiController extends BaseController
                 'id' => $id
             ], 201);
         } catch (\Exception $e) {
-            file_put_contents($debugFile, date('Y-m-d H:i:s') . " - CREATE ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
             $this->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -165,7 +160,8 @@ class ServiceApiController extends BaseController
      */
     public function update($id)
     {
-        $input = json_decode(file_get_contents('php://input'), true);
+        $payload = file_get_contents('php://input');
+        $input = json_decode($payload, true);
 
         if (empty($input['name'])) {
             $this->json(['error' => 'Nombre es requerido'], 400);
@@ -177,14 +173,14 @@ class ServiceApiController extends BaseController
                 SET name = ?, description = ?, price_monthly = ?, price_yearly = ?, price_one_time = ?, price = ?
                 WHERE id = ?
             ");
-            $stmt->execute([
+            $result = $stmt->execute([
                 $input['name'],
                 $input['description'] ?? null,
                 !empty($input['price_monthly']) ? (float) $input['price_monthly'] : 0,
                 !empty($input['price_yearly']) ? (float) $input['price_yearly'] : 0,
                 !empty($input['price_one_time']) ? (float) $input['price_one_time'] : 0,
                 !empty($input['price']) ? (float) $input['price'] : 0,
-                $id
+                (int) $id
             ]);
 
             $this->json([
@@ -217,19 +213,13 @@ class ServiceApiController extends BaseController
      */
     public function delete($id)
     {
-        $debugFile = sys_get_temp_dir() . '/debug_billing.log';
-        file_put_contents($debugFile, date('Y-m-d H:i:s') . " - DELETE CALLED - ID: $id\n", FILE_APPEND);
-
         try {
             // Check if in use? Better soft delete
             $stmt = $this->db->prepare("UPDATE billing_services SET status = 'deleted' WHERE id = ?");
             $result = $stmt->execute([$id]);
 
-            file_put_contents($debugFile, date('Y-m-d H:i:s') . " - DELETE RESULT: " . ($result ? 'SUCCESS' : 'FAILED') . "\n", FILE_APPEND);
-
             $this->json(['success' => true]);
         } catch (\Exception $e) {
-            file_put_contents($debugFile, date('Y-m-d H:i:s') . " - DELETE ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
             $this->json(['error' => $e->getMessage()], 500);
         }
     }
