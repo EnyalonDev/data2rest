@@ -71,7 +71,10 @@ class DatabaseManager
         // Fetch from system database
         try {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT * FROM databases WHERE id = ?");
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+
+            $stmt = $db->prepare("SELECT * FROM $qDatabases WHERE id = ?");
             $stmt->execute([$databaseId]);
             $database = $stmt->fetch();
 
