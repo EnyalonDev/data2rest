@@ -83,6 +83,37 @@ class MediaController extends BaseController
     }
 
     /**
+     * Validates that the requested database belongs to the current active project.
+     * Prevents cross-project file access tampering.
+     */
+    private function validateProjectScope($db_id)
+    {
+        if (!$db_id)
+            return;
+
+        $activeProject = Auth::getActiveProject();
+        if (!$activeProject && !Auth::isAdmin())
+            return; // Should not happen if logged in
+        if (Auth::isAdmin() && !$activeProject)
+            return; // Admin global view
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT project_id FROM databases WHERE id = ?");
+        $stmt->execute([$db_id]);
+        $dbProjectId = $stmt->fetchColumn();
+
+        if ($dbProjectId && $dbProjectId != $activeProject) {
+            // Tampering detected or unauthorized access
+            Auth::setFlashError("Security Warning: Cross-project access denied.", 'error');
+            // We can either die or just return. Since this is often API, JSON error is best.
+            // But catching it early is good.
+            // Let's force nullify/throw to be caught? 
+            // Or better, just exit with JSON error since we are in API controller.
+            $this->json(['error' => 'Access Denied: Database does not belong to active project.'], 403);
+        }
+    }
+
+    /**
      * Display media library interface
      * 
      * Renders the main media manager UI with file browser,
@@ -144,6 +175,8 @@ class MediaController extends BaseController
 
         // Scope to Project
         $db_id = $_GET['db_id'] ?? null;
+        $this->validateProjectScope($db_id);
+        $scopePath = $this->getStoragePrefix($db_id);
         $scopePath = $this->getStoragePrefix($db_id);
         $projectBase = $uploadBase . $scopePath;
 
@@ -363,6 +396,7 @@ class MediaController extends BaseController
         Auth::requirePermission('module:media.upload'); // Check perms
         $path = $_POST['path'] ?? '';
         $db_id = $_POST['db_id'] ?? null;
+        $this->validateProjectScope($db_id);
         $path = str_replace(['..', '\\'], '', $path);
 
         $uploadBase = Config::get('upload_dir');
@@ -459,7 +493,7 @@ class MediaController extends BaseController
 
         $path = str_replace(['..', '\\'], '', $path);
         $db_id = $_POST['db_id'] ?? null;
-        $db_id = $_POST['db_id'] ?? null;
+        $this->validateProjectScope($db_id);
         $uploadBase = Config::get('upload_dir');
         $scopePath = $this->getStoragePrefix($db_id);
         $projectBase = realpath($uploadBase . $scopePath);
