@@ -5,12 +5,16 @@
 @section('styles')
     <style type="text/tailwindcss">
         .input-dark {
-                        @apply bg-black/40 border-2 border-glass-border rounded-xl px-4 py-2 text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
-                    }
-                </style>
+                            @apply bg-black/40 border-2 border-glass-border rounded-xl px-4 py-2 text-p-title focus:outline-none focus:border-primary/50 transition-all font-medium;
+                        }
+                    </style>
 @endsection
 
 @section('content')
+    <!-- 
+            API Control Panel Header 
+            Includes Analytics navigation and title.
+        -->
     <header class="mb-12 flex justify-between items-end">
         <div>
             <h1 class="text-5xl font-black text-p-title italic tracking-tighter mb-2">
@@ -31,7 +35,10 @@
     </header>
 
     <div class="grid lg:grid-cols-2 gap-8">
-        <!-- Left: API Keys -->
+        <!-- 
+                Left Column: API Keys Management 
+                Create new keys and list existing active keys.
+            -->
         <section class="glass-card flex flex-col h-full">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-xl font-black text-p-title uppercase tracking-tight">
@@ -108,7 +115,10 @@
             </div>
         </section>
 
-        <!-- Right: Database Documentation Selection -->
+        <!-- 
+                Right Column: Interactive Documentation & SDKs
+                Links to Swagger UI, Legacy Docs, and SDK downloads.
+            -->
         <section class="glass-card">
             <h2 class="text-xl font-black text-p-title uppercase tracking-tight mb-8">
                 Interactive Documentation

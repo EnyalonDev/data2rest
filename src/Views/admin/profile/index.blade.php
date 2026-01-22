@@ -1,6 +1,10 @@
 @extends('layouts.main')
 
 @section('content')
+    <!-- 
+            Profile Header 
+            Simple title and subtitle for the User Profile section.
+        -->
     <div class="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div class="flex items-center justify-between">
             <div>
@@ -16,7 +20,10 @@
         <form action="{{ $baseUrl }}admin/profile/save" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             {!! $csrf_field !!}
 
-            <!-- Sidebar: Basic Info Card -->
+            <!-- 
+                    Sidebar: Basic Info Card 
+                    ReadOnly card displaying user avatar, username, role, and metadata (ID, Member Since).
+                -->
             <div class="md:col-span-1 space-y-6">
                 <div class="glass-card flex flex-col items-center text-center p-8">
                     <div
@@ -40,7 +47,10 @@
                 </div>
             </div>
 
-            <!-- Main Form Area -->
+            <!-- 
+                    Main Form Area 
+                    Fields for editing personal information (Name, Email, Phone, Address) and Security settings (Password).
+                -->
             <div class="md:col-span-2 space-y-6">
                 <div class="glass-card p-8">
                     <div class="flex items-center gap-3 mb-8">
@@ -51,7 +61,8 @@
                             </svg>
                         </div>
                         <h3 class="text-sm font-black text-p-title uppercase tracking-widest">
-                            {{ \App\Core\Lang::get('profile.personal_info') }}</h3>
+                            {{ \App\Core\Lang::get('profile.personal_info') }}
+                        </h3>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -91,7 +102,8 @@
                                 </svg>
                             </div>
                             <h3 class="text-sm font-black text-p-title uppercase tracking-widest">
-                                {{ \App\Core\Lang::get('profile.security') }}</h3>
+                                {{ \App\Core\Lang::get('profile.security') }}
+                            </h3>
                         </div>
 
                         <div class="space-y-2 max-w-sm">

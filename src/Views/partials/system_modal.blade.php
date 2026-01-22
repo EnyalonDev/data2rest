@@ -31,6 +31,11 @@
     </div>
 </div>
 
+<!-- 
+    System Modal Scripts 
+    Handles showing, hiding, and configuring the modal dynamically.
+-->
+
 <script>
     let modalTimeout = null;
 
@@ -93,7 +98,6 @@
             confirmBtn.onclick = () => {
                 if (options.onConfirm) options.onConfirm();
                 closeModal();
-                location.reload();
             };
         }
 
@@ -133,7 +137,6 @@
             modal.classList.add('hidden');
             modalTimeout = null;
         }, 300);
-        location.reload();
     }
 
     // Auto-show flash message for ALL types
@@ -141,6 +144,7 @@
     $fm = \App\Core\Auth::getFlashMsg();
     @endphp
     @if($fm)
+        <!-- Auto-show Flash Message if present in session -->
         document.addEventListener('DOMContentLoaded', () => {
             showModal({
                 title: '{{ $fm['type'] === 'success' ? 'Operación Exitosa' : ($fm['type'] === 'error' ? 'Error de Sistema' : 'Notificación') }}',

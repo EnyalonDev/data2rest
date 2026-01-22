@@ -3,6 +3,11 @@
 @section('title', ($id ? \App\Core\Lang::get('crud.edit') : \App\Core\Lang::get('crud.new')) . ' ' . ucfirst($ctx['table']))
 
 @section('content')
+@section('content')
+<!-- 
+    CRUD Form Header 
+    Displays the operation type (New/Edit), table name, and database name.
+-->
 <header class="mb-12 text-center">
     <h1 class="text-4xl font-black text-p-title italic tracking-tighter mb-2">
         {{ $id ? \App\Core\Lang::get('crud.edit') : \App\Core\Lang::get('crud.new') }}
@@ -23,6 +28,10 @@
 </div>
 @endif
 
+<!-- 
+    Main Form Container 
+    Encapsulates the dynamic form generation based on table schema.
+-->
 <section class="form-container">
     <form action="{{ $baseUrl }}admin/crud/save" method="POST" id="crud-form" enctype="multipart/form-data" class="w-full">
         {!! $csrf_field !!}
@@ -315,6 +324,11 @@
     </form>
 </section>
 
+<!-- 
+    Media Gallery Modal 
+    A hidden modal used for selecting images/files for 'image' and 'gallery' fields.
+    Includes search, filtering, and upload capabilities.
+-->
 <!-- Media Modal -->
 <div id="mediaModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xl transition-all">
     <div class="glass-card w-full h-[90vh] flex flex-col shadow-2xl ring-1 ring-white/10 relative">

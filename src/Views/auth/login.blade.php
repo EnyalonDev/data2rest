@@ -17,6 +17,10 @@
                 Database Gateway</p>
         </div>
 
+        <!-- 
+                Login Form Container 
+                Displays error messages and the authentication form.
+            -->
         <div class="glass-card border-t-4 border-primary">
             @if(isset($error))
                 <div

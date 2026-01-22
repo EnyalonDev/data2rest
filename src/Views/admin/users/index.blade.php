@@ -3,6 +3,10 @@
 @section('title', \App\Core\Lang::get('users_list.title'))
 
 @section('content')
+    <!-- 
+        Users Page Header
+        Includes Title, Subtitle, Search Form, and Action Buttons (Policies, Groups, Invite).
+    -->
     <header class="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
             <h1 class="text-5xl font-black text-p-title italic tracking-tighter mb-2">
@@ -13,16 +17,19 @@
         <div class="flex flex-wrap justify-end gap-4 w-full md:w-auto">
             <!-- Search Form -->
             <form action="" method="GET" class="relative group min-w-[300px]">
-                <input type="text" name="search" value="{{ $_GET['search'] ?? '' }}" 
+                <input type="text" name="search" value="{{ $_GET['search'] ?? '' }}"
                     placeholder="Buscar usuario, nombre o email..."
                     class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-10 text-sm text-p-title focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none">
-                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-p-muted group-focus-within:text-primary transition-colors">
+                <div
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-p-muted group-focus-within:text-primary transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
                 @if(isset($_GET['search']) && !empty($_GET['search']))
-                    <a href="{{ $baseUrl }}admin/users" class="absolute right-3 top-1/2 -translate-y-1/2 text-p-muted hover:text-red-500 transition-colors">
+                    <a href="{{ $baseUrl }}admin/users"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-p-muted hover:text-red-500 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -35,6 +42,11 @@
                     class="btn-primary !bg-slate-800 !text-slate-300 !py-2.5">{{ \App\Core\Lang::get('users_list.access_policies') }}</a>
             @endif
 
+            @if(\App\Core\Auth::hasPermission('module:users.manage_groups'))
+                <a href="{{ $baseUrl }}admin/groups"
+                    class="btn-primary !bg-slate-800 !text-slate-300 !py-2.5">{{ \App\Core\Lang::get('common.groups') }}</a>
+            @endif
+
             @if(\App\Core\Auth::hasPermission('module:users.invite_users'))
                 <a href="{{ $baseUrl }}admin/users/new"
                     class="btn-primary !py-2.5 px-6 font-black uppercase tracking-widest text-[11px]">{{ \App\Core\Lang::get('users_list.create') }}</a>
@@ -42,6 +54,10 @@
         </div>
     </header>
 
+    <!-- 
+        User List Table 
+        Displays the list of users with their role, group, and status.
+    -->
     <section class="glass-card overflow-hidden !p-0 shadow-2xl">
         <table class="w-full text-left">
             <thead>
@@ -67,7 +83,8 @@
                                     <p class="font-bold text-p-title">
                                         {{ $u['public_name'] ?: $u['username'] }}
                                         @if($u['public_name'])
-                                            <span class="text-[9px] text-p-muted font-mono opacity-50 ml-1">(@ {{ $u['username'] }})</span>
+                                            <span class="text-[9px] text-p-muted font-mono opacity-50 ml-1">(@
+                                                {{ $u['username'] }})</span>
                                         @endif
                                     </p>
                                     <p class="text-[10px] text-p-muted font-medium">
@@ -148,6 +165,10 @@
             });
         }
 
+        /**
+         * Show Access Denied Modal
+         * Helper to show a modal when a restricted action is simulated or rejected.
+         */
         function showAccessDenied(action) {
             showModal({
                 title: '{!! addslashes(\App\Core\Lang::get('system_modal.access_restricted')) !!}',

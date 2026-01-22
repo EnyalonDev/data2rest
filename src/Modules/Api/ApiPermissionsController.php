@@ -49,10 +49,22 @@ class ApiPermissionsController extends BaseController
             $this->redirect('admin/api');
         }
 
-        // Get all databases
+
+        // Get all databases scoped to project
+        $projectId = Auth::getActiveProject();
         $adapter = Database::getInstance()->getAdapter();
         $tableDatabases = $adapter->quoteName('databases');
-        $databases = $db->query("SELECT id, name FROM $tableDatabases ORDER BY name")->fetchAll();
+
+        if ($projectId) {
+            $stmtDb = $db->prepare("SELECT id, name FROM $tableDatabases WHERE project_id = ? ORDER BY name");
+            $stmtDb->execute([$projectId]);
+            $databases = $stmtDb->fetchAll();
+        } else if (Auth::isAdmin()) {
+            // Logic for superadmin seeing all DBs (or force project selection)
+            $databases = $db->query("SELECT id, name FROM $tableDatabases ORDER BY name")->fetchAll();
+        } else {
+            $databases = [];
+        }
 
         // Get current permissions
         $permManager = new ApiPermissionManager();
@@ -95,6 +107,25 @@ class ApiPermissionsController extends BaseController
         if (!$apiKeyId || !$databaseId) {
             Auth::setFlashError('Missing required fields');
             $this->redirect('admin/api');
+        }
+
+        // Security: Verify database belongs to active project
+        $projectId = Auth::getActiveProject();
+        $db = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $tableDatabases = $adapter->quoteName('databases');
+
+        if ($projectId) {
+            $stmtCheck = $db->prepare("SELECT id FROM $tableDatabases WHERE id = ? AND project_id = ?");
+            $stmtCheck->execute([$databaseId, $projectId]);
+            if (!$stmtCheck->fetch()) {
+                Auth::setFlashError('Access Denied: Invalid Database for this Project');
+                $this->redirect('admin/api/permissions?key_id=' . $apiKeyId);
+            }
+        } else if (!Auth::isAdmin()) {
+            // Non-admin without project context cannot assign permissions
+            Auth::setFlashError('Access Denied: No active project context');
+            $this->redirect('admin/api/permissions?key_id=' . $apiKeyId);
         }
 
         $permissions = [

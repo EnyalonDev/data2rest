@@ -147,6 +147,55 @@ class CrudController extends BaseController
         $stmt->execute([$db_id, $table]);
         $fields = $stmt->fetchAll();
 
+        // Ensure PK is correctly identified even if using stored config
+        if (!empty($fields)) {
+            try {
+                $adapter = \App\Core\DatabaseManager::getAdapter($database);
+                $targetDb = $adapter->getConnection();
+                $dbType = $adapter->getType();
+                $realPk = 'id';
+
+                if ($dbType === 'sqlite') {
+                    $stmtCols = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($table) . ")");
+                    $cols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($cols as $c) {
+                        if ($c['pk'] == 1) { // SQLite returns 1 for PK
+                            $realPk = $c['name'];
+                            break;
+                        }
+                    }
+                } elseif ($dbType === 'mysql') {
+                    $stmtCols = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($table));
+                    $cols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($cols as $c) {
+                        if ($c['Key'] === 'PRI') {
+                            $realPk = $c['Field'];
+                            break;
+                        }
+                    }
+                } elseif ($dbType === 'pgsql') {
+                    $cols = $adapter->getColumns($table);
+                    foreach ($cols as $c) {
+                        if (!empty($c['pk'])) {
+                            $realPk = $c['name'];
+                            break;
+                        }
+                    }
+                }
+
+                // Update fields array with correct PK info
+                foreach ($fields as &$f) {
+                    if ($f['field_name'] === $realPk) {
+                        $f['is_pk'] = 1;
+                    } else {
+                        $f['is_pk'] = 0;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Keep default behavior on error
+            }
+        }
+
         // Fallback: If no fields are configured, show all columns from target table
         if (empty($fields)) {
             try {
@@ -668,11 +717,12 @@ LIMIT 1");
 
     public function delete()
     {
-        $id = $_POST['id'] ?? $_GET['id'] ?? null;
-        $db_id = $_POST['db_id'] ?? $_GET['db_id'] ?? null;
+        $id = isset($_POST['id']) ? trim($_POST['id']) : (isset($_GET['id']) ? trim($_GET['id']) : null);
+        $db_id = isset($_POST['db_id']) ? trim($_POST['db_id']) : (isset($_GET['db_id']) ? trim($_GET['db_id']) : null);
 
         $ctx = $this->getContext('crud_delete');
         $pk = $this->getPrimaryKey($ctx['fields']);
+
 
         if ($id) {
             try {
@@ -684,12 +734,15 @@ LIMIT 1");
                 $qTable = $adapter->quoteName($tableName);
                 $qPk = $adapter->quoteName($pk);
 
+                error_log(sprintf("[CrudController::delete] DB: %s, Table: %s, PK: %s, ID: '%s'", $ctx['database']['name'], $tableName, $pk, $id));
+
                 // Data Versioning
                 $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE $qPk = ?");
                 $stmtFetch->execute([$id]);
                 $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
                 if ($oldData) {
+                    error_log("CRUD DELETE DEBUG: Record found, proceeding with backup.");
                     try {
                         $sysDb = Database::getInstance()->getConnection();
                         $stmtLog = $sysDb->prepare("INSERT INTO data_versions (database_id, table_name, record_id, action, old_data, new_data, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -702,25 +755,36 @@ LIMIT 1");
                             null,
                             $_SESSION['user_id'] ?? 0
                         ]);
-                    } catch (\Exception $e) { /* Ignore log failure */
+                    } catch (\Exception $e) {
+                        error_log("CRUD DELETE DEBUG: Backup failed: " . $e->getMessage());
                     }
+                } else {
+                    error_log("CRUD DELETE DEBUG: Record NOT found before delete.");
                 }
 
                 $stmt = $targetDb->prepare("DELETE FROM $qTable WHERE $qPk = ?");
                 $stmt->execute([$id]);
+                $count = $stmt->rowCount(); // Check affected rows
 
-                Auth::setFlashError("Registro eliminado exitosamente.", 'success');
-                Logger::log('DELETE_RECORD', ['table' => $tableName, 'id' => $id], $ctx['db_id']);
+                error_log("CRUD DELETE DEBUG: Deletion executed. Rows affected: $count");
 
-                // Update metadata timestamps
-                $this->updateMetadata($ctx['db_id'], $ctx['table']);
+                if ($count > 0) {
+                    Auth::setFlashError("Registro eliminado exitosamente.", 'success');
+                    Logger::log('DELETE_RECORD', ['table' => $tableName, 'id' => $id, 'rows_affected' => $count], $ctx['db_id']);
 
-                // Invalidate API Cache for this table
-                error_log("CRUD DELETE: Invalidating Cache");
-                $cacheManager = new ApiCacheManager();
-                $cacheManager->invalidate("db_{$ctx['db_id']}_table_{$tableName}");
+                    // Update metadata timestamps
+                    $this->updateMetadata($ctx['db_id'], $ctx['table']);
+
+                    // Invalidate API Cache for this table
+                    error_log("CRUD DELETE: Invalidating Cache");
+                    $cacheManager = new ApiCacheManager();
+                    $cacheManager->invalidate("db_{$ctx['db_id']}_table_{$tableName}");
+                } else {
+                    Auth::setFlashError("No se pudo eliminar el registro (No encontrado o ya eliminado).", 'warning');
+                }
 
             } catch (\Exception $e) {
+                error_log("CRUD DELETE DEBUG: Exception caught: " . $e->getMessage());
                 Auth::setFlashError("Error eliminando registro: " . $e->getMessage(), 'error');
             }
         }
