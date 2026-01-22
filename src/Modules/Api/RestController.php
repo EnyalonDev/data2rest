@@ -169,8 +169,10 @@ class RestController extends BaseController
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
 
         $sysDb = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $qDatabases = $adapter->quoteName('databases');
         // Support finding by ID or by name
-        $stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ? OR name = ? OR REPLACE(LOWER(name), ' ', '_') = ?");
+        $stmt = $sysDb->prepare("SELECT * FROM $qDatabases WHERE id = ? OR name = ? OR REPLACE(LOWER(name), ' ', '_') = ?");
         $stmt->execute([$db_id, $db_id, strtolower($db_id)]);
         $database = $stmt->fetch();
 
@@ -467,7 +469,9 @@ class RestController extends BaseController
 
         // Fallback to searching in actual table schema
         try {
-            $db_stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ?");
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+            $db_stmt = $sysDb->prepare("SELECT * FROM $qDatabases WHERE id = ?");
             $db_stmt->execute([$db_id]);
             $database_config = $db_stmt->fetch();
             if (!$database_config)
@@ -547,7 +551,9 @@ class RestController extends BaseController
         // Webhook Trigger
         try {
             $sysDb = Database::getInstance()->getConnection();
-            $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+            $projectStmt = $sysDb->prepare("SELECT project_id FROM $qDatabases WHERE id = ?");
             $projectStmt->execute([$db_id]);
             $projectId = $projectStmt->fetchColumn();
 
@@ -642,7 +648,9 @@ class RestController extends BaseController
         // Webhook Trigger
         try {
             $sysDb = Database::getInstance()->getConnection();
-            $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+            $projectStmt = $sysDb->prepare("SELECT project_id FROM $qDatabases WHERE id = ?");
             $projectStmt->execute([$db_id]);
             $projectId = $projectStmt->fetchColumn();
 
@@ -708,7 +716,9 @@ class RestController extends BaseController
         try {
             if ($oldData) {
                 $sysDb = Database::getInstance()->getConnection();
-                $projectStmt = $sysDb->prepare("SELECT project_id FROM databases WHERE id = ?");
+                $adapter = Database::getInstance()->getAdapter();
+                $qDatabases = $adapter->quoteName('databases');
+                $projectStmt = $sysDb->prepare("SELECT project_id FROM $qDatabases WHERE id = ?");
                 $projectStmt->execute([$db_id]);
                 $projectId = $projectStmt->fetchColumn();
 
@@ -830,7 +840,10 @@ class RestController extends BaseController
 
         // Get database
         $sysDb = Database::getInstance()->getConnection();
-        $stmt = $sysDb->prepare("SELECT * FROM databases WHERE id = ? OR name = ?");
+        $sysDb = Database::getInstance()->getConnection();
+        $adapter = Database::getInstance()->getAdapter();
+        $qDatabases = $adapter->quoteName('databases');
+        $stmt = $sysDb->prepare("SELECT * FROM $qDatabases WHERE id = ? OR name = ?");
         $stmt->execute([$db_id, $db_id]);
         $database = $stmt->fetch();
 
