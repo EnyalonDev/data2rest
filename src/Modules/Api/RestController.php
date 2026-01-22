@@ -307,22 +307,22 @@ class RestController extends BaseController
         $versionManager = new ApiVersionManager();
         $versionManager->setVersionHeaders();
 
-        // Phase 2: Cache Check (Only for GET)
-        $cacheManager = new ApiCacheManager();
-        $endpoint = "db_{$db_id}_table_{$table}" . ($id ? "_id_{$id}" : "_list");
-        $cacheKey = $cacheManager->getCacheKey($endpoint, $params);
-        $cachedResponse = $cacheManager->get($cacheKey);
+        // Phase 2: Cache Check (DISABLED as per user request for fresh data)
+        // $cacheManager = new ApiCacheManager();
+        // $endpoint = "db_{$db_id}_table_{$table}" . ($id ? "_id_{$id}" : "_list");
+        // $cacheKey = $cacheManager->getCacheKey($endpoint, $params);
+        // $cachedResponse = $cacheManager->get($cacheKey);
 
-        if ($cachedResponse) {
-            $etag = $cacheManager->generateETag($cachedResponse);
-            if ($cacheManager->isClientCacheValid($etag)) {
-                $cacheManager->send304NotModified();
-            }
-            $cacheManager->setCacheHeaders($etag);
-            // Ensure response is consistent with version
-            $this->json($versionManager->transformResponse($cachedResponse));
-            return;
-        }
+        // if ($cachedResponse) {
+        //     $etag = $cacheManager->generateETag($cachedResponse);
+        //     if ($cacheManager->isClientCacheValid($etag)) {
+        //         $cacheManager->send304NotModified();
+        //     }
+        //     $cacheManager->setCacheHeaders($etag);
+        //     // Ensure response is consistent with version
+        //     $this->json($versionManager->transformResponse($cachedResponse));
+        //     return;
+        // }
 
         // 1. Base Select and Joins
         $selectFields = ["t.*"];
@@ -375,10 +375,10 @@ class RestController extends BaseController
             if (!$result)
                 $this->json(['error' => 'Record not found'], 404);
 
-            // Phase 2: Save to Cache
-            $cacheManager->store($cacheKey, $result);
-            $etag = $cacheManager->generateETag($result);
-            $cacheManager->setCacheHeaders($etag);
+            // Phase 2: Save to Cache (DISABLED)
+            // $cacheManager->store($cacheKey, $result);
+            // $etag = $cacheManager->generateETag($result);
+            // $cacheManager->setCacheHeaders($etag);
 
             $this->json($versionManager->transformResponse($result));
         } else {
@@ -441,10 +441,10 @@ class RestController extends BaseController
                 'data' => $results
             ];
 
-            // Phase 2: Save to Cache
-            $cacheManager->store($cacheKey, $response);
-            $etag = $cacheManager->generateETag($response);
-            $cacheManager->setCacheHeaders($etag);
+            // Phase 2: Save to Cache (DISABLED)
+            // $cacheManager->store($cacheKey, $response);
+            // $etag = $cacheManager->generateETag($response);
+            // $cacheManager->setCacheHeaders($etag);
 
             $this->json($versionManager->transformResponse($response));
         }
@@ -903,19 +903,20 @@ class RestController extends BaseController
 
         // Attempt to capture API Key ID even if not fully authenticated yet
         $apiKeyId = $this->apiKeyData['id'] ?? null;
-        
+
         // If not authenticated, try to find the key provided in headers to log "Attempted Access"
         if (!$apiKeyId) {
             $headers = function_exists('getallheaders') ? getallheaders() : [];
             $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
-            
+
             if ($apiKey) {
                 try {
                     $db = Database::getInstance()->getConnection();
                     $stmt = $db->prepare("SELECT id FROM api_keys WHERE key_value = ?");
                     $stmt->execute([$apiKey]);
                     $apiKeyId = $stmt->fetchColumn();
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
         }
 
@@ -941,7 +942,7 @@ class RestController extends BaseController
         } catch (\Exception $e) {
             // Ignore logging errors to prevent API failure
         }
-        
+
         // CSV/Excel Export (Phase 3)
         if (isset($_GET['format']) && $status == 200 && isset($data['data'])) {
             $format = strtolower($_GET['format']);
