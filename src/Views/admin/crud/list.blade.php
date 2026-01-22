@@ -97,6 +97,15 @@
 @endsection
 
 @section('content')
+    @php
+        $pk = 'id';
+        foreach ($ctx['fields'] as $f) {
+            if (!empty($f['is_pk'])) {
+                $pk = $f['field_name'];
+                break;
+            }
+        }
+    @endphp
     <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
         <div>
             <div class="flex items-center gap-4 mb-2">
@@ -331,7 +340,7 @@
                                 <td class="px-8 py-6 sticky-col group-hover:bg-p-bg/50 transition-colors">
                                     <div class="flex justify-end gap-3 opacity-60 group-hover:opacity-100 transition-all">
                                         @if(\App\Core\Auth::hasPermission('module:databases.crud_update'))
-                                            <a href="{{ $baseUrl }}admin/crud/edit?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&id={{ $row['id'] }}"
+                                            <a href="{{ $baseUrl }}admin/crud/edit?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&id={{ $row[$pk] ?? '' }}"
                                                 class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all shadow-sm hover:shadow-md"
                                                 title="{{ \App\Core\Lang::get('common.edit') }}"><svg class="w-4 h-4" fill="none"
                                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -342,7 +351,7 @@
                                         @endif
 
                                         @if(\App\Core\Auth::hasPermission('module:databases.crud_delete'))
-                                            <button onclick="confirmRecordDelete('{{ $row['id'] }}')"
+                                            <button onclick="confirmRecordDelete('{{ $row[$pk] ?? '' }}')"
                                                 class="p-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-red-500 hover:bg-red-500/10 transition-all shadow-sm hover:shadow-md"
                                                 title="{{ \App\Core\Lang::get('common.delete') }}"><svg class="w-4 h-4" fill="none"
                                                     stroke="currentColor" viewBox="0 0 24 24">
