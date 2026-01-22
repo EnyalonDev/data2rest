@@ -110,6 +110,8 @@ class CrudController extends BaseController
         $stmt->execute([$db_id]);
         $database = $stmt->fetch();
 
+        error_log("getContext: DB Lookup Result: " . ($database ? 'Found' : 'Null'));
+
         // --- PATH SELF-HEALING ---
         // Fix issues where absolute paths from local dev don't match server paths
         if ($database && !file_exists($database['path'])) {
@@ -156,26 +158,41 @@ class CrudController extends BaseController
                 if ($dbType === 'sqlite') {
                     $stmtCols = $targetDb->query("PRAGMA table_info(" . $adapter->quoteName($table) . ")");
                     $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    // SQLite PRAGMA returns 'name' and 'pk' (1/0)
+                    foreach ($columns as &$c) {
+                        $c['is_pk'] = $c['pk'] ?? 0;
+                    }
                 } elseif ($dbType === 'mysql') {
                     $stmtCols = $targetDb->query("SHOW COLUMNS FROM " . $adapter->quoteName($table));
                     $mysqlCols = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    $columns = [];
                     foreach ($mysqlCols as $mCol) {
-                        $columns[] = ['name' => $mCol['Field'], 'type' => $mCol['Type']];
+                        $columns[] = [
+                            'name' => $mCol['Field'],
+                            'type' => $mCol['Type'],
+                            'is_pk' => ($mCol['Key'] === 'PRI') ? 1 : 0
+                        ];
                     }
                 } elseif ($dbType === 'pgsql') {
-                    $stmtCols = $targetDb->query($adapter->getTableStructureSQL($table));
-                    $columns = $stmtCols->fetchAll(PDO::FETCH_ASSOC);
+                    // Use adapter getColumns which has robust PK detection logic
+                    $columns = $adapter->getColumns($table);
+                    // Adapter returns 'name', 'type', 'pk' (1/0)
+                    foreach ($columns as &$c) {
+                        $c['is_pk'] = $c['pk'] ?? 0;
+                    }
                 }
 
                 foreach ($columns as $col) {
+                    $isPk = !empty($col['is_pk']);
                     $fields[] = [
                         'field_name' => $col['name'],
                         'data_type' => $col['type'],
                         'view_type' => 'text',
                         'is_visible' => 1,
-                        'is_editable' => ($col['name'] !== 'id') ? 1 : 0,
+                        'is_editable' => !$isPk ? 1 : 0,
                         'is_required' => 0,
-                        'is_foreign_key' => 0
+                        'is_foreign_key' => 0,
+                        'is_pk' => $isPk ? 1 : 0
                     ];
                 }
             } catch (\Exception $e) {
@@ -637,15 +654,26 @@ LIMIT 1");
      *
      * @return void
      */
+    /**
+     * Helper to find primary key column from fields config
+     */
+    private function getPrimaryKey($fields)
+    {
+        foreach ($fields as $f) {
+            if (!empty($f['is_pk']))
+                return $f['field_name'];
+        }
+        return 'id';
+    }
+
     public function delete()
     {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
         $db_id = $_POST['db_id'] ?? $_GET['db_id'] ?? null;
 
-        // Log for diagnosis
-        error_log("CRUD DELETE - Attempting ID: $id on DB: $db_id");
-
         $ctx = $this->getContext('crud_delete');
+        $pk = $this->getPrimaryKey($ctx['fields']);
+
         if ($id) {
             try {
                 $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
@@ -653,10 +681,11 @@ LIMIT 1");
                 $targetDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $ctx['table']);
+                $qTable = $adapter->quoteName($tableName);
+                $qPk = $adapter->quoteName($pk);
 
                 // Data Versioning
-                $qTable = $adapter->quoteName($tableName);
-                $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE id = ?");
+                $stmtFetch = $targetDb->prepare("SELECT * FROM $qTable WHERE $qPk = ?");
                 $stmtFetch->execute([$id]);
                 $oldData = $stmtFetch->fetch(PDO::FETCH_ASSOC);
 
@@ -677,8 +706,7 @@ LIMIT 1");
                     }
                 }
 
-                $qTable = $adapter->quoteName($tableName);
-                $stmt = $targetDb->prepare("DELETE FROM $qTable WHERE id = ?");
+                $stmt = $targetDb->prepare("DELETE FROM $qTable WHERE $qPk = ?");
                 $stmt->execute([$id]);
 
                 Auth::setFlashError("Registro eliminado exitosamente.", 'success');
@@ -688,8 +716,10 @@ LIMIT 1");
                 $this->updateMetadata($ctx['db_id'], $ctx['table']);
 
                 // Invalidate API Cache for this table
+                error_log("CRUD DELETE: Invalidating Cache");
                 $cacheManager = new ApiCacheManager();
                 $cacheManager->invalidate("db_{$ctx['db_id']}_table_{$tableName}");
+
             } catch (\Exception $e) {
                 Auth::setFlashError("Error eliminando registro: " . $e->getMessage(), 'error');
             }
