@@ -3,6 +3,10 @@
 @section('title', \App\Core\Lang::get('databases.title'))
 
 @section('content')
+    <!-- 
+            Database Management Header 
+            Contains title, subtitle, and "New Database" button.
+        -->
     <header class="mb-12">
         <div class="flex items-center justify-between">
             <div>
@@ -25,6 +29,10 @@
         </div>
     </header>
 
+    <!-- 
+            Database Grid
+            Displays a list of configured databases as cards with their status and actions.
+        -->
     <section class="w-full">
         <div class="space-y-4">
             @foreach ($databases as $db)

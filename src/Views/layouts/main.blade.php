@@ -2,6 +2,10 @@
 <html lang="{{ \App\Core\Lang::current() }}" class="dark">
 
 <head>
+    <!-- 
+        Main Layout Header 
+        Contains meta tags, title yield, Google Fonts, and TailwindCSS CDN.
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Data2Rest')</title>
@@ -196,7 +200,10 @@
 </head>
 
 <body class="selection:bg-primary/30">
-    <!-- Navbar -->
+    <!-- 
+        Navigation Bar 
+        Sticky navbar containing logo, breadcrumbs, project switcher, search, language toggle, and theme toggle.
+    -->
     <nav style="background-color: var(--p-nav);"
         class="fixed top-0 w-full h-16 md:h-20 backdrop-blur-lg border-b border-glass-border z-50 flex items-center justify-between px-4 md:px-8">
         <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
@@ -434,6 +441,10 @@
         }
     </script>
 
+    <!-- 
+        Main Content Area 
+        Yields the content from individual views.
+    -->
     <main class="container mx-auto pt-32 pb-20 px-6">
         @yield('content')
 
@@ -459,68 +470,68 @@
                     </button>
                 </div>
                 <script>
-                    window.devClearCache = function() {
+                    window.devClearCache = function () {
                         fetch('{{ $baseUrl }}admin/system/clear-cache', {
                             method: 'POST',
-                            headers: { 
+                            headers: {
                                 'X-CSRF-TOKEN': '{{ $csrf_token ?? "" }}',
                                 'Content-Type': 'application/json'
                             }
                         })
-                        .then(res => {
-                            if (!res.ok) throw new Error('Network response was not ok');
-                            return res.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                if (typeof showModal === 'function') {
-                                    showModal({
-                                        title: '{{ $lang['dashboard']['cache_modal_title'] ?? 'Cache Cleared' }}',
-                                        message: '{{ $lang['dashboard']['cache_modal_msg'] ?? 'System cache has been successfully cleared.' }}',
-                                        type: 'success'
-                                    });
-                                } else {
-                                    alert('{{ $lang['dashboard']['cache_modal_msg'] ?? 'System cache has been successfully cleared.' }}');
-                                }
-                            } else {
-                                alert('Error clearing cache: ' + (data.message || 'Unknown error'));
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            alert('Error: ' + err.message);
-                        });
-                    };
-
-                    window.devClearSessions = function() {
-                        const confirmAction = () => {
-                            fetch('{{ $baseUrl }}admin/system/clear-sessions', {
-                                method: 'POST',
-                                headers: { 
-                                    'X-CSRF-TOKEN': '{{ $csrf_token ?? "" }}',
-                                    'Content-Type': 'application/json' 
-                                }
-                            })
                             .then(res => {
                                 if (!res.ok) throw new Error('Network response was not ok');
                                 return res.json();
                             })
                             .then(data => {
                                 if (data.success) {
-                                    const msg = '{{ $lang['dashboard']['sessions_cleared_msg'] ?? ':count sessions cleared' }}'.replace(':count', data.cleared);
                                     if (typeof showModal === 'function') {
-                                        showModal({ title: 'Sessions Cleared', message: msg, type: 'success' });
+                                        showModal({
+                                            title: '{{ $lang['dashboard']['cache_modal_title'] ?? 'Cache Cleared' }}',
+                                            message: '{{ $lang['dashboard']['cache_modal_msg'] ?? 'System cache has been successfully cleared.' }}',
+                                            type: 'success'
+                                        });
                                     } else {
-                                        alert(msg);
+                                        alert('{{ $lang['dashboard']['cache_modal_msg'] ?? 'System cache has been successfully cleared.' }}');
                                     }
                                 } else {
-                                    alert('Error clearing sessions: ' + (data.message || 'Unknown error'));
+                                    alert('Error clearing cache: ' + (data.message || 'Unknown error'));
                                 }
                             })
                             .catch(err => {
                                 console.error(err);
                                 alert('Error: ' + err.message);
                             });
+                    };
+
+                    window.devClearSessions = function () {
+                        const confirmAction = () => {
+                            fetch('{{ $baseUrl }}admin/system/clear-sessions', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ $csrf_token ?? "" }}',
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                                .then(res => {
+                                    if (!res.ok) throw new Error('Network response was not ok');
+                                    return res.json();
+                                })
+                                .then(data => {
+                                    if (data.success) {
+                                        const msg = '{{ $lang['dashboard']['sessions_cleared_msg'] ?? ':count sessions cleared' }}'.replace(':count', data.cleared);
+                                        if (typeof showModal === 'function') {
+                                            showModal({ title: 'Sessions Cleared', message: msg, type: 'success' });
+                                        } else {
+                                            alert(msg);
+                                        }
+                                    } else {
+                                        alert('Error clearing sessions: ' + (data.message || 'Unknown error'));
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    alert('Error: ' + err.message);
+                                });
                         };
 
                         if (typeof showModal === 'function') {
@@ -602,6 +613,10 @@
         </footer>
     </main>
 
+    <!-- 
+        Footer Scripts 
+        Includes global scripts like clock synchronization and partial inclusions.
+    -->
     <script>
         // Footer Clock Synchronization
         (function () {

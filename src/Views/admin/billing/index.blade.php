@@ -4,6 +4,10 @@
 
 @section('content')
     <!-- Header Section -->
+    <!-- 
+            Billing Header 
+            Title, animated badge, and description.
+        -->
     <header class="text-center mb-10 md:mb-16 relative">
         <div
             class="absolute -top-10 md:-top-20 left-1/2 -translate-x-1/2 w-64 md:w-96 h-64 md:h-96 bg-emerald-500/10 blur-[80px] md:blur-[120px] rounded-full -z-10">
@@ -21,7 +25,10 @@
         </p>
     </header>
 
-    <!-- Financial Summary Cards -->
+    <!-- 
+            Financial Summary Cards 
+            Three metrics: Paid (Emerald), Pending (Amber), Overdue (Red).
+        -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
         <!-- Paid Installments -->
         <div
@@ -71,7 +78,10 @@
         </div>
     </div>
 
-    <!-- Charts Section -->
+    <!-- 
+            Financial Charts 
+            Visual representation of Income by Month and Installments Status.
+        -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
         <!-- Income by Month Chart -->
         <div class="glass-card !p-8 border-t-4 border-emerald-500/30 relative overflow-hidden group">
@@ -112,7 +122,10 @@
         </div>
     </div>
 
-    <!-- Upcoming & Overdue Installments -->
+    <!-- 
+            Installments Lists 
+            Upcoming deadlines (Amber) and Overdue items (Red) requiring attention.
+        -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
         <!-- Upcoming Installments -->
         <div class="glass-card !p-8 border-t-4 border-amber-500/30">

@@ -3,6 +3,10 @@
 @section('title', 'System Backups')
 
 @section('content')
+    <!-- 
+            Backups Header 
+            Title, Subtitle, Configuration Button, and Create Backup Action.
+        -->
     <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-3xl font-black text-p-title tracking-tight mb-2">System Backups</h1>
@@ -35,6 +39,10 @@
         </div>
     </header>
 
+    <!-- 
+            Backups List 
+            Grid of available backup files with actions to Upload to Cloud, Download, or Delete.
+        -->
     <div class="grid grid-cols-1 gap-6">
         @forelse($backups as $backup)
             <div
@@ -94,7 +102,10 @@
         @endforelse
     </div>
 
-    <!-- Config Modal -->
+    <!-- 
+            Configuration Modal 
+            Hidden modal to configure the Google Script URL for cloud sync.
+        -->
     <div id="config-modal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         <div class="glass-card w-full max-w-lg shadow-2xl border-2 border-white/10">

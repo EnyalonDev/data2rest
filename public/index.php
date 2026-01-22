@@ -142,6 +142,11 @@ $router->add('POST', '/admin/databases/import', 'Database\\DatabaseController@im
 $router->add('GET', '/admin/databases/export', 'Database\\DatabaseController@exportSql');
 $router->add('POST', '/admin/databases/table/create', 'Database\\DatabaseController@createTable');
 $router->add('POST', '/admin/databases/table/create-sql', 'Database\\DatabaseController@createTableSql');
+
+// Import JSON Feature
+$router->add('GET', '/admin/databases/import-json', 'Database\\ImportController@index');
+$router->add('POST', '/admin/databases/import-json-process', 'Database\\ImportController@process');
+
 $router->add('GET', '/admin/databases/table/delete', 'Database\\DatabaseController@deleteTable');
 $router->add('GET', '/admin/databases/fields', 'Database\\DatabaseController@manageFields');
 $router->add('POST', '/admin/databases/fields/add', 'Database\\DatabaseController@addField');
