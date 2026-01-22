@@ -106,7 +106,6 @@ class ServiceApiController extends BaseController
     public function create()
     {
         try {
-        try {
             $payload = file_get_contents('php://input');
             $input = json_decode($payload, true);
 
