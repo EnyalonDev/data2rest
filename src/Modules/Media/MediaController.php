@@ -105,12 +105,24 @@ class MediaController extends BaseController
         if ($dbProjectId && $dbProjectId != $activeProject) {
             // Tampering detected or unauthorized access
             Auth::setFlashError("Security Warning: Cross-project access denied.", 'error');
-            // We can either die or just return. Since this is often API, JSON error is best.
-            // But catching it early is good.
-            // Let's force nullify/throw to be caught? 
-            // Or better, just exit with JSON error since we are in API controller.
             $this->json(['error' => 'Access Denied: Database does not belong to active project.'], 403);
         }
+    }
+
+    /**
+     * Resolves the storage prefix strictly based on db_id if provided.
+     * Prevents fallback to global scope for Admins when specific DB context is requested.
+     */
+    private function getStrictProjectPrefix($db_id)
+    {
+        if ($db_id) {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT project_id FROM databases WHERE id = ?");
+            $stmt->execute([$db_id]);
+            $projectId = $stmt->fetchColumn();
+            return $projectId ? 'p' . $projectId : 'global';
+        }
+        return $this->getStoragePrefix(null);
     }
 
     /**
@@ -176,8 +188,8 @@ class MediaController extends BaseController
         // Scope to Project
         $db_id = $_GET['db_id'] ?? null;
         $this->validateProjectScope($db_id);
-        $scopePath = $this->getStoragePrefix($db_id);
-        $scopePath = $this->getStoragePrefix($db_id);
+
+        $scopePath = $this->getStrictProjectPrefix($db_id);
         $projectBase = $uploadBase . $scopePath;
 
         if (!is_dir($projectBase)) {
@@ -400,7 +412,8 @@ class MediaController extends BaseController
         $path = str_replace(['..', '\\'], '', $path);
 
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getStoragePrefix($db_id);
+
+        $scopePath = $this->getStrictProjectPrefix($db_id);
         $projectBase = $uploadBase . $scopePath . '/';
 
         // Final target is projectBase + requested relative path
@@ -495,7 +508,7 @@ class MediaController extends BaseController
         $db_id = $_POST['db_id'] ?? null;
         $this->validateProjectScope($db_id);
         $uploadBase = Config::get('upload_dir');
-        $scopePath = $this->getStoragePrefix($db_id);
+        $scopePath = $this->getStrictProjectPrefix($db_id);
         $projectBase = realpath($uploadBase . $scopePath);
 
         $fullPath = realpath($projectBase . '/' . $path);
