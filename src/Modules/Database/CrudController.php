@@ -11,6 +11,7 @@ use App\Modules\Media\ImageService;
 use PDO;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
+use App\Core\ApiCacheManager;
 
 /**
  * CRUD Controller
@@ -603,6 +604,10 @@ LIMIT 1");
             // Update metadata timestamps
             $this->updateMetadata($ctx['db_id'], $ctx['table']);
 
+            // Invalidate API Cache for this table
+            $cacheManager = new ApiCacheManager();
+            $cacheManager->invalidate("db_{$ctx['db_id']}_table_{$tableName}");
+
             header('Location: ' . Auth::getBaseUrl() . "admin/crud/list?db_id={$ctx['db_id']}&table={$ctx['table']}");
         } catch (\Exception $e) {
             die("Error saving data: " . $e->getMessage());
@@ -681,6 +686,10 @@ LIMIT 1");
 
                 // Update metadata timestamps
                 $this->updateMetadata($ctx['db_id'], $ctx['table']);
+
+                // Invalidate API Cache for this table
+                $cacheManager = new ApiCacheManager();
+                $cacheManager->invalidate("db_{$ctx['db_id']}_table_{$tableName}");
             } catch (\Exception $e) {
                 Auth::setFlashError("Error eliminando registro: " . $e->getMessage(), 'error');
             }
