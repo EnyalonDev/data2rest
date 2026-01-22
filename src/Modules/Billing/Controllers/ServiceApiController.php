@@ -2,6 +2,7 @@
 
 namespace App\Modules\Billing\Controllers;
 
+use App\Core\Auth;
 use App\Core\BaseController;
 use App\Core\Database;
 use PDO;
@@ -39,7 +40,19 @@ class ServiceApiController extends BaseController
      * 
      * @var PDO
      */
+    /**
+     * Database connection instance
+     * 
+     * @var PDO
+     */
     private $db;
+
+    /**
+     * API key data for the current request
+     * 
+     * @var array|null
+     */
+    private $apiKeyData;
 
     /**
      * Constructor - Initializes database connection
@@ -54,7 +67,46 @@ class ServiceApiController extends BaseController
      */
     public function __construct()
     {
+        $this->apiKeyData = $this->authenticate();
         $this->db = Database::getInstance()->getConnection();
+    }
+
+    /**
+     * Authenticate API request
+     * 
+     * Validates API key from X-API-KEY header or api_key parameter.
+     * Supports internal session bypass for authenticated dashboard users.
+     * 
+     * @return array API key data or internal session data
+     */
+    private function authenticate()
+    {
+        Auth::init();
+
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
+
+        // Internal bypass for authenticated dashboard users
+        if (!$apiKey && Auth::check()) {
+            // Optional: Set internal header for debugging
+            // header('X-Data2Rest-Auth: Internal-Session');
+            return ['name' => 'Internal Console Session', 'key_value' => 'internal'];
+        }
+
+        if (!$apiKey) {
+            $this->json(['error' => 'API Key required (X-API-KEY header or api_key param)'], 401);
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM api_keys WHERE key_value = ? AND status = 1");
+        $stmt->execute([$apiKey]);
+        $keyData = $stmt->fetch();
+
+        if (!$keyData) {
+            $this->json(['error' => 'Invalid or inactive API Key'], 403);
+        }
+
+        return $keyData;
     }
 
     /**
