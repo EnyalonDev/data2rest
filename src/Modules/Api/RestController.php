@@ -901,31 +901,47 @@ class RestController extends BaseController
         $start = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
         $time = microtime(true) - $start;
 
-        // Log to api_access_logs if we have API key context
-        if (!empty($this->apiKeyData)) {
-            try {
-                $db = Database::getInstance()->getConnection();
-                $stmt = $db->prepare("INSERT INTO api_access_logs (api_key_id, method, endpoint, status_code, ip_address, response_time_ms, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)");
-
-                // Truncate URI if too long
-                $uri = $_SERVER['REQUEST_URI'] ?? '/';
-                if (strlen($uri) > 255)
-                    $uri = substr($uri, 0, 255);
-
-                $stmt->execute([
-                    $this->apiKeyData['id'] ?? null,
-                    $_SERVER['REQUEST_METHOD'] ?? 'GET',
-                    $uri,
-                    $status,
-                    $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0',
-                    round($time * 1000, 2),
-                    $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
-                ]);
-            } catch (\Exception $e) {
-                // Ignore logging errors to prevent API failure
+        // Attempt to capture API Key ID even if not fully authenticated yet
+        $apiKeyId = $this->apiKeyData['id'] ?? null;
+        
+        // If not authenticated, try to find the key provided in headers to log "Attempted Access"
+        if (!$apiKeyId) {
+            $headers = function_exists('getallheaders') ? getallheaders() : [];
+            $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
+            
+            if ($apiKey) {
+                try {
+                    $db = Database::getInstance()->getConnection();
+                    $stmt = $db->prepare("SELECT id FROM api_keys WHERE key_value = ?");
+                    $stmt->execute([$apiKey]);
+                    $apiKeyId = $stmt->fetchColumn();
+                } catch (\Exception $e) {}
             }
         }
 
+        // Log to api_access_logs
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("INSERT INTO api_access_logs (api_key_id, method, endpoint, status_code, ip_address, response_time_ms, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+            // Truncate URI if too long
+            $uri = $_SERVER['REQUEST_URI'] ?? '/';
+            if (strlen($uri) > 255)
+                $uri = substr($uri, 0, 255);
+
+            $stmt->execute([
+                $apiKeyId, // Can be null if unknown key
+                $_SERVER['REQUEST_METHOD'] ?? 'GET',
+                $uri,
+                $status,
+                $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0',
+                round($time * 1000, 2),
+                $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+        } catch (\Exception $e) {
+            // Ignore logging errors to prevent API failure
+        }
+        
         // CSV/Excel Export (Phase 3)
         if (isset($_GET['format']) && $status == 200 && isset($data['data'])) {
             $format = strtolower($_GET['format']);

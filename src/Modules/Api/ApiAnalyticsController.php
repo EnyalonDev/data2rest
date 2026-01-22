@@ -50,13 +50,25 @@ class ApiAnalyticsController extends BaseController
         $val = $stmt->fetchColumn();
         $avgLatency = round($val ?: 0, 2);
 
-        // 3. Error Rate
-        $stmt = $db->prepare("SELECT COUNT(*) FROM api_access_logs WHERE status_code >= 400 AND created_at >= ?");
+        // 3. Status Breakdown
+        $stmt = $db->prepare("SELECT 
+            SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN status_code IN (401, 403, 429) THEN 1 ELSE 0 END) as denied,
+            SUM(CASE WHEN status_code >= 400 AND status_code < 500 AND status_code NOT IN (401, 403, 429) THEN 1 ELSE 0 END) as client_error,
+            SUM(CASE WHEN status_code >= 500 THEN 1 ELSE 0 END) as server_error
+            FROM api_access_logs WHERE created_at >= ?");
         $stmt->execute([$startDate]);
-        $errorCount = $stmt->fetchColumn();
-        $errorRate = $totalRequests > 0 ? round(($errorCount / $totalRequests) * 100, 2) : 0;
+        $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // 4. Requests Over Time (Hourly)
+        $successCount = $stats['success'] ?? 0;
+        $deniedCount = $stats['denied'] ?? 0;
+        $serverErrorCount = $stats['server_error'] ?? 0;
+        $clientErrorCount = $stats['client_error'] ?? 0;
+        $totalErrors = $deniedCount + $serverErrorCount + $clientErrorCount;
+
+        $errorRate = $totalRequests > 0 ? round(($totalErrors / $totalRequests) * 100, 2) : 0;
+
+        // 4. Requests Over Time (Hourly) - Split by Success vs Error
         // Group format: date-agnostic logic
         $timeFormat = ($range === '30d' || $range === '7d') ? 'Y-m-d' : 'Y-m-d H:00';
 
@@ -65,20 +77,19 @@ class ApiAnalyticsController extends BaseController
             $dateFormatSql = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00';
             $groupBySql = "strftime('$dateFormatSql', created_at)";
         } elseif ($adapterType === 'mysql') {
-            $dateFormatSql = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00'; // MySQL uses different specifiers usually but strftime is SQLite. MySQL is DATE_FORMAT
-            // MySQL DATE_FORMAT: %Y-%m-%d, %Y-%m-%d %H:00
             $mysqlFormat = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00';
             $groupBySql = "DATE_FORMAT(created_at, '$mysqlFormat')";
         } elseif ($adapterType === 'pgsql' || $adapterType === 'postgresql') {
             $pgFormat = ($range === '30d' || $range === '7d') ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH24:00';
             $groupBySql = "TO_CHAR(created_at, '$pgFormat')";
         } else {
-            // Fallback or error? defaulting to sqlite syntax as existing code did
             $dateFormatSql = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00';
             $groupBySql = "strftime('$dateFormatSql', created_at)";
         }
 
-        $usageSql = "SELECT $groupBySql as time_slot, COUNT(*) as count 
+        $usageSql = "SELECT $groupBySql as time_slot, 
+                     SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) as success_count,
+                     SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as error_count
                      FROM api_access_logs 
                      WHERE created_at >= ? 
                      GROUP BY time_slot 
@@ -112,7 +123,10 @@ class ApiAnalyticsController extends BaseController
             'summary' => [
                 'total_requests' => $totalRequests,
                 'avg_latency' => $avgLatency,
-                'error_rate' => $errorRate
+                'error_rate' => $errorRate,
+                'denied_count' => $deniedCount,
+                'server_error_count' => $serverErrorCount,
+                'success_count' => $successCount
             ],
             'usage_data' => $usageData,
             'endpoints_data' => $endpointsData,
