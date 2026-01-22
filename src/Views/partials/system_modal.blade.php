@@ -93,6 +93,7 @@
             confirmBtn.onclick = () => {
                 if (options.onConfirm) options.onConfirm();
                 closeModal();
+                location.reload();
             };
         }
 
@@ -126,12 +127,13 @@
         const content = document.getElementById('modal-content');
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
-
+        
         modalTimeout = setTimeout(() => {
             modal.classList.remove('flex');
             modal.classList.add('hidden');
             modalTimeout = null;
         }, 300);
+        location.reload();
     }
 
     // Auto-show flash message for ALL types
