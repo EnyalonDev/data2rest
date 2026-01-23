@@ -507,6 +507,48 @@ class Installer
 
             error_log("Installer: Starting sync. Type: " . $adapter->getType() . ", isNew: " . ($isNew ? 'true' : 'false'));
 
+            // 0. Pre-Schema Migration: key -> key_name
+            // Must be done BEFORE syncColumns sees 'key_name' missing and adds an empty one.
+            try {
+                $checkTable = $adapter->getTableExistsSQL('system_settings');
+                $tblExists = false;
+                try {
+                    $res = $db->query($checkTable);
+                    $tblExists = (bool) $res->fetchColumn();
+                } catch (\Exception $e) {
+                }
+
+                if ($tblExists) {
+                    $cols = [];
+                    $type = $adapter->getType();
+
+                    if ($type === 'sqlite') {
+                        $stmt = $db->query("PRAGMA table_info(system_settings)");
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+                    } elseif ($type === 'mysql') {
+                        $stmt = $db->query("SHOW COLUMNS FROM system_settings");
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+                    } elseif ($type === 'pgsql') {
+                        $stmt = $db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'system_settings'");
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+                    }
+
+                    // If 'key' exists but 'key_name' does not, rename it
+                    if (in_array('key', $cols) && !in_array('key_name', $cols)) {
+                        error_log("Installer: Migrating system_settings column 'key' to 'key_name'...");
+                        if ($type === 'sqlite') {
+                            $db->exec("ALTER TABLE system_settings RENAME COLUMN key TO key_name");
+                        } elseif ($type === 'mysql') {
+                            $db->exec("ALTER TABLE system_settings CHANGE `key` `key_name` VARCHAR(255) NOT NULL");
+                        } elseif ($type === 'pgsql') {
+                            $db->exec("ALTER TABLE system_settings RENAME COLUMN \"key\" TO key_name");
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log("Pre-Migration warning: " . $e->getMessage());
+            }
+
             // 1. Ensure all tables exist
             foreach (self::$SCHEMA as $tableName => $definition) {
                 // Use Adapter to check existence
