@@ -556,6 +556,38 @@ class Installer
                             $db->exec("ALTER TABLE system_settings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
                         }
                     }
+                    }
+                }
+
+                // Pre-Migration: users -> google_id
+                $checkUsers = $adapter->getTableExistsSQL('users');
+                $usersExist = false;
+                try { $res = $db->query($checkUsers); $usersExist = (bool)$res->fetchColumn(); } catch(\Exception $e){}
+                
+                if ($usersExist) {
+                    $cols = [];
+                    $type = $adapter->getType();
+                    if ($type === 'sqlite') {
+                        $stmt = $db->query("PRAGMA table_info(users)");
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+                    } elseif ($type === 'mysql') {
+                        $stmt = $db->query("SHOW COLUMNS FROM users");
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0); 
+                    } elseif ($type === 'pgsql') {
+                        $stmt = $db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'users'");
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+                    }
+
+                    if (!in_array('google_id', $cols)) {
+                        error_log("Installer: Adding 'google_id' column to users...");
+                        if ($type === 'sqlite') {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
+                        } elseif ($type === 'mysql') {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
+                        } elseif ($type === 'pgsql') {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
+                        }
+                    }
                 }
             } catch (\Exception $e) {
                 error_log("Pre-Migration warning: " . $e->getMessage());
