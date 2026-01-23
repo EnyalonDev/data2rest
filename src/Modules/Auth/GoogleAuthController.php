@@ -126,10 +126,16 @@ class GoogleAuthController extends BaseController
             } catch (\Exception $e) {
                 // Log error
                 error_log("Google Login Error: " . $e->getMessage());
-                $this->redirect('login');
+                // FORCE DEBUG ON SCREEN
+                echo "<div style='padding:50px;font-family:sans-serif;'>";
+                echo "<h1>Google Login Error</h1>";
+                echo "<p>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
+                echo "<pre>" . $e->getTraceAsString() . "</pre>";
+                echo "</div>";
+                exit; // Stop redirect
             }
         } else {
-            $this->redirect('login');
+            die("Google did not return an authorization code.");
         }
     }
 
