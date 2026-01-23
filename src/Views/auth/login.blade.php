@@ -18,9 +18,9 @@
         </div>
 
         <!-- 
-                Login Form Container 
-                Displays error messages and the authentication form.
-            -->
+                    Login Form Container 
+                    Displays error messages and the authentication form.
+                -->
         <div class="glass-card border-t-4 border-primary">
             @if(isset($error))
                 <div
@@ -67,6 +67,16 @@
                     </div>
                 </button>
             </form>
+
+            @if(isset($google_login_enabled) && $google_login_enabled)
+                <div class="mt-6 pt-6 border-t border-glass-border">
+                    <a href="{{ $baseUrl }}auth/google"
+                        class="relative w-full bg-white text-gray-700 font-bold py-3 rounded-xl transition-all duration-300 hover:bg-gray-50 active:scale-95 shadow border border-gray-200 uppercase tracking-widest text-xs flex items-center justify-center gap-3">
+                        <img src="https://www.google.com/favicon.ico" alt="Google" class="w-4 h-4">
+                        <span>Ingresar con Google</span>
+                    </a>
+                </div>
+            @endif
 
             <div class="mt-8 pt-8 border-t border-glass-border text-center">
                 <p class="text-[10px] font-bold text-p-muted uppercase tracking-[0.2em] mb-4">Environment: <span
