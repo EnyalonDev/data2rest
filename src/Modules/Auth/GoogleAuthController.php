@@ -209,7 +209,11 @@ class GoogleAuthController extends BaseController
         Auth::loadUserProjects();
 
         // Check role for redirection
-        if ($_SESSION['user_role'] === 'admin' || $_SESSION['user_role'] === 'administrator' || $_SESSION['permissions']['all'] === true) {
+        // Logic: Admin OR User with Active Projects -> Dashboard
+        //        Otherwise -> Welcome Pending
+        $hasProjects = !empty($_SESSION['user_projects']);
+
+        if ($_SESSION['user_role'] === 'admin' || $_SESSION['user_role'] === 'administrator' || $_SESSION['permissions']['all'] === true || $hasProjects) {
             $this->redirect('admin/dashboard');
         } else {
             $this->redirect('welcome-pending');
