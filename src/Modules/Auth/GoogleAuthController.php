@@ -124,6 +124,13 @@ class GoogleAuthController extends BaseController
                 }
 
             } catch (\Exception $e) {
+                // Handle Expired/Invalid Code (Bad Request)
+                if (strpos($e->getMessage(), 'Bad Request') !== false || strpos($e->getMessage(), 'invalid_grant') !== false) {
+                    // Redirect to login to try again
+                    $this->redirect('login');
+                    return;
+                }
+
                 // Self-Healing: Check for missing 'google_id' column
                 if (strpos($e->getMessage(), 'no such column: google_id') !== false || strpos($e->getMessage(), "Unknown column 'google_id'") !== false) {
                     try {
@@ -138,21 +145,14 @@ class GoogleAuthController extends BaseController
                         header("Refresh:0");
                         exit;
                     } catch (\Exception $migErr) {
-                        // If migration fails, show original error + migration error
-                        $e = new \Exception($e->getMessage() . " | Migration Failed: " . $migErr->getMessage());
+                        error_log("Migration Failed: " . $migErr->getMessage());
                     }
                 }
 
-                // Log error
+                // Log error and redirect
                 error_log("Google Login Error: " . $e->getMessage());
-                // FORCE DEBUG ON SCREEN
-                echo "<div style='padding:50px;font-family:sans-serif;'>";
-                echo "<h1>Google Login Error</h1>";
-                echo "<p>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
-                echo "<p><strong>Auto-Fix Attempted. Please refresh the page if problem persists.</strong></p>";
-                echo "<pre>" . $e->getTraceAsString() . "</pre>";
-                echo "</div>";
-                exit; // Stop redirect
+                // Fallback to login
+                $this->redirect('login');
             }
         } else {
             die("Google did not return an authorization code.");
