@@ -261,15 +261,32 @@ class SystemController extends BaseController
 
         // Helper to upsert
         $upsert = function ($key, $val) use ($db, $adapter) {
-            if ($adapter->getType() === 'mysql') {
-                $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, NOW()) 
-                         ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()";
-            } else {
-                $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, datetime('now')) 
-                    ON CONFLICT(key_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at";
+            try {
+                if ($adapter->getType() === 'mysql') {
+                    $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, NOW()) 
+                             ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()";
+                } else {
+                    $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, datetime('now')) 
+                        ON CONFLICT(key_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at";
+                }
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$key, $val]);
+            } catch (\PDOException $e) {
+                // If error is about missing column 'updated_at', fallback to simple update
+                if (strpos($e->getMessage(), 'no column named updated_at') !== false || strpos($e->getMessage(), "Unknown column 'updated_at'") !== false) {
+                    if ($adapter->getType() === 'mysql') {
+                        $sql = "INSERT INTO system_settings (key_name, value) VALUES (?, ?) 
+                                 ON DUPLICATE KEY UPDATE value = VALUES(value)";
+                    } else {
+                        $sql = "INSERT INTO system_settings (key_name, value) VALUES (?, ?) 
+                            ON CONFLICT(key_name) DO UPDATE SET value=excluded.value";
+                    }
+                    $stmt = $db->prepare($sql);
+                    $stmt->execute([$key, $val]);
+                } else {
+                    throw $e;
+                }
             }
-            $stmt = $db->prepare($sql);
-            $stmt->execute([$key, $val]);
         };
 
         $upsert('google_client_id', $clientId);
