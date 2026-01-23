@@ -72,6 +72,42 @@
             </p>
         </div>
 
+        <!-- Composer Check Section -->
+        @if(!class_exists('Google\Client'))
+            <div class="sm:mx-auto sm:w-full sm:max-w-xl mb-6">
+                <div class="glass py-4 px-6 rounded-2xl border border-amber-500/20 bg-amber-500/5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 mt-1">
+                            <svg class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-amber-500 uppercase tracking-wider">Dependencia Faltante:
+                                Google Login</h3>
+                            <p class="mt-1 text-xs text-slate-300">
+                                Para habilitar el inicio de sesión con Google, debes instalar la librería oficial. Si no lo
+                                haces ahora, podrás hacerlo después manualmente.
+                            </p>
+                            <div
+                                class="mt-3 bg-black/40 rounded-lg p-3 border border-white/5 flex justify-between items-center group">
+                                <code class="text-xs font-mono text-amber-200">composer require google/apiclient</code>
+                                <button onclick="navigator.clipboard.writeText('composer require google/apiclient')"
+                                    class="text-slate-500 hover:text-white transition-colors" title="Copiar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 20h6a2 2 0 002-2v-6a2 2 0 00-2-2h-6a2 2 0 00-2 2v6a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="sm:mx-auto sm:w-full sm:max-w-xl">
             <div class="glass py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-700/50">
 
