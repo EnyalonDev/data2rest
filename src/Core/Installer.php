@@ -125,8 +125,9 @@ class Installer
         ],
         'system_settings' => [
             'sql' => "CREATE TABLE system_settings (
-                key TEXT PRIMARY KEY,
-                value TEXT
+                key_name TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )"
         ],
         'projects' => [
@@ -838,12 +839,13 @@ class Installer
             'media_optimize_priority' => 'webp',
             'media_optimize_quality' => '85'
         ];
-        // Ensure quotes via adapter or explicit double quotes for Postgres
-        $stmt = $db->prepare("INSERT INTO system_settings (" . Database::getInstance()->getAdapter()->quoteName('key') . ", value) VALUES (?, ?)");
+
+        // Use key_name
+        $stmt = $db->prepare("INSERT INTO system_settings (key_name, value) VALUES (?, ?)");
 
         // Only insert settings if they don't exist
         foreach ($settings as $k => $v) {
-            $check = $db->prepare("SELECT COUNT(*) FROM system_settings WHERE " . Database::getInstance()->getAdapter()->quoteName('key') . " = ?");
+            $check = $db->prepare("SELECT COUNT(*) FROM system_settings WHERE key_name = ?");
             $check->execute([$k]);
             if ($check->fetchColumn() == 0) {
                 $stmt->execute([$k, $v]);
@@ -972,16 +974,14 @@ class Installer
         }
 
         // Mark as seeded to avoid re-running on every request
-        $adapter = Database::getInstance()->getAdapter();
-        $tableName = $adapter->quoteName('system_settings');
-        $keyCol = $adapter->quoteName('key');
+        // Mark as seeded to avoid re-running on every request
+        // Try to update or insert the flag using key_name
+        $update = $db->prepare("UPDATE system_settings SET value = '1' WHERE key_name = 'system_seeded'");
+        $update->execute();
 
-        // Try to update or insert the flag
-        $stmt = $db->prepare("UPDATE $tableName SET value = '1' WHERE $keyCol = 'system_seeded'");
-        $stmt->execute();
-        if ($stmt->rowCount() == 0) {
-            $stmt = $db->prepare("INSERT INTO $tableName ($keyCol, value) VALUES ('system_seeded', '1')");
-            $stmt->execute();
+        if ($update->rowCount() == 0) {
+            $insert = $db->prepare("INSERT INTO system_settings (key_name, value) VALUES ('system_seeded', '1')");
+            $insert->execute();
         }
     }
 
@@ -1011,8 +1011,37 @@ class Installer
             // Ignore table not found errors during early install
         }
 
+        // Migration: key -> key_name
+        try {
+            $cols = [];
+            $adapter = Database::getInstance()->getAdapter();
+            $type = $adapter->getType();
+
+            if ($type === 'sqlite') {
+                $stmt = $db->query("PRAGMA table_info(system_settings)");
+                $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+            } elseif ($type === 'mysql') {
+                $stmt = $db->query("SHOW COLUMNS FROM system_settings");
+                $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+            }
+
+            // If 'key' exists but 'key_name' does not, rename it
+            if (in_array('key', $cols) && !in_array('key_name', $cols)) {
+                error_log("Installer: Migrating system_settings column 'key' to 'key_name'...");
+                if ($type === 'sqlite') {
+                    $db->exec("ALTER TABLE system_settings RENAME COLUMN key TO key_name");
+                } elseif ($type === 'mysql') {
+                    // MySQL requires full definition
+                    $db->exec("ALTER TABLE system_settings CHANGE `key` `key_name` VARCHAR(255) PRIMARY KEY");
+                } elseif ($type === 'pgsql') {
+                    $db->exec("ALTER TABLE system_settings RENAME COLUMN \"key\" TO key_name");
+                }
+            }
+        } catch (\Exception $e) {
+            error_log("Migration warning: " . $e->getMessage());
+        }
+
         // Final sanity check for settings
-        // Use portable check-then-insert instead of SQLite 'INSERT OR IGNORE'
         $defaults = [
             'media_trash_retention' => '30',
             'time_offset_total' => '0',
@@ -1022,9 +1051,8 @@ class Installer
             'start_week_on' => '1' // Monday
         ];
 
-        $qKey = $adapter->quoteName('key');
-        $checkStmt = $db->prepare("SELECT 1 FROM system_settings WHERE $qKey = ?");
-        $insertStmt = $db->prepare("INSERT INTO system_settings ($qKey, value) VALUES (?, ?)");
+        $checkStmt = $db->prepare("SELECT 1 FROM system_settings WHERE key_name = ?");
+        $insertStmt = $db->prepare("INSERT INTO system_settings (key_name, value) VALUES (?, ?)");
 
         foreach ($defaults as $key => $val) {
             $checkStmt->execute([$key]);
