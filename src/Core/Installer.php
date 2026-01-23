@@ -555,13 +555,18 @@ class Installer
                         } elseif ($type === 'pgsql') {
                             $db->exec("ALTER TABLE system_settings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
                         }
+                    }
                 }
 
                 // Pre-Migration: users -> google_id
                 $checkUsers = $adapter->getTableExistsSQL('users');
                 $usersExist = false;
-                try { $res = $db->query($checkUsers); $usersExist = (bool)$res->fetchColumn(); } catch(\Exception $e){}
-                
+                try {
+                    $res = $db->query($checkUsers);
+                    $usersExist = (bool) $res->fetchColumn();
+                } catch (\Exception $e) {
+                }
+
                 if ($usersExist) {
                     $cols = [];
                     $type = $adapter->getType();
@@ -570,7 +575,7 @@ class Installer
                         $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
                     } elseif ($type === 'mysql') {
                         $stmt = $db->query("SHOW COLUMNS FROM users");
-                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0); 
+                        $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
                     } elseif ($type === 'pgsql') {
                         $stmt = $db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'users'");
                         $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
