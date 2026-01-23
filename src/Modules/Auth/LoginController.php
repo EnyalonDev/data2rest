@@ -62,7 +62,20 @@ class LoginController extends BaseController
         if (Auth::check()) {
             $this->redirect('');
         }
-        $this->view('auth/login', ['title' => 'Login']);
+
+        // Check if Google Login is enabled
+        $googleEnabled = false;
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'google_login_enabled'");
+            $googleEnabled = (bool) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+        }
+
+        $this->view('auth/login', [
+            'title' => 'Login',
+            'google_login_enabled' => $googleEnabled
+        ]);
     }
 
     /**
@@ -91,9 +104,19 @@ class LoginController extends BaseController
             $this->redirect('');
         }
 
+        // Check if Google Login is enabled (duplicate logic for now, ideally helper)
+        $googleEnabled = false;
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'google_login_enabled'");
+            $googleEnabled = (bool) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+        }
+
         $this->view('auth/login', [
             'title' => 'Login',
-            'error' => "Invalid username or password"
+            'error' => "Invalid username or password",
+            'google_login_enabled' => $googleEnabled
         ]);
     }
 
@@ -116,5 +139,19 @@ class LoginController extends BaseController
     {
         Auth::logout();
         $this->redirect('login');
+    }
+
+    public function welcomePending()
+    {
+        if (!Auth::check()) {
+            $this->redirect('login');
+        }
+
+        $role = $_SESSION['user_role'] ?? 'guest';
+        if ($role === 'admin' || $role === 'super_admin') {
+            $this->redirect('admin/dashboard');
+        }
+
+        $this->view('system/welcome_pending', ['title' => 'Pending Approval']);
     }
 }

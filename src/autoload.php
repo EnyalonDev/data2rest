@@ -2,6 +2,12 @@
 if (ob_get_level() === 0)
     ob_start();
 
+// Load Composer Autoloader
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
+
+
 /**
  * Custom PSR-4 Autoloader
  * Automatically maps the 'App\' namespace to the 'src/' directory.

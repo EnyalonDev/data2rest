@@ -45,9 +45,8 @@ class SystemController extends BaseController
         while (ob_get_level())
             ob_end_clean(); // Ensure clean output
         $db = \App\Core\Database::getInstance()->getConnection();
-        $adapter = \App\Core\Database::getInstance()->getAdapter();
-        $keyCol = $adapter->quoteName('key');
-        $stmt = $db->query("SELECT value FROM system_settings WHERE $keyCol = 'time_offset_total' ");
+        // Use key_name as per current schema
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'time_offset_total'");
         $offset = (int) ($stmt->fetchColumn() ?: 0);
 
         $now = new \DateTime();
@@ -78,11 +77,6 @@ class SystemController extends BaseController
     /**
      * Updates the global time offset in minutes.
      */
-    /**
-     * updateTimeOffset method
-     *
-     * @return void
-     */
     public function updateTimeOffset()
     {
         while (ob_get_level())
@@ -92,16 +86,24 @@ class SystemController extends BaseController
         $minutes = (int) ($_POST['minutes'] ?? 0);
         $totalMinutes = ($hours * 60) + ($minutes >= 0 ? $minutes : 0);
         if ($hours < 0 && $minutes > 0) {
-            // If someone puts -1 hour and 30 minutes, they probably mean -1:30, which is -90 min.
-            // But if they put -1 and 30 in separate inputs, it's ambiguous.
-            // Let's assume the sign of hours dictates the sign of the whole offset if minutes are positive.
             $totalMinutes = ($hours * 60) - $minutes;
         }
 
         $db = \App\Core\Database::getInstance()->getConnection();
         $adapter = \App\Core\Database::getInstance()->getAdapter();
 
-        $sql = $adapter->getUpsertSQL('system_settings', ['key' => 'time_offset_total', 'value' => $totalMinutes], 'key');
+        // Fix: Use key_name instead of key
+        $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, datetime('now')) 
+                ON CONFLICT(key_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at";
+
+        // Use standard SQL for MySQL/Postgres if needed, but for SQLite ON CONFLICT is good.
+        // Actually, let's use a simpler DELETE/INSERT or the adapter if it supports key_name override.
+        // Let's just use raw SQL for safety with the new column name.
+        if ($adapter->getType() === 'mysql') {
+            $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, NOW()) 
+                     ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()";
+        }
+
         $stmt = $db->prepare($sql);
         $stmt->execute(['time_offset_total', $totalMinutes]);
 
@@ -113,25 +115,29 @@ class SystemController extends BaseController
     /**
      * Toggles development mode in system settings.
      */
-    /**
-     * toggleDevMode method
-     *
-     * @return void
-     */
     public function toggleDevMode()
     {
         while (ob_get_level())
             ob_end_clean(); // Ensure clean output
         Auth::requireAdmin();
         $db = \App\Core\Database::getInstance()->getConnection();
-        $adapter = \App\Core\Database::getInstance()->getAdapter();
-        $keyCol = $adapter->quoteName('key');
-        $stmt = $db->query("SELECT value FROM system_settings WHERE $keyCol = 'dev_mode'");
+
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'dev_mode'");
         $current = $stmt->fetchColumn();
         $newValue = ($current === 'on') ? 'off' : 'on';
 
-        $stmt = $db->prepare("UPDATE system_settings SET value = ? WHERE $keyCol = 'dev_mode'");
-        $stmt->execute([$newValue]);
+        // Upsert logic
+        $adapter = \App\Core\Database::getInstance()->getAdapter();
+        if ($adapter->getType() === 'mysql') {
+            $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, NOW()) 
+                     ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()";
+        } else {
+            $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, datetime('now')) 
+                ON CONFLICT(key_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at";
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['dev_mode', $newValue]);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'dev_mode' => $newValue]);
@@ -141,11 +147,6 @@ class SystemController extends BaseController
     /**
      * Clears application temporary cache files.
      */
-    /**
-     * clearCache method
-     *
-     * @return void
-     */
     public function clearCache()
     {
         // Prevent accidental output (like newlines) from breaking JSON
@@ -153,13 +154,10 @@ class SystemController extends BaseController
             ob_end_clean();
 
         Auth::requireAdmin();
-        // Since sqlite doesn't have internal cache to clear via PHP, 
-        // we'll focus on opcache and potentially temp files.
         if (function_exists('opcache_reset')) {
             opcache_reset();
         }
 
-        // Clear any specific app cache if it existed (e.g. data/cache/*)
         $cacheDir = __DIR__ . '/../../../data/cache';
         if (is_dir($cacheDir)) {
             $files = glob($cacheDir . '/*');
@@ -176,11 +174,6 @@ class SystemController extends BaseController
 
     /**
      * Clears all active PHP sessions except the current one.
-     */
-    /**
-     * clearSessions method
-     *
-     * @return void
      */
     public function clearSessions()
     {
@@ -209,11 +202,7 @@ class SystemController extends BaseController
         echo json_encode(['success' => true, 'cleared' => $cleared]);
         exit;
     }
-    /**
-     * dismissBanner method
-     *
-     * @return void
-     */
+
     public function dismissBanner()
     {
         while (ob_get_level())
@@ -222,7 +211,14 @@ class SystemController extends BaseController
         $db = \App\Core\Database::getInstance()->getConnection();
         $adapter = \App\Core\Database::getInstance()->getAdapter();
 
-        $sql = $adapter->getUpsertSQL('system_settings', ['key' => 'show_welcome_banner', 'value' => '0'], 'key');
+        if ($adapter->getType() === 'mysql') {
+            $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, NOW()) 
+                     ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()";
+        } else {
+            $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, datetime('now')) 
+                ON CONFLICT(key_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at";
+        }
+
         $stmt = $db->prepare($sql);
         $stmt->execute(['show_welcome_banner', '0']);
 
@@ -231,5 +227,60 @@ class SystemController extends BaseController
         exit;
     }
 
-    // globalSearch method removed due to incompatibility with new DB system.
+    /**
+     * Show Google Settings View
+     */
+    public function googleSettings()
+    {
+        Auth::requireAdmin();
+
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $stmt = $db->query("SELECT * FROM system_settings WHERE key_name IN ('google_client_id', 'google_client_secret', 'google_redirect_uri', 'google_login_enabled')");
+        $settings = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $settings[$row['key_name']] = $row['value'];
+        }
+
+        $this->view('admin/settings/google', ['title' => 'Google Login Settings', 'settings' => $settings]);
+    }
+
+    /**
+     * Update Google Settings
+     */
+    public function updateGoogleSettings()
+    {
+        Auth::requireAdmin();
+
+        $clientId = trim($_POST['google_client_id'] ?? '');
+        $clientSecret = trim($_POST['google_client_secret'] ?? '');
+        $redirectUri = trim($_POST['google_redirect_uri'] ?? '');
+        $enabled = isset($_POST['google_login_enabled']) ? '1' : '0';
+
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $adapter = \App\Core\Database::getInstance()->getAdapter(); // For checking type if needed
+
+        // Helper to upsert
+        $upsert = function ($key, $val) use ($db, $adapter) {
+            if ($adapter->getType() === 'mysql') {
+                $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, NOW()) 
+                         ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()";
+            } else {
+                $sql = "INSERT INTO system_settings (key_name, value, updated_at) VALUES (?, ?, datetime('now')) 
+                    ON CONFLICT(key_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at";
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$key, $val]);
+        };
+
+        $upsert('google_client_id', $clientId);
+        // Only update secret if provided (not empty), allowing placeholders in UI
+        if (!empty($clientSecret) && $clientSecret !== '••••••••••••••••••••••••••••••') {
+            $upsert('google_client_secret', $clientSecret);
+        }
+        $upsert('google_redirect_uri', $redirectUri);
+        $upsert('google_login_enabled', $enabled);
+
+        Auth::setFlashError("Google settings updated successfully!", "success");
+        $this->redirect('admin/settings/google');
+    }
 }

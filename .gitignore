@@ -60,3 +60,5 @@ yarn-error.log*
 
 # System Config
 /data/config.json
+vendor/
+composer.phar

@@ -754,4 +754,14 @@ return [
                 'current_remote_error' => 'El sistema ya está utilizando una base de datos remota (:type).',
                 'link_text' => 'Migrar a MySQL/PostgreSQL',
         ],
+        'welcome_pending' => [
+                'title' => 'Cuenta en Espera de Aprobación',
+                'subtitle' => '¡Bienvenido a Data2Rest!',
+                'message_success' => 'Tu cuenta ha sido creada exitosamente vía Google.',
+                'message_pending' => 'Sin embargo, por razones de seguridad, las nuevas cuentas requieren aprobación de un administrador antes de acceder al panel.',
+                'contact_admin' => 'Por favor contacta al administrador del sistema para solicitar permisos de acceso.',
+                'approved_msg' => 'Una vez aprobado, podrás acceder al sistema completo.',
+                'logout' => 'Cerrar Sesión',
+                'status_pending' => 'ESTADO: PENDIENTE DE REVISIÓN'
+        ],
 ];

@@ -109,6 +109,13 @@ $router->add('GET', '/login', 'Auth\\LoginController@showLoginForm');
 $router->add('POST', '/login', 'Auth\\LoginController@login');
 $router->add('GET', '/logout', 'Auth\\LoginController@logout');
 
+// Google Auth
+$router->add('GET', '/auth/google', 'Auth\\GoogleAuthController@redirectToGoogle');
+$router->add('GET', '/auth/google/callback', 'Auth\\GoogleAuthController@handleCallback');
+
+// Welcome Pending (Waiting Room)
+$router->add('GET', '/welcome-pending', 'Auth\\LoginController@welcomePending');
+
 $router->add('GET', '/lang/{lang}', function ($lang) {
     \App\Core\Lang::set($lang);
     $referer = $_SERVER['HTTP_REFERER'] ?? (\App\Core\Auth::getBaseUrl() . 'admin/dashboard');
@@ -392,6 +399,10 @@ $router->add('GET', '/api/system/backups', 'SystemDatabase\\SystemDatabaseApiCon
 $router->add('POST', '/api/system/optimize', 'SystemDatabase\\SystemDatabaseApiController@optimize');
 $router->add('POST', '/api/system/query', 'SystemDatabase\\SystemDatabaseApiController@executeQuery');
 $router->add('GET', '/api/system/tables', 'SystemDatabase\\SystemDatabaseApiController@listTables');
+
+// --- System Settings ---
+$router->add('GET', '/admin/settings/google', 'System\\SystemController@googleSettings');
+$router->add('POST', '/admin/settings/google', 'System\\SystemController@updateGoogleSettings');
 
 // Dispatch
 $method = $_SERVER['REQUEST_METHOD'];
