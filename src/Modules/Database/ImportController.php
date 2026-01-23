@@ -90,10 +90,21 @@ class ImportController extends BaseController
             exit;
         }
 
+        // Check if it has schema or if we need to INFER it (Schema-less Mode)
         if (!isset($data['database_schema']['tables'])) {
-            Auth::setFlashError("Invalid structure: missing 'database_schema.tables'.");
-            $this->redirect('admin/databases/import-json?db_id=' . $dbId);
-            exit;
+            // Check if it's a simple key-value payload (Schema-less)
+            $inferredSchema = $this->inferSchema($data);
+            if ($inferredSchema) {
+                // Transform to expected format
+                $data = [
+                    'database_schema' => ['tables' => $inferredSchema],
+                    'content_payload' => $data
+                ];
+            } else {
+                Auth::setFlashError("Invalid structure: missing 'database_schema.tables' and could not infer schema.");
+                $this->redirect('admin/databases/import-json?db_id=' . $dbId);
+                exit;
+            }
         }
 
         try {
@@ -142,6 +153,47 @@ class ImportController extends BaseController
 
                 // If no ID found, maybe add one? The user request schema includes 'id' in services/products but not site_config
                 // We trust the schema provided.
+
+                // Add default audit columns if they don't exist in the JSON definition
+                // NOTE: 'id' might be explicitly defined in JSON. We check before adding.
+                // But generally, for consistency with the system, we should ensure they exist.
+
+                // Check for ID
+                $hasId = false;
+                foreach ($fields as $f) {
+                    if ($f === 'id')
+                        $hasId = true;
+                }
+
+                if (!$hasId) {
+                    $columnDef = "";
+                    if ($adapter->getType() === 'sqlite') {
+                        $columnDef = "INTEGER PRIMARY KEY AUTOINCREMENT";
+                    } elseif ($adapter->getType() === 'mysql') {
+                        $columnDef = "INT AUTO_INCREMENT PRIMARY KEY";
+                    } else { // pgsql
+                        $columnDef = "SERIAL PRIMARY KEY";
+                    }
+                    array_unshift($columnsSql, $adapter->quoteName('id') . " " . $columnDef);
+                }
+
+                // Check for timestamps
+                $hasCreated = false;
+                $hasUpdated = false;
+                foreach ($fields as $f) {
+                    if ($f === 'fecha_de_creacion')
+                        $hasCreated = true;
+                    if ($f === 'fecha_edicion')
+                        $hasUpdated = true;
+                }
+
+                if (!$hasCreated) {
+                    $columnsSql[] = $adapter->quoteName('fecha_de_creacion') . " DATETIME DEFAULT CURRENT_TIMESTAMP";
+                }
+                if (!$hasUpdated) {
+                    $columnsSql[] = $adapter->quoteName('fecha_edicion') . " DATETIME DEFAULT CURRENT_TIMESTAMP";
+                    // Note: SQLite doesn't support ON UPDATE CURRENT_TIMESTAMP easily in create table without triggers
+                }
 
                 $sql = "CREATE TABLE IF NOT EXISTS " . $adapter->quoteName($tableName) . " (";
                 $sql .= implode(", ", $columnsSql);
@@ -310,5 +362,55 @@ class ImportController extends BaseController
             Auth::setFlashError("Import Error: " . $e->getMessage());
             $this->redirect('admin/databases/import-json?db_id=' . $dbId);
         }
+    }
+
+    /**
+     * Infer database schema from a data payload
+     */
+    private function inferSchema($data)
+    {
+        $tables = [];
+
+        foreach ($data as $key => $value) {
+            $tableName = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $key)); // CamelCase to snake_case
+            $fields = [];
+
+            // Determine sample for field extraction
+            $sample = null;
+
+            if (is_array($value)) {
+                // Check if it is a list of items
+                if (isset($value[0]) && is_array($value[0])) {
+                    $sample = $value[0];
+                }
+                // Check for 'items', 'projects', 'plans' wrapper
+                elseif (isset($value['items']) && is_array($value['items']) && isset($value['items'][0])) {
+                    $sample = $value['items'][0];
+                } elseif (isset($value['projects']) && is_array($value['projects']) && isset($value['projects'][0])) {
+                    $sample = $value['projects'][0];
+                } elseif (isset($value['plans']) && is_array($value['plans']) && isset($value['plans'][0])) {
+                    $sample = $value['plans'][0];
+                }
+                // Associative array = Single Row Table
+                elseif (!isset($value[0])) {
+                    $sample = $value;
+                }
+            }
+
+            if ($sample) {
+                // Recursively check for "items" inside the sample? No, simple level 1 for now.
+                $fields = array_keys($sample);
+
+                // Exclude complex nested arrays from becoming columns if we want flat tables
+                // But current logic simply makes them columns (TEXT type for JSON). This is fine.
+
+                $tables[] = [
+                    'name' => $tableName,
+                    'fields' => $fields
+                ];
+            }
+        }
+
+        return count($tables) > 0 ? $tables : null;
     }
 }

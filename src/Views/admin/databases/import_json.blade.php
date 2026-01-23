@@ -45,9 +45,18 @@
                 <div class="relative group">
                     <textarea name="json_payload" rows="20"
                         class="form-input font-mono text-xs leading-relaxed custom-scrollbar !bg-black/40 border-primary/20 focus:border-primary"
-                        placeholder='{
+                        placeholder='Paste your JSON content here.
+
+    Mode 1: Full Schema (Recommended)
+    {
       "database_schema": { ... },
       "content_payload": { ... }
+    }
+
+    Mode 2: Data Only (Auto-Schema)
+    {
+       "HERO_CONTENT": { ... },
+       "PRICING": [ ... ]
     }' required></textarea>
 
                     <div
