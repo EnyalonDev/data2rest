@@ -84,10 +84,47 @@
         </div>
     @endif
 
+    <!-- Missing Dependencies Alert -->
+    @if(\App\Core\Auth::isAdmin() && !class_exists('Google\Client'))
+        <div
+            class="animate-in fade-in slide-in-from-top-4 duration-500 mb-8 p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden group">
+            <div
+                class="absolute inset-0 bg-amber-500/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000">
+            </div>
+            <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div class="flex-1 text-center md:text-left z-10">
+                <h3 class="text-sm font-black text-amber-500 uppercase tracking-widest mb-1">New Feature Available: Google Login
+                </h3>
+                <p class="text-xs text-p-muted font-medium">
+                    To enable the new Google Login feature, you need to install the required PHP library.
+                </p>
+            </div>
+            <div class="flex flex-col md:flex-row items-center gap-4 z-10 w-full md:w-auto">
+                <code
+                    class="px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-[10px] font-mono text-amber-200 whitespace-nowrap">
+                            composer require google/apiclient
+                        </code>
+                <button onclick="navigator.clipboard.writeText('composer require google/apiclient')"
+                    class="p-2 text-amber-500 hover:bg-amber-500/20 rounded-lg transition-colors" title="Copy Command">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 20h6a2 2 0 002-2v-6a2 2 0 00-2-2h-6a2 2 0 00-2 2v6a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    @endif
+
     <!-- 
-                Stats Grid 
-                Shows high-level metrics: Total Databases, Total Records, and Storage Usage.
-            -->
+                    Stats Grid 
+                    Shows high-level metrics: Total Databases, Total Records, and Storage Usage.
+                -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
         <div class="glass-card py-8 flex flex-col items-center border-b-4 border-primary/50">
             <span class="text-4xl font-black text-p-title mb-2">{{ $stats['total_databases'] }}</span>
@@ -120,9 +157,9 @@
     </div>
 
     <!-- 
-                Charts Section 
-                Two main charts: System Activity (Line) and Storage Distribution (Doughnut).
-            -->
+                    Charts Section 
+                    Two main charts: System Activity (Line) and Storage Distribution (Doughnut).
+                -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
         <!-- Activity Chart -->
         <div class="lg:col-span-2 glass-card !p-8 border-t-4 border-primary/30 relative overflow-hidden group">
@@ -226,9 +263,9 @@
     </div>
 
     <!-- 
-                Modules Links 
-                Grid of available system modules (Database, API, Media, Users, etc.) based on permissions.
-            -->
+                    Modules Links 
+                    Grid of available system modules (Database, API, Media, Users, etc.) based on permissions.
+                -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Modules -->
         <div class="lg:col-span-2 space-y-8">
@@ -706,52 +743,52 @@
                     };
 
                     let html = `
-                                                                                            <!-- Time Section -->
-                                                                                            <div class="mb-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-blue-500/5 border border-primary/20 shadow-2xl overflow-hidden relative group">
-                                                                                                <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full group-hover:bg-primary/20 transition-all duration-700"></div>
+                                                                                                <!-- Time Section -->
+                                                                                                <div class="mb-8 p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-blue-500/5 border border-primary/20 shadow-2xl overflow-hidden relative group">
+                                                                                                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 blur-[50px] rounded-full group-hover:bg-primary/20 transition-all duration-700"></div>
 
-                                                                                                <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                                                                                                    <div class="w-32 h-32 rounded-full bg-black/40 border-4 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-inner">
-                                                                                                        <span class="text-5xl animate-pulse">🕒</span>
-                                                                                                    </div>
-
-                                                                                                    <div class="flex-1 text-center md:text-left">
-                                                                                                        <h3 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
-                                                                                                            <span class="w-2 h-2 rounded-full bg-primary"></span>
-                                                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.server_time')) !!}
-                                                                                                        </h3>
-                                                                                                        <div id="server-clock" class="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-4 tabular-nums">
-                                                                                                            ${data.server_time.split(' ')[1]}
+                                                                                                    <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                                                                                                        <div class="w-32 h-32 rounded-full bg-black/40 border-4 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-inner">
+                                                                                                            <span class="text-5xl animate-pulse">🕒</span>
                                                                                                         </div>
-                                                                                                        <p class="text-xs text-p-muted font-bold uppercase tracking-widest opacity-60">
-                                                                                                            ${data.server_time.split(' ')[0]} • ${data.timezone}
-                                                                                                        </p>
-                                                                                                    </div>
 
-                                                                                                    <div class="w-full md:w-auto p-6 rounded-3xl bg-black/50 border border-white/5 shadow-xl">
-                                                                                                        <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-4">{!! addslashes(\App\Core\Lang::get('dashboard.time_adjustment')) !!}</label>
-                                                                                                        <div class="flex items-center gap-3 mb-4">
-                                                                                                            <div class="flex-1 text-center">
-                                                                                                                <input type="number" id="offset-hours" value="${Math.floor(data.time_offset / 60)}" 
-                                                                                                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
-                                                                                                                <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.hours')) !!}</span>
+                                                                                                        <div class="flex-1 text-center md:text-left">
+                                                                                                            <h3 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                                                                                                                <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                                                                                {!! addslashes(\App\Core\Lang::get('dashboard.server_time')) !!}
+                                                                                                            </h3>
+                                                                                                            <div id="server-clock" class="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-4 tabular-nums">
+                                                                                                                ${data.server_time.split(' ')[1]}
                                                                                                             </div>
-                                                                                                            <span class="text-p-muted font-bold">:</span>
-                                                                                                            <div class="flex-1 text-center">
-                                                                                                                <input type="number" id="offset-minutes" value="${Math.abs(data.time_offset % 60)}" 
-                                                                                                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
-                                                                                                                <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.minutes')) !!}</span>
-                                                                                                            </div>
+                                                                                                            <p class="text-xs text-p-muted font-bold uppercase tracking-widest opacity-60">
+                                                                                                                ${data.server_time.split(' ')[0]} • ${data.timezone}
+                                                                                                            </p>
                                                                                                         </div>
-                                                                                                        <button onclick="updateTimeOffset()" class="w-full btn-primary !py-2.5 !text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20">
-                                                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.adjust_time_btn')) !!}
-                                                                                                        </button>
+
+                                                                                                        <div class="w-full md:w-auto p-6 rounded-3xl bg-black/50 border border-white/5 shadow-xl">
+                                                                                                            <label class="block text-[10px] font-black text-p-muted uppercase tracking-widest mb-4">{!! addslashes(\App\Core\Lang::get('dashboard.time_adjustment')) !!}</label>
+                                                                                                            <div class="flex items-center gap-3 mb-4">
+                                                                                                                <div class="flex-1 text-center">
+                                                                                                                    <input type="number" id="offset-hours" value="${Math.floor(data.time_offset / 60)}" 
+                                                                                                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
+                                                                                                                    <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.hours')) !!}</span>
+                                                                                                                </div>
+                                                                                                                <span class="text-p-muted font-bold">:</span>
+                                                                                                                <div class="flex-1 text-center">
+                                                                                                                    <input type="number" id="offset-minutes" value="${Math.abs(data.time_offset % 60)}" 
+                                                                                                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center text-white font-bold focus:border-primary/50 outline-none">
+                                                                                                                    <span class="text-[8px] font-black text-p-muted uppercase mt-1 block">{!! addslashes(\App\Core\Lang::get('dashboard.minutes')) !!}</span>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <button onclick="updateTimeOffset()" class="w-full btn-primary !py-2.5 !text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20">
+                                                                                                                {!! addslashes(\App\Core\Lang::get('dashboard.adjust_time_btn')) !!}
+                                                                                                            </button>
+                                                                                                        </div>
                                                                                                     </div>
                                                                                                 </div>
-                                                                                            </div>
 
-                                                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
-                                                                                        `;
+                                                                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+                                                                                            `;
 
                     for (const [key, value] of Object.entries(data)) {
                         if (['server_time', 'time_offset'].includes(key)) continue;
@@ -766,54 +803,54 @@
                         }
 
                         html += `
-                                                                                                <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
-                                                                                                    <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
-                                                                                                    <span class="text-lg font-black text-white block mb-2">${value}</span>
-                                                                                                    ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
-                                                                                                    ${extraWarning}
-                                                                                                </div>
-                                                                                            `;
+                                                                                                    <div class="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+                                                                                                        <span class="block text-[10px] font-black text-primary tracking-widest mb-2">${label}</span>
+                                                                                                        <span class="text-lg font-black text-white block mb-2">${value}</span>
+                                                                                                        ${help ? `<p class="text-xs text-p-muted font-medium italic opacity-70 group-hover:opacity-100 transition-opacity">${help}</p>` : ''}
+                                                                                                        ${extraWarning}
+                                                                                                    </div>
+                                                                                                `;
                     }
 
                     // Migration Section (Only for SQLite)
                     if (data.database_type === 'sqlite') {
                         html += `
-                                                <div class="col-span-1 md:col-span-2 p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all group flex flex-col md:flex-row items-center justify-between gap-6">
-                                                    <div class="flex items-center gap-4">
-                                                        <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-                                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                                            </svg>
+                                                    <div class="col-span-1 md:col-span-2 p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all group flex flex-col md:flex-row items-center justify-between gap-6">
+                                                        <div class="flex items-center gap-4">
+                                                            <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <div class="text-center md:text-left">
+                                                                <h4 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{!! addslashes(\App\Core\Lang::get('migration.title')) !!}</h4>
+                                                                <p class="text-sm text-indigo-200">{!! addslashes(\App\Core\Lang::get('migration.subtitle')) !!}</p>
+                                                            </div>
                                                         </div>
-                                                        <div class="text-center md:text-left">
-                                                            <h4 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{!! addslashes(\App\Core\Lang::get('migration.title')) !!}</h4>
-                                                            <p class="text-sm text-indigo-200">{!! addslashes(\App\Core\Lang::get('migration.subtitle')) !!}</p>
-                                                        </div>
+                                                        <a href="{{ $baseUrl }}admin/system/migrate" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">
+                                                            {!! addslashes(\App\Core\Lang::get('migration.link_text')) !!} &rarr;
+                                                        </a>
                                                     </div>
-                                                    <a href="{{ $baseUrl }}admin/system/migrate" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">
-                                                        {!! addslashes(\App\Core\Lang::get('migration.link_text')) !!} &rarr;
-                                                    </a>
-                                                </div>
-                                            `;
+                                                `;
                     }
 
                     html += `
-                                                                                            </div>
-                                                                                            <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
-                                                                                                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-                                                                                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
-                                                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
-                                                                                                </h4>
-                                                                                                <p class="text-sm text-p-muted leading-relaxed mb-6">
-                                                                                                    {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
-                                                                                                </p>
-                                                                                                <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                                                                                    <p class="text-xs md:text-sm text-p-muted leading-relaxed">
-                                                                                                        {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
-                                                                                                    </p>
                                                                                                 </div>
-                                                                                            </div>
-                                                                                        `;
+                                                                                                <div class="p-8 rounded-3xl bg-black/40 border border-white/5">
+                                                                                                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-4 flex items-center gap-3">
+                                                                                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 
+                                                                                                        {!! addslashes(\App\Core\Lang::get('dashboard.needs_more_capacity')) !!}
+                                                                                                    </h4>
+                                                                                                    <p class="text-sm text-p-muted leading-relaxed mb-6">
+                                                                                                        {!! addslashes(\App\Core\Lang::get('dashboard.modify_values_text')) !!}
+                                                                                                    </p>
+                                                                                                    <div class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                                                                                        <p class="text-xs md:text-sm text-p-muted leading-relaxed">
+                                                                                                            {!! addslashes(\App\Core\Lang::get('dashboard.recommendation')) !!}
+                                                                                                        </p>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            `;
 
                     showModal({
                         title: '{!! addslashes(\App\Core\Lang::get('dashboard.server_config')) !!}',
