@@ -124,12 +124,32 @@ class GoogleAuthController extends BaseController
                 }
 
             } catch (\Exception $e) {
+                // Self-Healing: Check for missing 'google_id' column
+                if (strpos($e->getMessage(), 'no such column: google_id') !== false || strpos($e->getMessage(), "Unknown column 'google_id'") !== false) {
+                    try {
+                        $db = Database::getInstance()->getConnection();
+                        $adapter = Database::getInstance()->getAdapter();
+                        if ($adapter->getType() === 'sqlite') {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
+                        } else {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
+                        }
+                        // Retry login flow immediately by reloading
+                        header("Refresh:0");
+                        exit;
+                    } catch (\Exception $migErr) {
+                        // If migration fails, show original error + migration error
+                        $e = new \Exception($e->getMessage() . " | Migration Failed: " . $migErr->getMessage());
+                    }
+                }
+
                 // Log error
                 error_log("Google Login Error: " . $e->getMessage());
                 // FORCE DEBUG ON SCREEN
                 echo "<div style='padding:50px;font-family:sans-serif;'>";
                 echo "<h1>Google Login Error</h1>";
                 echo "<p>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
+                echo "<p><strong>Auto-Fix Attempted. Please refresh the page if problem persists.</strong></p>";
                 echo "<pre>" . $e->getTraceAsString() . "</pre>";
                 echo "</div>";
                 exit; // Stop redirect
