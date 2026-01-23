@@ -544,6 +544,18 @@ class Installer
                             $db->exec("ALTER TABLE system_settings RENAME COLUMN \"key\" TO key_name");
                         }
                     }
+
+                    // Ensure updated_at exists (Migration for production)
+                    if (!in_array('updated_at', $cols)) {
+                        error_log("Installer: Adding 'updated_at' column to system_settings...");
+                        if ($type === 'sqlite') {
+                            $db->exec("ALTER TABLE system_settings ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+                        } elseif ($type === 'mysql') {
+                            $db->exec("ALTER TABLE system_settings ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+                        } elseif ($type === 'pgsql') {
+                            $db->exec("ALTER TABLE system_settings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                        }
+                    }
                 }
             } catch (\Exception $e) {
                 error_log("Pre-Migration warning: " . $e->getMessage());
