@@ -555,8 +555,6 @@ class Installer
                         } elseif ($type === 'pgsql') {
                             $db->exec("ALTER TABLE system_settings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
                         }
-                    }
-                    }
                 }
 
                 // Pre-Migration: users -> google_id
