@@ -517,6 +517,7 @@ return [
                 'perm_manage_roles' => 'Gestionar Roles',
                 'perm_view_files' => 'Ver Archivos (Media)',
                 'perm_upload_files' => 'Subir Archivos',
+                'perm_upload_original' => 'Subir Originales (Sin Optimizar)',
                 'perm_edit_files' => 'Editar / Renombrar',
                 'perm_delete_files' => 'Eliminar Archivos',
                 'perm_view_tables' => 'Ver Tablas',

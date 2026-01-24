@@ -41,6 +41,7 @@
                 'actions' => [
                     'view_files' => \App\Core\Lang::get('roles_form.perm_view_files'),
                     'upload' => \App\Core\Lang::get('roles_form.perm_upload_files'),
+                    'upload_original' => \App\Core\Lang::get('roles_form.perm_upload_original'),
                     'edit_files' => \App\Core\Lang::get('roles_form.perm_edit_files'),
                     'delete_files' => \App\Core\Lang::get('roles_form.perm_delete_files')
                 ]

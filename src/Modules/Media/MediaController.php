@@ -443,8 +443,11 @@ class MediaController extends BaseController
             $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
         }
 
+        // Check if user has permission to upload original files (without optimization)
+        $canUploadOriginal = Auth::hasPermission('module:media.upload_original');
+
         $imageService = new ImageService();
-        $safeName = $imageService->process($file['tmp_name'], $targetDir, $safeName);
+        $safeName = $imageService->process($file['tmp_name'], $targetDir, $safeName, $canUploadOriginal);
 
         if (file_exists($targetDir . $safeName)) {
             $publicUrl = Auth::getFullBaseUrl() . 'uploads/' . $scopePath . '/' . ($path ? $path . '/' : '') . $safeName;
@@ -920,16 +923,43 @@ class MediaController extends BaseController
 
         // SAVE
         $quality = (int) ($_POST['quality'] ?? 85);
-        $success = false;
+        $format = $_POST['format'] ?? 'original';
 
-        // If it's a save-as-copy
-        $savePath = $fullPath;
-        if (isset($_POST['save_as_copy']) && $_POST['save_as_copy'] === 'true') {
-            $pi = pathinfo($fullPath);
-            $savePath = $pi['dirname'] . DIRECTORY_SEPARATOR . $pi['filename'] . '-edited-' . time() . '.' . $pi['extension'];
+        // Determine Target Type
+        $targetType = $type;
+        $targetExt = image_type_to_extension($type, false);
+
+        if ($format === 'webp') {
+            $targetType = IMAGETYPE_WEBP;
+            $targetExt = 'webp';
+        } elseif ($format === 'avif' && defined('IMAGETYPE_AVIF')) {
+            $targetType = IMAGETYPE_AVIF;
+            $targetExt = 'avif';
+        } elseif ($format === 'jpeg') {
+            $targetType = IMAGETYPE_JPEG;
+            $targetExt = 'jpg';
+        } elseif ($format === 'png') {
+            $targetType = IMAGETYPE_PNG;
+            $targetExt = 'png';
         }
 
-        switch ($type) {
+        $success = false;
+
+        // If it's a save-as-copy OR format changed (force copy logic efficiently)
+        // Actually, if format changed, we treat it as a new file unless we overwrite (but we usually want to save as copy)
+        // If "Save as Copy" is FALSE but format changed, we effectively delete original and create new one?
+        // Let's stick to: If format changed, we force a filename change (extension).
+
+        $savePath = $fullPath;
+        $pi = pathinfo($fullPath);
+
+        if ((isset($_POST['save_as_copy']) && $_POST['save_as_copy'] === 'true') || $targetType !== $type) {
+            // If format changed, using the NEW extension
+            $newFilename = $pi['filename'] . ($targetType !== $type ? '' : '-edited') . '-' . time() . '.' . $targetExt;
+            $savePath = $pi['dirname'] . DIRECTORY_SEPARATOR . $newFilename;
+        }
+
+        switch ($targetType) {
             case IMAGETYPE_JPEG:
                 $success = imagejpeg($image, $savePath, $quality);
                 break;
@@ -1189,8 +1219,11 @@ class MediaController extends BaseController
             $safeName = $info['filename'] . '-' . substr(uniqid(), -5) . '.' . $info['extension'];
         }
 
+        // Check if user has permission to upload original files (without optimization)
+        $canUploadOriginal = Auth::hasPermission('module:media.upload_original');
+
         $imageService = new ImageService();
-        $safeName = $imageService->process($file['tmp_name'], $absoluteDir, $safeName);
+        $safeName = $imageService->process($file['tmp_name'], $absoluteDir, $safeName, $canUploadOriginal);
 
         if (file_exists($absoluteDir . $safeName)) {
             $url = Auth::getFullBaseUrl() . 'uploads/' . str_replace('//', '/', $relativeDir . $safeName);
