@@ -541,6 +541,7 @@ return array(
       'perm_manage_roles' => 'Manage Roles',
       'perm_view_files' => 'View Files (Media)',
       'perm_upload_files' => 'Upload Files',
+      'perm_upload_original' => 'Upload Originals (Unoptimized)',
       'perm_edit_files' => 'Edit / Rename',
       'perm_delete_files' => 'Delete Files',
       'perm_view_tables' => 'See Tables',

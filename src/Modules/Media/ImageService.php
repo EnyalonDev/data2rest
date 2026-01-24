@@ -28,9 +28,10 @@ class ImageService
      * @param string $sourcePath Path to the source file (usually a temp file).
      * @param string $destinationDir Directory where the file should be saved.
      * @param string $filename Original filename.
+     * @param bool $forceOriginal If true, skip format conversion (user has upload_original permission).
      * @return string Final filename (might have different extension).
      */
-    public function process($sourcePath, $destinationDir, $filename)
+    public function process($sourcePath, $destinationDir, $filename, $forceOriginal = false)
     {
         $destinationDir = rtrim($destinationDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         $pi = pathinfo($filename);
@@ -88,9 +89,14 @@ class ImageService
             }
 
             // 3. Formats and Optimization
-            $priorityFormat = Config::getSetting('media_optimize_priority', 'original'); // original, webp, avif
+            $priorityFormat = Config::getSetting('media_optimize_priority', 'webp'); // Changed default to 'webp'
             $quality = (int) Config::getSetting('media_optimize_quality', 85);
             $availableFormats = Imagick::queryFormats();
+
+            // If user has permission to upload originals, force 'original' format
+            if ($forceOriginal) {
+                $priorityFormat = 'original';
+            }
 
             if ($priorityFormat === 'avif' && in_array('AVIF', $availableFormats)) {
                 $imagick->setImageFormat('avif');
