@@ -234,6 +234,14 @@ class ProjectController extends BaseController
         $planType = $_POST['plan_type'] ?? 'monthly';
         $startDate = $_POST['start_date'] ?? Auth::getCurrentTime();
 
+        // External Auth / Google OAuth Fields
+        $googleClientId = $_POST['google_client_id'] ?? null;
+        $googleClientSecret = $_POST['google_client_secret'] ?? null;
+        $domain = $_POST['domain'] ?? null;
+        $allowedOrigins = $_POST['allowed_origins'] ?? null;
+        // Checkbox handling: if present/checked '1', else '0'
+        $externalAuthEnabled = isset($_POST['external_auth_enabled']) ? 1 : 0;
+
         if (empty($name)) {
             Auth::setFlashError("Project name is required.");
             $this->redirect('admin/projects/new');
@@ -243,11 +251,11 @@ class ProjectController extends BaseController
         $db = Database::getInstance()->getConnection();
         try {
             if ($id) {
-                $stmt = $db->prepare("UPDATE projects SET name = ?, description = ?, storage_quota = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-                $stmt->execute([$name, $description, $storageQuota, $id]);
+                $stmt = $db->prepare("UPDATE projects SET name = ?, description = ?, storage_quota = ?, google_client_id = ?, google_client_secret = ?, domain = ?, allowed_origins = ?, external_auth_enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$name, $description, $storageQuota, $googleClientId, $googleClientSecret, $domain, $allowedOrigins, $externalAuthEnabled, $id]);
             } else {
-                $stmt = $db->prepare("INSERT INTO projects (name, description, storage_quota) VALUES (?, ?, ?)");
-                $stmt->execute([$name, $description, $storageQuota]);
+                $stmt = $db->prepare("INSERT INTO projects (name, description, storage_quota, google_client_id, google_client_secret, domain, allowed_origins, external_auth_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $description, $storageQuota, $googleClientId, $googleClientSecret, $domain, $allowedOrigins, $externalAuthEnabled]);
                 $id = $db->lastInsertId();
             }
 
