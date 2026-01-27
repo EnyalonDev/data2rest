@@ -139,18 +139,24 @@ try {
     // 6. Configurando system_settings
     echo "\n6. Configurando system_settings...\n";
 
-    // 6.1 Asegurar columna 'description'
+
+    // 6.1 Asegurar columna 'description' y 'created_at'
     try {
         $stmt = $db->query("PRAGMA table_info(system_settings)");
         $cols = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+
         if (!in_array('description', $cols)) {
             $db->exec("ALTER TABLE system_settings ADD COLUMN description TEXT");
             echo "  ✓ Columna 'description' agregada a system_settings\n";
         }
-    } catch (Exception $e) {
-        echo "  - Error verificando description: " . $e->getMessage() . "\n";
-    }
 
+        if (!in_array('created_at', $cols)) {
+            $db->exec("ALTER TABLE system_settings ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+            echo "  ✓ Columna 'created_at' agregada a system_settings\n";
+        }
+    } catch (Exception $e) {
+        echo "  - Error verificando columnas en system_settings: " . $e->getMessage() . "\n";
+    }
     // 6.2 Insertar valores defaults
     $settings = [
         ['jwt_secret', bin2hex(random_bytes(32)), 'Clave secreta para firmar tokens JWT'],
