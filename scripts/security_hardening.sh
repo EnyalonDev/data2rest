@@ -186,6 +186,70 @@ else
     echo "✓ uploads/.htaccess exists"
 fi
 
+# Check src/.htaccess
+if [ ! -f "$PROJECT_ROOT/src/.htaccess" ]; then
+    echo "⚠ WARNING: src/.htaccess not found!"
+    echo "  Creating protective .htaccess..."
+    cat > "$PROJECT_ROOT/src/.htaccess" << 'EOF'
+# Deny all access to source code
+Order Allow,Deny
+Deny from all
+
+# Additional protection
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
+EOF
+    chmod 644 "$PROJECT_ROOT/src/.htaccess"
+    echo "✓ Created src/.htaccess"
+else
+    echo "✓ src/.htaccess exists"
+fi
+
+# Check vendor/.htaccess
+if [ ! -f "$PROJECT_ROOT/vendor/.htaccess" ]; then
+    echo "⚠ WARNING: vendor/.htaccess not found!"
+    echo "  Creating protective .htaccess..."
+    cat > "$PROJECT_ROOT/vendor/.htaccess" << 'EOF'
+# Deny all access to vendor directory
+Order Allow,Deny
+Deny from all
+
+# Additional protection
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
+EOF
+    chmod 644 "$PROJECT_ROOT/vendor/.htaccess"
+    echo "✓ Created vendor/.htaccess"
+else
+    echo "✓ vendor/.htaccess exists"
+fi
+
+# Check scripts/.htaccess
+if [ ! -f "$PROJECT_ROOT/scripts/.htaccess" ]; then
+    echo "⚠ WARNING: scripts/.htaccess not found!"
+    echo "  Creating protective .htaccess..."
+    cat > "$PROJECT_ROOT/scripts/.htaccess" << 'EOF'
+# Deny all access to scripts directory
+Order Allow,Deny
+Deny from all
+
+# Additional protection
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
+EOF
+    chmod 644 "$PROJECT_ROOT/scripts/.htaccess"
+    echo "✓ Created scripts/.htaccess"
+else
+    echo "✓ scripts/.htaccess exists"
+fi
+
+
 echo ""
 
 # 7. Summary
@@ -200,16 +264,21 @@ echo "📂 data/           → 750 (protected from web access)"
 echo "📄 *.db files      → 640 (owner read/write, group read)"
 echo "📁 uploads/        → 755 (web accessible for media)"
 echo "🖼️  media files     → 644 (readable by web server)"
+echo "📝 src/            → Protected (403 Forbidden)"
+echo "📦 vendor/         → Protected (403 Forbidden)"
+echo "🔧 scripts/        → Protected (403 Forbidden)"
 echo "🛡️  .htaccess       → Deny rules in place"
 echo ""
 echo "═══════════════════════════════════════════════════════════"
 echo "  SECURITY LAYERS:"
 echo "═══════════════════════════════════════════════════════════"
-echo "1. ✓ Directory outside public/"
+echo "1. ✓ Directories outside public/"
 echo "2. ✓ File permissions (640 for databases)"
-echo "3. ✓ .htaccess deny rules"
+echo "3. ✓ .htaccess deny rules (data, src, vendor, scripts)"
 echo "4. ✓ No directory listing"
 echo "5. ✓ PHP execution blocked in uploads/"
+echo "6. ✓ Source code protected from web access"
+
 echo ""
 echo "🔒 Your databases are now protected!"
 echo ""

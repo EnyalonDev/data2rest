@@ -1,0 +1,9 @@
+# Deny all access to source code
+Order Allow,Deny
+Deny from all
+
+# Additional protection
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
