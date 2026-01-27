@@ -293,16 +293,8 @@
         </div>
     </div>
 
-    @include('admin.projects.add_user_modal') {{-- Assuming we move the add user modal or leave it--}} 
-    {{-- Reintegration of Add User Modal (simplified for this edit) or keeping it if not replacing that part. 
-       Wait, I must preserve the Add User Modal logic/HTML I'm not replacing.
-       The tool accepts a range. I will include the Add Users modal if it overlaps or ensure I don't delete it.
-       The previous tool call had Add User Modal at lines 268+. 
-       I am replacing up to line 477. So I NEED to include the Add User Modal inside this content block or adjust EndLine.
-       
-       Let's stick to replacing the Config Modal (lines 151-266) + Script (297-477).
-       I will just put the existing Add User Modal back in to be safe.
-    --}}
+
+    <!-- Modal: Agregar Usuario (Classic) -->
 
     <!-- Modal: Agregar Usuario (Classic) -->
     <div id="addUserModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
