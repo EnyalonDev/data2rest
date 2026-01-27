@@ -96,7 +96,7 @@ $router = new Router();
 if (isset($_SERVER['REQUEST_URI']) && (strpos($_SERVER['REQUEST_URI'], '/api/v1/') !== false || strpos($_SERVER['REQUEST_URI'], '/api/system/') !== false)) {
     header("Access-Control-Allow-Origin: *");
     header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, X-API-KEY, X-API-Key, Authorization");
+    header("Access-Control-Allow-Headers: Content-Type, X-API-KEY, X-API-Key, Authorization, X-Project-ID");
 
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         http_response_code(200);
@@ -403,6 +403,20 @@ $router->add('GET', '/api/system/tables', 'SystemDatabase\\SystemDatabaseApiCont
 // --- System Settings ---
 $router->add('GET', '/admin/settings/google', 'System\\SystemController@googleSettings');
 $router->add('POST', '/admin/settings/google', 'System\\SystemController@updateGoogleSettings');
+
+// --- Auth: External Sites (Google OAuth) ---
+$router->add('POST', '/api/v1/auth/google/verify', 'Auth\\ProjectAuthController@verifyGoogleCode');
+$router->add('POST', '/api/v1/auth/verify-token', 'Auth\\ProjectAuthController@verifyToken');
+$router->add('POST', '/api/v1/auth/logout', 'Auth\\ProjectAuthController@logout');
+$router->add('POST', '/api/v1/external/{projectId}/log-activity', 'Auth\\ProjectAuthController@logExternalActivity');
+
+// --- Admin: Project Logs ---
+$router->add('GET', '/admin/projects/{id}/logs', 'Projects\\ProjectLogsController@index');
+$router->add('GET', '/admin/projects/{id}/logs/export-csv', 'Projects\\ProjectLogsController@exportCsv');
+$router->add('GET', '/admin/projects/{id}/external-users', 'Projects\\ProjectUsersController@listExternalUsers');
+$router->add('POST', '/admin/projects/external-users/update', 'Projects\\ProjectUsersController@updateExternalPermissions');
+$router->add('GET', '/admin/projects/external-users/search', 'Projects\\ProjectUsersController@searchUsers');
+$router->add('POST', '/admin/projects/external-users/add', 'Projects\\ProjectUsersController@addUserToProject');
 
 // Dispatch
 $method = $_SERVER['REQUEST_METHOD'];

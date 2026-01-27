@@ -11,6 +11,25 @@
             <p class="text-p-muted font-medium">Configura los detalles del proyecto, el equipo y la facturación</p>
         </div>
 
+        @if($project)
+            <!-- Pestañas de Navegación -->
+            <div class="border-b border-white/10 mb-8 -mt-4">
+                <nav class="flex gap-6 overflow-x-auto">
+                    <a href="#" class="pb-3 border-b-2 border-primary font-bold text-white whitespace-nowrap">General</a>
+                    <a href="{{ $baseUrl }}admin/databases?project_id={{ $project['id'] }}"
+                        class="pb-3 border-b-2 border-transparent font-medium text-p-muted hover:text-white hover:border-white/20 transition-all whitespace-nowrap">Bases
+                        de Datos</a>
+                    <a href="{{ $baseUrl }}admin/api?project_id={{ $project['id'] }}"
+                        class="pb-3 border-b-2 border-transparent font-medium text-p-muted hover:text-white hover:border-white/20 transition-all whitespace-nowrap">API</a>
+                    <a href="{{ $baseUrl }}admin/projects/{{ $project['id'] }}/logs"
+                        class="pb-3 border-b-2 border-transparent font-medium text-p-muted hover:text-white hover:border-white/20 transition-all whitespace-nowrap">Logs</a>
+                    <a href="{{ $baseUrl }}admin/projects/{{ $project['id'] }}/external-users"
+                        class="pb-3 border-b-2 border-transparent font-medium text-p-muted hover:text-white hover:border-white/20 transition-all whitespace-nowrap">Usuarios
+                        Web</a>
+                </nav>
+            </div>
+        @endif
+
         <form action="{{ $baseUrl }}admin/projects/save" method="POST" id="projectForm" class="space-y-8">
             {!! $csrf_field !!}
             @if ($project)
@@ -96,6 +115,53 @@
                         <div class="mt-8 pt-8 border-t border-white/5 flex justify-between items-center">
                             <span class="text-p-muted font-bold">Total Presupuestado:</span>
                             <span class="text-2xl font-black text-primary" id="grandTotalDisplay">$0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Autenticación Externa -->
+                    <div class="glass-card p-8">
+                        <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                            <h3 class="text-xs font-black text-p-muted uppercase tracking-[0.3em] flex items-center gap-3">
+                                <span class="w-8 h-[1px] bg-slate-800"></span> Autenticación Externa (Google OAuth)
+                            </h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="flex items-center mb-4">
+                                <input type="checkbox" name="external_auth_enabled" id="external_auth_enabled" value="1" {{ ($project['external_auth_enabled'] ?? 0) ? 'checked' : '' }}
+                                    class="form-checkbox h-5 w-5 text-primary rounded border-white/10 bg-white/5 focus:ring-primary">
+                                <label for="external_auth_enabled" class="ml-3 text-sm font-bold text-p-title">Habilitar
+                                    autenticación externa</label>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-6">
+                                <div>
+                                    <label class="form-label mb-2">Google Client ID</label>
+                                    <input type="text" name="google_client_id"
+                                        value="{{ $project['google_client_id'] ?? '' }}"
+                                        class="form-input text-xs font-mono" placeholder="apps.googleusercontent.com">
+                                </div>
+                                <div>
+                                    <label class="form-label mb-2">Google Client Secret</label>
+                                    <input type="password" name="google_client_secret"
+                                        value="{{ $project['google_client_secret'] ?? '' }}"
+                                        class="form-input text-xs font-mono" placeholder="Secret Key">
+                                </div>
+                                <div>
+                                    <label class="form-label mb-2">Dominio Permitido (Opcional)</label>
+                                    <input type="text" name="domain" value="{{ $project['domain'] ?? '' }}"
+                                        class="form-input" placeholder="ej: miempresa.com">
+                                    <p class="text-[10px] text-p-muted mt-1">Si se especifica, solo emails de este dominio
+                                        podrán registrarse.</p>
+                                </div>
+                                <div>
+                                    <label class="form-label mb-2">Orígenes Permitidos (CORS)</label>
+                                    <textarea name="allowed_origins" rows="2" class="form-input font-mono text-xs"
+                                        placeholder="https://mi-sitio.com, https://otro-sitio.com">{{ $project['allowed_origins'] ?? '' }}</textarea>
+                                    <p class="text-[10px] text-p-muted mt-1">URLs separadas por coma desde donde se
+                                        permitirán peticiones.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -240,35 +306,35 @@
                     const card = document.createElement('div');
                     card.className = `flex flex-col p-4 bg-white/5 border ${isPayer ? 'border-primary/50 bg-primary/5' : 'border-white/5'} rounded-xl transition-all group`;
                     card.innerHTML = `
-                                        <div class="flex items-center justify-between mb-2">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded-lg ${isPayer ? 'bg-primary' : 'bg-emerald-500/10'} flex items-center justify-center text-xs font-black ${isPayer ? 'text-dark' : 'text-emerald-500'}">
-                                                    ${user.username.charAt(0).toUpperCase()}
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-8 h-8 rounded-lg ${isPayer ? 'bg-primary' : 'bg-emerald-500/10'} flex items-center justify-center text-xs font-black ${isPayer ? 'text-dark' : 'text-emerald-500'}">
+                                                            ${user.username.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-sm font-bold text-p-title">${user.public_name || user.username}</p>
+                                                            ${!hasBillingData && isPayer ? '<p class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">⚠️ Falta info de factura</p>' : ''}
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-2">
+                                                        ${!isPayer ? `<button type="button" onclick="setAsPayer(${user.id})" class="text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-all">Definir Pago</button>` : '<span class="text-[9px] font-black uppercase tracking-widest text-primary">RESPONSABLE</span>'}
+                                                        <button type="button" onclick="removeUser(${user.id})" class="text-p-muted hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p class="text-sm font-bold text-p-title">${user.public_name || user.username}</p>
-                                                    ${!hasBillingData && isPayer ? '<p class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">⚠️ Falta info de factura</p>' : ''}
-                                                </div>
-                                            </div>
-                                            <div class="flex gap-2">
-                                                ${!isPayer ? `<button type="button" onclick="setAsPayer(${user.id})" class="text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-all">Definir Pago</button>` : '<span class="text-[9px] font-black uppercase tracking-widest text-primary">RESPONSABLE</span>'}
-                                                <button type="button" onclick="removeUser(${user.id})" class="text-p-muted hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                                            </div>
-                                        </div>
-                                        <input type="hidden" name="user_ids[]" value="${user.id}">
-                                    `;
+                                                <input type="hidden" name="user_ids[]" value="${user.id}">
+                                            `;
                     assigned.appendChild(card);
                 } else if (matchesQuery && query.length > 0) {
                     const item = document.createElement('div');
                     item.className = 'p-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between hover:border-primary/50 cursor-pointer transition-all hover:bg-white/10';
                     item.onclick = () => addUser(user.id);
                     item.innerHTML = `
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-sm font-bold text-p-title">${user.username}</span>
-                                            <span class="text-xs text-p-muted">${user.email || ''}</span>
-                                        </div>
-                                        <span class="text-xs font-black text-primary">+ Añadir</span>
-                                    `;
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-sm font-bold text-p-title">${user.username}</span>
+                                                    <span class="text-xs text-p-muted">${user.email || ''}</span>
+                                                </div>
+                                                <span class="text-xs font-black text-primary">+ Añadir</span>
+                                            `;
                     results.appendChild(item);
                 }
             });
@@ -329,14 +395,14 @@
                         item.className = 'glass-card p-4 hover:border-primary/50 cursor-pointer transition-all';
                         item.onclick = () => addServiceToProject(service);
                         item.innerHTML = `
-                                        <p class="font-bold text-p-title text-sm mb-1">${service.name}</p>
-                                        <p class="text-[10px] text-p-muted mb-2">${service.description || ''}</p>
-                                        <div class="flex flex-wrap gap-2 mt-2">
-                                            <span class="text-[9px] font-black text-primary uppercase border border-primary/20 px-2 rounded-full">Mes: $${service.price_monthly}</span>
-                                            <span class="text-[9px] font-black text-emerald-500 uppercase border border-emerald-500/20 px-2 rounded-full">Año: $${service.price_yearly}</span>
-                                            <span class="text-[9px] font-black text-amber-500 uppercase border border-amber-500/20 px-2 rounded-full">Pago Único: $${service.price_one_time}</span>
-                                        </div>
-                                    `;
+                                                <p class="font-bold text-p-title text-sm mb-1">${service.name}</p>
+                                                <p class="text-[10px] text-p-muted mb-2">${service.description || ''}</p>
+                                                <div class="flex flex-wrap gap-2 mt-2">
+                                                    <span class="text-[9px] font-black text-primary uppercase border border-primary/20 px-2 rounded-full">Mes: $${service.price_monthly}</span>
+                                                    <span class="text-[9px] font-black text-emerald-500 uppercase border border-emerald-500/20 px-2 rounded-full">Año: $${service.price_yearly}</span>
+                                                    <span class="text-[9px] font-black text-amber-500 uppercase border border-amber-500/20 px-2 rounded-full">Pago Único: $${service.price_one_time}</span>
+                                                </div>
+                                            `;
                         list.appendChild(item);
                     });
                 });
@@ -383,49 +449,49 @@
                 const el = document.createElement('div');
                 el.className = 'service-item glass-card !bg-white/5 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-right-2';
                 el.innerHTML = `
-                                    <div class="flex-grow">
-                                        <p class="text-sm font-bold text-p-title mb-2">${ps.name}</p>
-                                        <input type="hidden" name="services[${index}][service_id]" value="${ps.service_id}">
+                                            <div class="flex-grow">
+                                                <p class="text-sm font-bold text-p-title mb-2">${ps.name}</p>
+                                                <input type="hidden" name="services[${index}][service_id]" value="${ps.service_id}">
 
-                                        <div class="flex flex-wrap gap-4 items-center">
-                                            <div class="flex flex-col gap-1">
-                                                <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Periodo</span>
-                                                <select name="services[${index}][billing_period]" onchange="updatePeriod(${index}, this.value)"
-                                                    class="text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 rounded px-2 py-1.5 text-p-title focus:ring-0 outline-none">
-                                                    <option value="monthly" ${ps.billing_period === 'monthly' ? 'selected' : ''}>Precio Mensual</option>
-                                                    <option value="yearly" ${ps.billing_period === 'yearly' ? 'selected' : ''}>Precio Anual</option>
-                                                    <option value="unico" ${ps.billing_period === 'unico' ? 'selected' : ''}>Pago Único</option>
-                                                </select>
-                                            </div>
+                                                <div class="flex flex-wrap gap-4 items-center">
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Periodo</span>
+                                                        <select name="services[${index}][billing_period]" onchange="updatePeriod(${index}, this.value)"
+                                                            class="text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 rounded px-2 py-1.5 text-p-title focus:ring-0 outline-none">
+                                                            <option value="monthly" ${ps.billing_period === 'monthly' ? 'selected' : ''}>Precio Mensual</option>
+                                                            <option value="yearly" ${ps.billing_period === 'yearly' ? 'selected' : ''}>Precio Anual</option>
+                                                            <option value="unico" ${ps.billing_period === 'unico' ? 'selected' : ''}>Pago Único</option>
+                                                        </select>
+                                                    </div>
 
-                                            <div class="flex flex-col gap-1">
-                                                <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Precio Unitario</span>
-                                                <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-2 h-[29px]">
-                                                    <span class="text-[10px] text-p-muted font-bold">$</span>
-                                                    <input type="number" step="0.01" name="services[${index}][custom_price]" 
-                                                        value="${ps.custom_price}" 
-                                                        onchange="updateCustomPrice(${index}, this.value)"
-                                                        class="w-20 bg-transparent text-[10px] font-bold text-p-title border-none p-0 focus:ring-0 outline-none">
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Precio Unitario</span>
+                                                        <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-2 h-[29px]">
+                                                            <span class="text-[10px] text-p-muted font-bold">$</span>
+                                                            <input type="number" step="0.01" name="services[${index}][custom_price]" 
+                                                                value="${ps.custom_price}" 
+                                                                onchange="updateCustomPrice(${index}, this.value)"
+                                                                class="w-20 bg-transparent text-[10px] font-bold text-p-title border-none p-0 focus:ring-0 outline-none">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <div class="flex flex-col items-center gap-1">
-                                            <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Cant.</span>
-                                            <div class="flex items-center border border-white/10 rounded-lg overflow-hidden h-[29px]">
-                                                <button type="button" onclick="updateQty(${index}, -1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">-</button>
-                                                <input type="number" name="services[${index}][quantity]" value="${ps.quantity}" class="w-10 bg-transparent text-center text-xs font-bold border-none focus:ring-0" readonly>
-                                                <button type="button" onclick="updateQty(${index}, 1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">+</button>
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex flex-col items-center gap-1">
+                                                    <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Cant.</span>
+                                                    <div class="flex items-center border border-white/10 rounded-lg overflow-hidden h-[29px]">
+                                                        <button type="button" onclick="updateQty(${index}, -1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">-</button>
+                                                        <input type="number" name="services[${index}][quantity]" value="${ps.quantity}" class="w-10 bg-transparent text-center text-xs font-bold border-none focus:ring-0" readonly>
+                                                        <button type="button" onclick="updateQty(${index}, 1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">+</button>
+                                                    </div>
+                                                </div>
+                                                <div class="text-right min-w-[100px]">
+                                                    <p class="text-[10px] text-p-muted uppercase font-black">Subtotal</p>
+                                                    <p class="text-sm font-black text-primary">$${(ps.custom_price * ps.quantity).toFixed(2)}</p>
+                                                </div>
+                                                <button type="button" onclick="removeService(${index})" class="text-p-muted hover:text-red-500 mt-3 md:mt-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                             </div>
-                                        </div>
-                                        <div class="text-right min-w-[100px]">
-                                            <p class="text-[10px] text-p-muted uppercase font-black">Subtotal</p>
-                                            <p class="text-sm font-black text-primary">$${(ps.custom_price * ps.quantity).toFixed(2)}</p>
-                                        </div>
-                                        <button type="button" onclick="removeService(${index})" class="text-p-muted hover:text-red-500 mt-3 md:mt-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                                    </div>
-                                `;
+                                        `;
                 list.appendChild(el);
             });
 
@@ -499,7 +565,7 @@
                         }
                     });
             @endif
-                        }
+                                }
 
         // --- Form Submission ---
         document.getElementById('projectForm').addEventListener('submit', function (e) {

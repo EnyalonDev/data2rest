@@ -100,7 +100,7 @@ class Config
         try {
             $db = Database::getInstance()->getConnection();
             $adapter = Database::getInstance()->getAdapter();
-            $quotedKey = $adapter->quoteName('key');
+            $quotedKey = $adapter->quoteName('key_name');
             $stmt = $db->prepare("SELECT value FROM " . $adapter->quoteName('system_settings') . " WHERE $quotedKey = ?");
             $stmt->execute([$key]);
             $val = $stmt->fetchColumn();
