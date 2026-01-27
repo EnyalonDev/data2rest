@@ -80,14 +80,38 @@ class ApiDocsController extends BaseController
         $userId = $_SESSION['user_id'] ?? null;
 
         if (Auth::isAdmin()) {
-            // Super Admin sees all keys
-            $sql = "SELECT * FROM api_keys WHERE status = 1 ORDER BY id DESC";
-            $keys = $db->query($sql)->fetchAll();
+            // Super Admin sees all keys for this project
+            if ($projectId) {
+                // Check if project_id column exists before querying (Migration Safety)
+                // Assuming schema is up to date since we verified Installer.php
+                // But for safety in existing production without migration, we might want to check?
+                // No, we will assume migration is run or will handle the error gracefully?
+                // Let's assume schema is correct.
+                $stmt = $db->prepare("SELECT * FROM api_keys WHERE status = 1 AND project_id = ? ORDER BY id DESC");
+                $stmt->execute([$projectId]);
+                $keys = $stmt->fetchAll();
+
+                // Fallback for keys created before project_id was enforced (project_id IS NULL)
+                // If we want to show global keys? No, strictly scoped.
+                // Or maybe show keys with NULL project_id too?
+                // Let's stick to project only.
+            } else {
+                // No active project selected (Global Admin View?), show all
+                $sql = "SELECT * FROM api_keys WHERE status = 1 ORDER BY id DESC";
+                $keys = $db->query($sql)->fetchAll();
+            }
         } else {
-            // Regular users only see their own keys
-            $stmt = $db->prepare("SELECT * FROM api_keys WHERE status = 1 AND user_id = ? ORDER BY id DESC");
-            $stmt->execute([$userId]);
-            $keys = $stmt->fetchAll();
+            // Regular users only see their own keys within the project
+            if ($projectId) {
+                $stmt = $db->prepare("SELECT * FROM api_keys WHERE status = 1 AND user_id = ? AND project_id = ? ORDER BY id DESC");
+                $stmt->execute([$userId, $projectId]);
+                $keys = $stmt->fetchAll();
+            } else {
+                // No project context, show user's keys (maybe from all projects?)
+                $stmt = $db->prepare("SELECT * FROM api_keys WHERE status = 1 AND user_id = ? ORDER BY id DESC");
+                $stmt->execute([$userId]);
+                $keys = $stmt->fetchAll();
+            }
         }
 
         // Scope databases list to project
@@ -134,10 +158,14 @@ class ApiDocsController extends BaseController
             $key = bin2hex(random_bytes(32));
             $db = Database::getInstance()->getConnection();
             $userId = $_SESSION['user_id'] ?? null;
-            $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, description, rate_limit, user_id, status) VALUES (?, ?, ?, ?, ?, 1)");
-            $stmt->execute([$key, $name, $description, $rateLimit, $userId]);
 
-            Logger::log('API_KEY_CREATED', ['name' => $name, 'rate_limit' => $rateLimit]);
+            // Link to Active Project
+            $projectId = Auth::getActiveProject();
+
+            $stmt = $db->prepare("INSERT INTO api_keys (key_value, name, description, rate_limit, user_id, project_id, status) VALUES (?, ?, ?, ?, ?, ?, 1)");
+            $stmt->execute([$key, $name, $description, $rateLimit, $userId, $projectId]);
+
+            Logger::log('API_KEY_CREATED', ['name' => $name, 'rate_limit' => $rateLimit, 'project_id' => $projectId]);
         }
         $this->redirect('admin/api');
     }

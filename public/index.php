@@ -319,6 +319,12 @@ $router->add('GET', '/admin/webhooks/delete', 'Webhooks\\WebhookController@delet
 $router->add('GET', '/admin/webhooks/logs', 'Webhooks\\WebhookController@logs');
 $router->add('POST', '/admin/webhooks/test', 'Webhooks\\WebhookController@test');
 
+// --- Auth: External Sites (Google OAuth) ---
+$router->add('POST', '/api/v1/auth/google/verify', 'Auth\\ProjectAuthController@verifyGoogleCode');
+$router->add('POST', '/api/v1/auth/verify-token', 'Auth\\ProjectAuthController@verifyToken');
+$router->add('POST', '/api/v1/auth/logout', 'Auth\\ProjectAuthController@logout');
+$router->add('POST', '/api/v1/external/{projectId}/log-activity', 'Auth\\ProjectAuthController@logExternalActivity');
+
 // --- REST API Engine ---
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('GET', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
@@ -406,11 +412,6 @@ $router->add('GET', '/api/system/tables', 'SystemDatabase\\SystemDatabaseApiCont
 $router->add('GET', '/admin/settings/google', 'System\\SystemController@googleSettings');
 $router->add('POST', '/admin/settings/google', 'System\\SystemController@updateGoogleSettings');
 
-// --- Auth: External Sites (Google OAuth) ---
-$router->add('POST', '/api/v1/auth/google/verify', 'Auth\\ProjectAuthController@verifyGoogleCode');
-$router->add('POST', '/api/v1/auth/verify-token', 'Auth\\ProjectAuthController@verifyToken');
-$router->add('POST', '/api/v1/auth/logout', 'Auth\\ProjectAuthController@logout');
-$router->add('POST', '/api/v1/external/{projectId}/log-activity', 'Auth\\ProjectAuthController@logExternalActivity');
 
 // --- Admin: Project Logs ---
 $router->add('GET', '/admin/projects/{id}/logs', 'Projects\\ProjectLogsController@index');
