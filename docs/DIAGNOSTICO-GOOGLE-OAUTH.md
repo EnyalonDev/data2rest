@@ -24,10 +24,12 @@ WHERE key_name IN ('google_client_id', 'google_client_secret', 'google_redirect_
 ```
 
 **Valores esperados:**
-- `google_client_id`: `1078429525939-tb94bqkk9g47r12lkr7rs8q7062sp2pt.apps.googleusercontent.com`
-- `google_client_secret`: `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`
-- `google_redirect_uri`: `https://d2r.nestorovallos.com/auth/google/callback`
+- `google_client_id`: `TU_CLIENT_ID_AQUI`
+- `google_client_secret`: `TU_CLIENT_SECRET_AQUI`
+- `google_redirect_uri`: `https://tu-dominio.com/auth/google/callback`
 - `google_login_enabled`: `1`
+
+> **IMPORTANTE**: Nunca compartas tus credenciales de Google OAuth públicamente
 
 ---
 
@@ -91,18 +93,18 @@ Error de Google: access_denied - El usuario canceló la autorización
 #### A. **URIs de Redirección Autorizados**
 
 1. Ir a: https://console.cloud.google.com/apis/credentials
-2. Seleccionar tu proyecto: `data2rest-auth`
+2. Seleccionar tu proyecto
 3. Hacer clic en el Client ID de OAuth 2.0
 4. Verificar que en **"URIs de redirección autorizados"** esté:
    ```
-   https://d2r.nestorovallos.com/auth/google/callback
+   https://tu-dominio.com/auth/google/callback
    ```
 
 #### B. **Orígenes de JavaScript Autorizados**
 
 Verificar que esté:
 ```
-https://d2r.nestorovallos.com
+https://tu-dominio.com
 ```
 
 #### C. **Pantalla de Consentimiento OAuth**
@@ -121,7 +123,7 @@ https://d2r.nestorovallos.com
 ```
 
 #### Paso 2: Intentar Login
-1. Ir a: `https://d2r.nestorovallos.com/login`
+1. Ir a: `https://tu-dominio.com/login`
 2. Hacer clic en "Iniciar sesión con Google"
 3. **Observar:**
    - ¿Te redirige a Google?
@@ -144,7 +146,7 @@ https://d2r.nestorovallos.com
 **Solución:**
 ```sql
 UPDATE system_settings 
-SET value = 'https://d2r.nestorovallos.com/auth/google/callback' 
+SET value = 'https://tu-dominio.com/auth/google/callback' 
 WHERE key_name = 'google_redirect_uri';
 ```
 
@@ -215,7 +217,7 @@ SELECT id, name FROM roles;
 
 #### A. **Probar Redirect**
 ```bash
-curl -I "https://d2r.nestorovallos.com/auth/google"
+curl -I "https://tu-dominio.com/auth/google"
 ```
 
 Deberías ver:
@@ -244,13 +246,13 @@ composer require google/apiclient:"^2.0"
 ### Configuración de Base de Datos
 - [ ] `google_client_id` configurado
 - [ ] `google_client_secret` configurado
-- [ ] `google_redirect_uri` = `https://d2r.nestorovallos.com/auth/google/callback`
+- [ ] `google_redirect_uri` = `https://tu-dominio.com/auth/google/callback`
 - [ ] `google_login_enabled` = `1`
 - [ ] Columna `google_id` existe en tabla `users`
 
 ### Configuración de Google Cloud Console
-- [ ] URIs de redirección incluyen `https://d2r.nestorovallos.com/auth/google/callback`
-- [ ] Orígenes de JavaScript incluyen `https://d2r.nestorovallos.com`
+- [ ] URIs de redirección incluyen `https://tu-dominio.com/auth/google/callback`
+- [ ] Orígenes de JavaScript incluyen `https://tu-dominio.com`
 - [ ] Pantalla de consentimiento configurada
 - [ ] Email agregado a usuarios de prueba (si está en modo Testing)
 
@@ -273,10 +275,10 @@ composer require google/apiclient:"^2.0"
 
 ```bash
 # Terminal 1: Ver logs de PHP
-tail -f ~/public_html/d2r.nestorovallos.com/error_log
+tail -f ~/public_html/tu-dominio.com/error_log
 
 # Terminal 2: Intentar login
-# Navegar a https://d2r.nestorovallos.com/login
+# Navegar a https://tu-dominio.com/login
 # Hacer clic en "Iniciar sesión con Google"
 ```
 
@@ -324,4 +326,19 @@ Google OAuth: New user created with ID: 5, username: tu
 
 ---
 
-**¿Qué ves en los logs después de hacer `git pull` e intentar el login?**
+## 🔐 Seguridad
+
+**NUNCA compartas públicamente:**
+- ❌ Client ID
+- ❌ Client Secret
+- ❌ API Keys
+- ❌ Tokens de acceso
+
+**Guarda tus credenciales en:**
+- ✅ Variables de entorno
+- ✅ Base de datos (encriptadas)
+- ✅ Gestores de secretos (Google Secret Manager, AWS Secrets Manager)
+
+---
+
+**Última actualización**: 2026-01-27
