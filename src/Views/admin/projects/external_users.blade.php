@@ -5,31 +5,30 @@
 @section('content')
     <div class="container mx-auto p-6">
         <div class="mb-6">
-            <h1 class="text-3xl font-bold">{{ $project['name'] }}</h1>
-            <p class="text-gray-600">Gestión de usuarios del sitio web (Autenticación Externa)</p>
+            <h1 class="text-3xl font-bold text-p-title">{{ $project['name'] }}</h1>
+            <p class="text-p-muted">Gestión de usuarios del sitio web (Autenticación Externa)</p>
         </div>
 
         <!-- Pestañas -->
-        <div class="border-b mb-6">
+        <div class="border-b border-white/10 mb-6">
             <nav class="flex gap-4">
-                <a href="/admin/projects?edit={{ $project['id'] }}" class="px-4 py-2 hover:text-blue-600">General</a>
-                <a href="/admin/databases?project_id={{ $project['id'] }}" class="px-4 py-2 hover:text-blue-600">Bases de
-                    Datos</a>
-                <a href="/admin/api?project_id={{ $project['id'] }}" class="px-4 py-2 hover:text-blue-600">API</a>
-                <a href="/admin/projects/{{ $project['id'] }}/logs" class="px-4 py-2 hover:text-blue-600">Logs</a>
-                <a href="#" class="px-4 py-2 border-b-2 border-blue-600 font-semibold text-blue-600">Usuarios Web</a>
+                <a href="/admin/projects?edit={{ $project['id'] }}" class="px-4 py-2 text-p-muted hover:text-primary transition-colors">General</a>
+                <a href="/admin/databases?project_id={{ $project['id'] }}" class="px-4 py-2 text-p-muted hover:text-primary transition-colors">Bases de Datos</a>
+                <a href="/admin/api?project_id={{ $project['id'] }}" class="px-4 py-2 text-p-muted hover:text-primary transition-colors">API</a>
+                <a href="/admin/projects/{{ $project['id'] }}/logs" class="px-4 py-2 text-p-muted hover:text-primary transition-colors">Logs</a>
+                <a href="#" class="px-4 py-2 border-b-2 border-primary font-semibold text-primary">Usuarios Web</a>
             </nav>
         </div>
 
         <!-- Botón agregar usuario -->
-        <div class="mb-6 flex justify-between items-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <div class="mb-6 flex justify-between items-center glass-card p-4 rounded-lg">
             <div>
-                <h3 class="font-medium text-gray-700">Agregar Usuario Existente</h3>
-                <p class="text-sm text-gray-500">Busca usuarios registrados en el sistema y dales acceso a este sitio web.
+                <h3 class="font-medium text-p-title">Agregar Usuario Existente</h3>
+                <p class="text-sm text-p-muted">Busca usuarios registrados en el sistema y dales acceso a este sitio web.
                 </p>
             </div>
             <button onclick="openAddUserModal()"
-                class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">
+                class="btn-primary px-4 py-2 rounded shadow flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
@@ -39,8 +38,9 @@
 
         <!-- Usuarios pendientes -->
         @if(count($pendingUsers) > 0)
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 shadow-sm">
-                <h2 class="text-xl font-semibold mb-4 text-yellow-800 flex items-center gap-2">
+            <div class="glass-card !border-yellow-500/30 p-4 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
+                <h2 class="text-xl font-semibold mb-4 text-yellow-400 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -48,25 +48,25 @@
                     Pendientes de Aprobación ({{ count($pendingUsers) }})
                 </h2>
                 <div class="overflow-x-auto">
-                    <table class="w-full bg-white rounded-lg border border-yellow-100">
+                    <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="border-b bg-yellow-50/50 text-left text-sm font-semibold text-yellow-800">
+                            <tr class="border-b border-white/10 text-xs font-semibold text-yellow-500/80 uppercase tracking-wider">
                                 <th class="px-4 py-3">Usuario</th>
                                 <th class="px-4 py-3">Email</th>
                                 <th class="px-4 py-3">Solicitado</th>
                                 <th class="px-4 py-3 text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-white/5">
                             @foreach($pendingUsers as $user)
-                                <tr class="hover:bg-yellow-50 transition-colors">
-                                    <td class="px-4 py-3 font-medium">{{ $user['username'] }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ $user['email'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">Recién</td>
+                                <tr class="hover:bg-white/5 transition-colors">
+                                    <td class="px-4 py-3 font-medium text-p-title">{{ $user['username'] }}</td>
+                                    <td class="px-4 py-3 text-p-muted">{{ $user['email'] }}</td>
+                                    <td class="px-4 py-3 text-sm text-p-muted">Recién</td>
                                     <td class="px-4 py-3 text-right">
                                         <button
                                             onclick="openConfigModal({{ $user['id'] }}, '{{ $user['username'] }}', '{{ $user['email'] }}', true)"
-                                            class="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 shadow-sm transition">
+                                            class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-3 py-1.5 rounded text-xs hover:bg-emerald-500/30 transition shadow-sm">
                                             ✓ Aprobar & Configurar
                                         </button>
                                     </td>
@@ -79,16 +79,16 @@
         @endif
 
         <!-- Usuarios activos -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-gray-800">👥 Usuarios Activos ({{ count($activeUsers) }})</h2>
-                <div class="text-sm text-gray-500">
+        <div class="glass-card rounded-lg overflow-hidden">
+            <div class="p-4 border-b border-white/5 flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-p-title">👥 Usuarios Activos ({{ count($activeUsers) }})</h2>
+                <div class="text-sm text-p-muted">
                     Usuarios con acceso habilitado
                 </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <thead class="bg-black/20 text-left text-xs font-bold text-p-muted uppercase tracking-wider">
                         <tr>
                             <th class="px-6 py-3">Usuario</th>
                             <th class="px-6 py-3">Email</th>
@@ -96,7 +96,7 @@
                             <th class="px-6 py-3 text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-white/5">
                         @forelse($activeUsers as $user)
                                             <?php
                             // Decodificar permisos de forma segura
@@ -104,16 +104,16 @@
                             $role = $perms['role'] ?? 'client';
 
                             $roleConfig = [
-                                'admin' => ['label' => '👑 Admin', 'class' => 'bg-purple-100 text-purple-800'],
-                                'staff' => ['label' => '👨‍⚕️ Staff', 'class' => 'bg-blue-100 text-blue-800'],
-                                'client' => ['label' => '👤 Cliente', 'class' => 'bg-gray-100 text-gray-800']
+                                'admin' => ['label' => '👑 Admin', 'class' => 'bg-purple-500/20 text-purple-300 border border-purple-500/30'],
+                                'staff' => ['label' => '👨‍⚕️ Staff', 'class' => 'bg-blue-500/20 text-blue-300 border border-blue-500/30'],
+                                'client' => ['label' => '👤 Cliente', 'class' => 'bg-slate-500/20 text-slate-300 border border-slate-500/30']
                             ];
 
                             $currentRole = $roleConfig[$role] ?? $roleConfig['client'];
                                                                     ?>
-                                            <tr class="hover:bg-gray-50 transition-colors">
-                                                <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user['username'] }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ $user['email'] }}</td>
+                                            <tr class="hover:bg-white/5 transition-colors">
+                                                <td class="px-6 py-4 whitespace-nowrap font-medium text-p-title">{{ $user['username'] }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-p-muted">{{ $user['email'] }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $currentRole['class'] }}">
@@ -123,7 +123,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                                     <button
                                                         onclick="openConfigModal({{ $user['id'] }}, '{{ $user['username'] }}', '{{ $user['email'] }}', false, '{{ $role }}', {{ json_encode($perms['pages'] ?? []) }})"
-                                                        class="text-blue-600 hover:text-blue-900 font-medium hover:underline flex items-center justify-end gap-1 w-full">
+                                                        class="text-primary hover:text-white font-medium hover:underline flex items-center justify-end gap-1 w-full transition-colors">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
@@ -137,7 +137,7 @@
                                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-10 text-center text-gray-500">
+                                <td colspan="4" class="px-6 py-10 text-center text-p-muted">
                                     No hay usuarios activos aún.
                                 </td>
                             </tr>
