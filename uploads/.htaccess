@@ -1,0 +1,14 @@
+# Allow access to media files but deny PHP execution
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Allow common media files
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|avif|svg|pdf|mp4|webm|mp3|wav|zip|doc|docx|xls|xlsx)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>

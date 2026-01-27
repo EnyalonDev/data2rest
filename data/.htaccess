@@ -1,0 +1,24 @@
+# Deny all access to database files
+<Files "*.db">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "*.sqlite">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "*.sqlite3">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Deny access to this directory
+Options -Indexes
+
+# Additional protection
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
