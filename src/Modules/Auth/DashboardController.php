@@ -247,8 +247,7 @@ class DashboardController extends BaseController
             $stmt = $db->query("SELECT COUNT(*) FROM " . Database::getInstance()->getAdapter()->quoteName('databases'));
             $globalDbCount = $stmt->fetchColumn();
 
-            $qKey = Database::getInstance()->getAdapter()->quoteName('key');
-            $stmt = $db->prepare("SELECT value FROM system_settings WHERE $qKey = 'show_welcome_banner'");
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key_name = 'show_welcome_banner'");
             $stmt->execute();
             $val = $stmt->fetchColumn();
             $showWelcomeBanner = ($val === false) ? 1 : (int) $val;
