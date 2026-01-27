@@ -110,7 +110,7 @@
                             ];
 
                             $currentRole = $roleConfig[$role] ?? $roleConfig['client'];
-                                            ?>
+                                                                    ?>
                                             <tr class="hover:bg-gray-50 transition-colors">
                                                 <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $user['username'] }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ $user['email'] }}</td>
@@ -332,7 +332,7 @@
                     cb.checked = true;
                     cb.disabled = true;
                 });
-            } elseif(role === 'staff') {
+            } else if (role === 'staff') {
                 // Staff default checks but editable
                 pageCheckboxes.forEach(cb => {
                     cb.disabled = false;
@@ -426,21 +426,21 @@
                 let html = '<ul class="divide-y divide-gray-100">';
                 data.users.forEach(u => {
                     html += `
-                        <li class="p-3 hover:bg-gray-50 flex justify-between items-center group">
-                            <div class="flex items-center gap-3">
-                                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                    ${u.username.substring(0, 2).toUpperCase()}
+                            <li class="p-3 hover:bg-gray-50 flex justify-between items-center group">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                                        ${u.username.substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">${u.username}</p>
+                                        <p class="text-xs text-gray-500">${u.email}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">${u.username}</p>
-                                    <p class="text-xs text-gray-500">${u.email}</p>
-                                </div>
-                            </div>
-                            <button onclick="addUser(${u.id})" class="text-blue-600 border border-blue-600 rounded px-2 py-1 text-xs hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                                + Agregar
-                            </button>
-                        </li>
-                    `;
+                                <button onclick="addUser(${u.id})" class="text-blue-600 border border-blue-600 rounded px-2 py-1 text-xs hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    + Agregar
+                                </button>
+                            </li>
+                        `;
                 });
                 html += '</ul>';
                 resultsDiv.innerHTML = html;
