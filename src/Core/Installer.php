@@ -42,7 +42,7 @@ class Installer
                 role_id INTEGER,
                 group_id INTEGER,
                 status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP, public_name TEXT, phone TEXT, address TEXT, email TEXT, tax_id TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP, public_name TEXT, phone TEXT, address TEXT, email TEXT, tax_id TEXT, google_id TEXT,
                 FOREIGN KEY (role_id) REFERENCES roles(id),
                 FOREIGN KEY (group_id) REFERENCES groups(id)
                 )"
@@ -138,7 +138,8 @@ class Installer
                 status TEXT DEFAULT 'active',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                , storage_quota INTEGER DEFAULT 300, client_id INTEGER, start_date DATE, current_plan_id INTEGER, billing_status TEXT DEFAULT 'active', billing_user_id INTEGER REFERENCES users(id))"
+                , storage_quota INTEGER DEFAULT 300, client_id INTEGER, start_date DATE, current_plan_id INTEGER, billing_status TEXT DEFAULT 'active', billing_user_id INTEGER REFERENCES users(id),
+                google_client_id VARCHAR(255), google_client_secret VARCHAR(255), domain VARCHAR(255), allowed_origins TEXT, external_auth_enabled INTEGER DEFAULT 0)"
         ],
         'project_users' => [
             'sql' => "CREATE TABLE project_users (
@@ -146,10 +147,25 @@ class Installer
                 user_id INTEGER,
                 permissions TEXT,
                 assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                external_permissions TEXT, external_access_enabled INTEGER DEFAULT 1,
                 PRIMARY KEY (project_id, user_id),
                 FOREIGN KEY (project_id) REFERENCES projects(id),
                 FOREIGN KEY (user_id) REFERENCES users(id)
                 )"
+        ],
+        'project_sessions' => [
+            'sql' => "CREATE TABLE project_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                token VARCHAR(512) NOT NULL UNIQUE,
+                expires_at DATETIME NOT NULL,
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"
         ],
         'project_plans' => [
             'sql' => "CREATE TABLE project_plans (
