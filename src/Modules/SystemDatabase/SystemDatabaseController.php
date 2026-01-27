@@ -454,14 +454,12 @@ class SystemDatabaseController extends BaseController
     public function cleanOldData()
     {
         $db = Database::getInstance()->getConnection();
-        $adapter = Database::getInstance()->getAdapter();
-        $keyCol = $adapter->quoteName('key');
 
         // Get retention settings
-        $stmt = $db->query("SELECT value FROM system_settings WHERE $keyCol = 'log_retention_days'");
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'log_retention_days'");
         $logRetention = (int) ($stmt->fetchColumn() ?: 90);
 
-        $stmt = $db->query("SELECT value FROM system_settings WHERE $keyCol = 'audit_retention_days'");
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'audit_retention_days'");
         $auditRetention = (int) ($stmt->fetchColumn() ?: 365);
 
         $cutoffLog = date('Y-m-d H:i:s', strtotime("-$logRetention days"));

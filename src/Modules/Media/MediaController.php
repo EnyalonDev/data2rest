@@ -719,7 +719,7 @@ class MediaController extends BaseController
         $adapter = Database::getInstance()->getAdapter();
 
         foreach ($settings as $key => $value) {
-            $sql = $adapter->getUpsertSQL('system_settings', ['key' => $key, 'value' => $value], 'key');
+            $sql = $adapter->getUpsertSQL('system_settings', ['key_name' => $key, 'value' => $value], 'key_name');
             $stmt = $db->prepare($sql);
             $stmt->execute([$key, $value]);
         }
@@ -1058,8 +1058,7 @@ class MediaController extends BaseController
     {
         $db = Database::getInstance()->getConnection();
         $adapter = Database::getInstance()->getAdapter();
-        $keyCol = $adapter->quoteName('key');
-        $stmt = $db->query("SELECT $keyCol, value FROM system_settings WHERE $keyCol LIKE 'media_%'");
+        $stmt = $db->query("SELECT key_name, value FROM system_settings WHERE key_name LIKE 'media_%'");
         $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         return [
