@@ -151,7 +151,10 @@ try {
         }
 
         if (!in_array('created_at', $cols)) {
-            $db->exec("ALTER TABLE system_settings ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+            // SQLite restriction: Cannot add column with non-constant default (like CURRENT_TIMESTAMP)
+            // Workaround: Add as NULL, then update values
+            $db->exec("ALTER TABLE system_settings ADD COLUMN created_at DATETIME DEFAULT NULL");
+            $db->exec("UPDATE system_settings SET created_at = datetime('now') WHERE created_at IS NULL");
             echo "  ✓ Columna 'created_at' agregada a system_settings\n";
         }
     } catch (Exception $e) {
