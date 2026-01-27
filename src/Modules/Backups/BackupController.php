@@ -275,7 +275,7 @@ class BackupController extends BaseController
         $db = Database::getInstance()->getConnection();
         $adapter = Database::getInstance()->getAdapter();
 
-        $sql = $adapter->getUpsertSQL('system_settings', ['key' => 'backup_cloud_url', 'value' => $url], 'key');
+        $sql = $adapter->getUpsertSQL('system_settings', ['key_name' => 'backup_cloud_url', 'value' => $url], 'key_name');
         $stmt = $db->prepare($sql);
         $stmt->execute(['backup_cloud_url', $url]);
 
@@ -386,8 +386,7 @@ class BackupController extends BaseController
         // Let's assume system_settings exists or handle it.
         try {
             $adapter = Database::getInstance()->getAdapter();
-            $keyCol = $adapter->quoteName('key');
-            $stmt = $db->prepare("SELECT value FROM system_settings WHERE $keyCol = 'backup_cloud_url'");
+            $stmt = $db->prepare("SELECT value FROM system_settings WHERE key_name = 'backup_cloud_url'");
             $stmt->execute();
             return $stmt->fetchColumn();
         } catch (\Exception $e) {
