@@ -25,6 +25,11 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Security reports and private docs
+SECURITY_REPORT*.md
+*_PRIVATE.md
+
+
 # IDEs
 .vscode/
 .idea/
