@@ -149,31 +149,32 @@
     </div>
 
 
-    <!-- Modal: Configurar Permisos (Styled) -->
+
+    <!-- Modal: Configurar Permisos (Themed) -->
     <div id="configModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background overlay -->
-            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-filter backdrop-blur-sm" aria-hidden="true" onclick="closeConfigModal()"></div>
+            <div class="fixed inset-0 bg-dark/80 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="closeConfigModal()"></div>
 
             <!-- Modal panel -->
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
+            <div class="inline-block align-bottom glass-card text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full !p-0">
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-                    <h3 class="text-lg leading-6 font-bold text-white flex items-center gap-2" id="modalUserTitle">
-                        <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <div class="bg-white/5 border-b border-white/10 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-bold text-p-title flex items-center gap-2" id="modalUserTitle">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         Configurar Usuario
                     </h3>
-                    <button onclick="closeConfigModal()" class="text-blue-100 hover:text-white transition-colors focus:outline-none">
+                    <button onclick="closeConfigModal()" class="text-p-muted hover:text-p-title transition-colors focus:outline-none">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 <!-- Body -->
-                <div class="px-6 py-6 bg-white">
-                    <p class="text-sm text-gray-500 mb-6 bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
-                        <span id="modalUserEmail" class="font-medium text-blue-800">email@example.com</span>
+                <div class="px-6 py-6">
+                    <p class="text-sm text-p-muted mb-6 bg-primary/10 p-3 rounded-lg border border-primary/20 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
+                        <span id="modalUserEmail" class="font-medium text-p-title">email@example.com</span>
                     </p>
 
                     <form id="configForm">
@@ -181,59 +182,59 @@
                         <input type="hidden" id="configProjectId" value="{{ $project['id'] }}">
 
                         <!-- Switch Habilitado -->
-                        <div class="mb-6 flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
-                            <span class="text-sm font-medium text-gray-900">Acceso Habilitado</span>
+                        <div class="mb-6 flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10">
+                            <span class="text-sm font-medium text-p-title">Acceso Habilitado</span>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="userEnabled" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none ring-0 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                <div class="w-11 h-6 bg-white/10 peer-focus:outline-none ring-0 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                             </label>
                         </div>
 
                         <!-- Roles Grid -->
                         <div class="mb-6">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Rol Asignado</label>
+                            <label class="block text-xs font-black text-p-muted uppercase tracking-widest mb-3">Rol Asignado</label>
                             <div class="grid grid-cols-1 gap-3">
-                                <label class="relative border-2 rounded-lg p-3 cursor-pointer hover:border-blue-300 transition-all group has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <label class="relative border border-white/10 rounded-lg p-3 cursor-pointer hover:bg-white/5 transition-all group has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5">
                                     <input type="radio" name="role" value="admin" class="sr-only" onchange="updatePermissionsUI()">
                                     <div class="flex items-start">
                                         <div class="flex-shrink-0 mt-0.5">
-                                            <span class="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center group-has-[:checked]:border-blue-500">
-                                                <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></span>
+                                            <span class="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center group-has-[:checked]:border-primary">
+                                                <span class="w-2 h-2 rounded-full bg-primary opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></span>
                                             </span>
                                         </div>
                                         <div class="ml-3">
-                                            <span class="block text-sm font-bold text-gray-900 group-has-[:checked]:text-blue-700">Administrador</span>
-                                            <span class="block text-xs text-gray-500 mt-0.5">Control total del sitio y configuraciones.</span>
+                                            <span class="block text-sm font-bold text-p-title group-has-[:checked]:text-primary">Administrador</span>
+                                            <span class="block text-xs text-p-muted mt-0.5">Control total del sitio y configuraciones.</span>
                                         </div>
                                     </div>
                                 </label>
                                 
-                                <label class="relative border-2 rounded-lg p-3 cursor-pointer hover:border-blue-300 transition-all group has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <label class="relative border border-white/10 rounded-lg p-3 cursor-pointer hover:bg-white/5 transition-all group has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5">
                                     <input type="radio" name="role" value="staff" class="sr-only" onchange="updatePermissionsUI()">
                                     <div class="flex items-start">
                                         <div class="flex-shrink-0 mt-0.5">
-                                            <span class="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center group-has-[:checked]:border-blue-500">
-                                                <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></span>
+                                            <span class="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center group-has-[:checked]:border-primary">
+                                                <span class="w-2 h-2 rounded-full bg-primary opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></span>
                                             </span>
                                         </div>
                                         <div class="ml-3">
-                                            <span class="block text-sm font-bold text-gray-900 group-has-[:checked]:text-blue-700">Staff</span>
-                                            <span class="block text-xs text-gray-500 mt-0.5">Gestión operativa sin acceso a configuración.</span>
+                                            <span class="block text-sm font-bold text-p-title group-has-[:checked]:text-primary">Staff</span>
+                                            <span class="block text-xs text-p-muted mt-0.5">Gestión operativa sin acceso a configuración.</span>
                                         </div>
                                     </div>
                                 </label>
 
-                                <label class="relative border-2 rounded-lg p-3 cursor-pointer hover:border-blue-300 transition-all group has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <label class="relative border border-white/10 rounded-lg p-3 cursor-pointer hover:bg-white/5 transition-all group has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5">
                                     <input type="radio" name="role" value="client" class="sr-only" onchange="updatePermissionsUI()">
                                     <div class="flex items-start">
                                         <div class="flex-shrink-0 mt-0.5">
-                                            <span class="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center group-has-[:checked]:border-blue-500">
-                                                <span class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></span>
+                                            <span class="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center group-has-[:checked]:border-primary">
+                                                <span class="w-2 h-2 rounded-full bg-primary opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></span>
                                             </span>
                                         </div>
                                         <div class="ml-3">
-                                            <span class="block text-sm font-bold text-gray-900 group-has-[:checked]:text-blue-700">Cliente</span>
-                                            <span class="block text-xs text-gray-500 mt-0.5">Acceso limitado a sus propios datos.</span>
+                                            <span class="block text-sm font-bold text-p-title group-has-[:checked]:text-primary">Cliente</span>
+                                            <span class="block text-xs text-p-muted mt-0.5">Acceso limitado a sus propios datos.</span>
                                         </div>
                                     </div>
                                 </label>
@@ -242,23 +243,23 @@
 
                         <!-- Paginas -->
                         <div class="mb-4">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Páginas Permitidas</label>
-                            <div class="bg-gray-50 rounded-lg p-4 grid grid-cols-2 gap-3 border border-gray-100" id="pagesContainer">
-                                <label class="flex items-center space-x-2 bg-white p-2 rounded border border-gray-200 shadow-sm opacity-50 cursor-not-allowed">
-                                    <input type="checkbox" checked disabled class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span class="text-sm font-medium text-gray-700">Dashboard</span>
+                            <label class="block text-xs font-black text-p-muted uppercase tracking-widest mb-3">Páginas Permitidas</label>
+                            <div class="bg-white/5 rounded-lg p-4 grid grid-cols-2 gap-3 border border-white/10" id="pagesContainer">
+                                <label class="flex items-center space-x-2 p-2 rounded border border-white/10 opacity-50 cursor-not-allowed">
+                                    <input type="checkbox" checked disabled class="bg-black/20 border-white/10 rounded text-primary focus:ring-primary">
+                                    <span class="text-sm font-medium text-p-muted">Dashboard</span>
                                 </label>
-                                <label class="flex items-center space-x-2 bg-white p-2 rounded border border-gray-200 shadow-sm opacity-50 cursor-not-allowed">
-                                    <input type="checkbox" checked disabled class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span class="text-sm font-medium text-gray-700">Perfil</span>
+                                <label class="flex items-center space-x-2 p-2 rounded border border-white/10 opacity-50 cursor-not-allowed">
+                                    <input type="checkbox" checked disabled class="bg-black/20 border-white/10 rounded text-primary focus:ring-primary">
+                                    <span class="text-sm font-medium text-p-muted">Perfil</span>
                                 </label>
-                                <label class="flex items-center space-x-2 bg-white p-2 rounded border border-gray-200 shadow-sm hover:border-blue-400 transition-colors">
-                                    <input type="checkbox" name="pages" value="reports" class="page-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4">
-                                    <span class="text-sm font-medium text-gray-700">Reportes</span>
+                                <label class="flex items-center space-x-2 p-2 rounded border border-white/10 hover:border-primary/50 transition-colors">
+                                    <input type="checkbox" name="pages" value="reports" class="page-checkbox bg-black/20 border-white/10 rounded text-primary focus:ring-primary h-4 w-4">
+                                    <span class="text-sm font-medium text-p-title">Reportes</span>
                                 </label>
-                                <label class="flex items-center space-x-2 bg-white p-2 rounded border border-gray-200 shadow-sm hover:border-blue-400 transition-colors">
-                                    <input type="checkbox" name="pages" value="settings" class="page-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4">
-                                    <span class="text-sm font-medium text-gray-700">Configuración</span>
+                                <label class="flex items-center space-x-2 p-2 rounded border border-white/10 hover:border-primary/50 transition-colors">
+                                    <input type="checkbox" name="pages" value="settings" class="page-checkbox bg-black/20 border-white/10 rounded text-primary focus:ring-primary h-4 w-4">
+                                    <span class="text-sm font-medium text-p-title">Configuración</span>
                                 </label>
                             </div>
                         </div>
@@ -266,18 +267,19 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="px-6 py-4 bg-gray-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
-                    <button type="button" onclick="closeConfigModal()" class="w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-gray-200">
+                <div class="px-6 py-4 bg-white/5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-white/10">
+                    <button type="button" onclick="closeConfigModal()" class="btn-outline w-full sm:w-auto">
                         Cancelar
                     </button>
-                    <button type="button" onclick="savePermissions()" id="btnSave" class="w-full sm:w-auto px-4 py-2 bg-blue-600 border border-transparent rounded-lg text-white hover:bg-blue-700 font-medium shadow-md transition-all transform active:scale-95 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex justify-center items-center">
+                    <button type="button" onclick="savePermissions()" id="btnSave" class="btn-primary w-full sm:w-auto shadow-lg shadow-primary/20">
                         <span id="btnSaveText">Guardar Cambios</span>
-                        <svg id="btnSaveSpinner" class="animate-spin ml-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <svg id="btnSaveSpinner" class="animate-spin ml-2 h-4 w-4 text-dark hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Toast Notification System -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out">
@@ -331,9 +333,9 @@
 
             // Config colors
             const colors = {
-                success: 'border-green-500 text-green-500',
+                success: 'border-emerald-500 text-emerald-500',
                 error: 'border-red-500 text-red-500',
-                info: 'border-blue-500 text-blue-500'
+                info: 'border-primary text-primary'
             };
             const icons = {
                 success: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
@@ -341,10 +343,12 @@
                 info: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
             };
 
-            // Reset classes
-            toastContent.className = `bg-white border-l-4 rounded shadow-2xl p-4 flex items-center min-w-[300px] ${colors[type]}`;
+            // Using glass-card for background matching theme
+            toastContent.className = `glass-card border-l-4 !p-4 flex items-center min-w-[300px] ${colors[type]}`;
             icon.innerHTML = icons[type];
+            titleEl.className = "font-bold text-sm text-p-title";
             titleEl.innerText = title;
+            msgEl.className = "text-xs text-p-muted mt-1";
             msgEl.innerText = message;
 
             // Show
@@ -361,9 +365,10 @@
         // --- Config Modal Logic ---
         function openConfigModal(userId, username, email, isApproval = false, currentRole = 'client', currentPages = []) {
             document.getElementById('configModal').classList.remove('hidden');
+            // Theme-aware icons in title
             document.getElementById('modalUserTitle').innerHTML = isApproval 
-                ? '<svg class="w-5 h-5 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Aprobar: ' + username 
-                : '<svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg> Configurar: ' + username;
+                ? '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Aprobar: ' + username 
+                : '<svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg> Configurar: ' + username;
             document.getElementById('modalUserEmail').innerText = email;
             document.getElementById('configUserId').value = userId;
             document.getElementById('userEnabled').checked = true;
@@ -371,11 +376,7 @@
             // Set role radio
             const radios = document.getElementsByName('role');
             for (const radio of radios) {
-                 radio.parentElement.classList.remove('bg-blue-50', 'border-blue-500'); // Reset visuals
-                 if (radio.value === currentRole) {
-                     radio.checked = true;
-                     radio.parentElement.classList.add('bg-blue-50', 'border-blue-500'); // Active visual
-                 }
+                 if (radio.value === currentRole) radio.checked = true;
             }
 
             // Set pages
@@ -395,11 +396,7 @@
             const role = document.querySelector('input[name="role"]:checked').value;
             const pageCheckboxes = document.querySelectorAll('.page-checkbox');
             
-            // Visual Update for Radios
-            document.getElementsByName('role').forEach(r => {
-                if(r.checked) r.parentElement.classList.add('bg-blue-50', 'border-blue-500');
-                else r.parentElement.classList.remove('bg-blue-50', 'border-blue-500');
-            });
+            // Manual styling logic removed - handled by CSS :has() selector now
 
             if (role === 'admin') {
                 pageCheckboxes.forEach(cb => { cb.checked = true; cb.disabled = true; });
