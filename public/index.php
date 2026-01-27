@@ -346,18 +346,6 @@ $router->add('GET', '/api/billing/payment-plans/{id}', 'Billing\\Controllers\\Pa
 $router->add('PUT', '/api/billing/payment-plans/{id}', 'Billing\\Controllers\\PaymentPlanController@update');
 
 
-// Temporary route to run migration script
-if ($_SERVER['REQUEST_URI'] === '/system/fix-schema') {
-    header('Content-Type: text/plain');
-    echo "Running migration script...\n";
-    try {
-        // Correct path from public/ to scripts/
-        require_once __DIR__ . '/../scripts/migrate_external_auth.php';
-    } catch (Exception $e) {
-        echo "Error running migration: " . $e->getMessage();
-    }
-    exit;
-}
 
 // Installments
 $router->add('GET', '/api/billing/projects/{id}/installments', 'Billing\\Controllers\\InstallmentController@getByProject');
