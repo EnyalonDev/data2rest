@@ -320,6 +320,7 @@ $router->add('GET', '/admin/webhooks/logs', 'Webhooks\\WebhookController@logs');
 $router->add('POST', '/admin/webhooks/test', 'Webhooks\\WebhookController@test');
 
 // --- Auth: External Sites (Google OAuth) ---
+$router->add('GET', '/api/projects/{projectId}/auth/google', 'Auth\\ProjectAuthController@initiateGoogleAuth');
 $router->add('POST', '/api/v1/auth/google/verify', 'Auth\\ProjectAuthController@verifyGoogleCode');
 $router->add('POST', '/api/v1/auth/verify-token', 'Auth\\ProjectAuthController@verifyToken');
 $router->add('POST', '/api/v1/auth/logout', 'Auth\\ProjectAuthController@logout');

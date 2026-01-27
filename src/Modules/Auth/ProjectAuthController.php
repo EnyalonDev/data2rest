@@ -13,6 +13,42 @@ use Exception;
 class ProjectAuthController extends BaseController
 {
     /**
+     * Iniciar flujo OAuth de Google
+     * GET /api/projects/{projectId}/auth/google
+     */
+    public function initiateGoogleAuth($projectId)
+    {
+        // $projectId viene de la URL (ruta)
+
+        $project = $this->getProject($projectId);
+        if (!$project || !$project['external_auth_enabled']) {
+            die('External authentication not enabled for this project');
+        }
+
+        if (empty($project['google_client_id'])) {
+            die('Google Client ID not configured for this project');
+        }
+
+        // Detectar redirect_uri desde query param o usar default
+        $redirectUri = $_GET['redirect_uri'] ?? null;
+
+        // Construir URL de Google
+        $params = [
+            'client_id' => $project['google_client_id'],
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'email profile openid',
+            'access_type' => 'online',
+            'prompt' => 'select_account' // Forzar selector de cuenta
+        ];
+
+        $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params);
+
+        header('Location: ' . $authUrl);
+        exit;
+    }
+
+    /**
      * Verificar código de Google y crear sesión
      * POST /api/v1/auth/google/verify
      */
