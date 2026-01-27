@@ -38,26 +38,70 @@ class GoogleAuthController extends BaseController
     {
         $client = $this->getClient();
         if (!$client) {
-            die("Google Login is not configured.");
+            error_log("Google OAuth Error: Client not configured");
+
+            // Check what's missing
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->query("SELECT key_name, value FROM system_settings WHERE key_name IN ('google_client_id', 'google_client_secret', 'google_redirect_uri', 'google_login_enabled')");
+            $settings = [];
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $settings[$row['key_name']] = $row['value'];
+            }
+
+            $missing = [];
+            if (empty($settings['google_login_enabled']))
+                $missing[] = 'Google Login no está habilitado';
+            if (empty($settings['google_client_id']))
+                $missing[] = 'Client ID no configurado';
+            if (empty($settings['google_client_secret']))
+                $missing[] = 'Client Secret no configurado';
+            if (empty($settings['google_redirect_uri']))
+                $missing[] = 'Redirect URI no configurado';
+
+            Auth::setFlashError('Error de configuración de Google OAuth: ' . implode(', ', $missing), 'error');
+            $this->redirect('login');
+            return;
         }
-        $authUrl = $client->createAuthUrl();
-        header('Location: ' . $authUrl);
-        exit;
+
+        try {
+            $authUrl = $client->createAuthUrl();
+            error_log("Google OAuth: Redirecting to " . $authUrl);
+            header('Location: ' . $authUrl);
+            exit;
+        } catch (\Exception $e) {
+            error_log("Google OAuth Error creating auth URL: " . $e->getMessage());
+            Auth::setFlashError('Error al crear URL de autenticación: ' . $e->getMessage(), 'error');
+            $this->redirect('login');
+        }
     }
 
     public function handleCallback()
     {
+        error_log("Google OAuth Callback: Started");
+
         $client = $this->getClient();
         if (!$client) {
+            error_log("Google OAuth Callback Error: Client not configured");
+            Auth::setFlashError('Error: Google OAuth no está configurado correctamente', 'error');
             $this->redirect('login');
+            return;
         }
 
         if (isset($_GET['code'])) {
+            error_log("Google OAuth Callback: Received code");
+
             try {
                 $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+
                 if (isset($token['error'])) {
-                    throw new \Exception($token['error_description'] ?? 'Error fetching token');
+                    $errorMsg = $token['error_description'] ?? $token['error'] ?? 'Error desconocido';
+                    error_log("Google OAuth Token Error: " . $errorMsg);
+                    Auth::setFlashError('Error al obtener token de Google: ' . $errorMsg, 'error');
+                    $this->redirect('login');
+                    return;
                 }
+
+                error_log("Google OAuth: Token obtained successfully");
                 $client->setAccessToken($token['access_token']);
 
                 // Get User Info
@@ -69,6 +113,8 @@ class GoogleAuthController extends BaseController
                 $name = $google_account_info->name;
                 $avatar = $google_account_info->picture;
 
+                error_log("Google OAuth: User info retrieved - Email: $email, Google ID: $googleId");
+
                 // Check if user exists
                 $db = Database::getInstance()->getConnection();
 
@@ -78,7 +124,7 @@ class GoogleAuthController extends BaseController
                 $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
                 if ($user) {
-                    // Start session
+                    error_log("Google OAuth: Existing user found by Google ID: " . $user['username']);
                     $this->loginUser($user);
                 } else {
                     // 2. Check by Email (Link account if exists)
@@ -87,13 +133,15 @@ class GoogleAuthController extends BaseController
                     $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
                     if ($user) {
+                        error_log("Google OAuth: Linking existing user by email: " . $user['username']);
                         // Link account
                         $update = $db->prepare("UPDATE users SET google_id = ? WHERE id = ?");
                         $update->execute([$googleId, $user['id']]);
                         $this->loginUser($user);
                     } else {
+                        error_log("Google OAuth: Creating new user for email: $email");
+
                         // 3. Create new user (Standard/Guest)
-                        // If no username, use email prefix or safe version of name
                         $username = explode('@', $email)[0];
                         // Ensure unique username
                         $check = $db->prepare("SELECT count(*) FROM users WHERE username = ?");
@@ -102,17 +150,22 @@ class GoogleAuthController extends BaseController
                             $username .= rand(100, 999);
                         }
 
-                        $roleId = 4; // Default role ID (Usuario/Standard)
-                        // If roles table structure isn't guaranteed, we should query it, but 4 is safe based on listing.
+                        // Get "Usuario" role ID dynamically
+                        $roleStmt = $db->prepare("SELECT id FROM roles WHERE name = 'Usuario' LIMIT 1");
+                        $roleStmt->execute();
+                        $roleId = $roleStmt->fetchColumn();
 
-                        $insert = $db->prepare("INSERT INTO users (username, email, password, role_id, google_id, created_at, status) VALUES (?, ?, NULL, ?, ?, datetime('now'), 1)");
-                        // Note: Datetime syntax might vary by DB, using standard
-                        // MySQL uses NOW(), SQLite uses datetime('now')
-                        $adapter = Database::getInstance()->getAdapter();
-                        $now = ($adapter->getType() === 'sqlite') ? date('Y-m-d H:i:s') : date('Y-m-d H:i:s'); // PHP Generated is safest
+                        if (!$roleId) {
+                            error_log("Google OAuth Warning: 'Usuario' role not found, using default role_id = 4");
+                            $roleId = 4; // Fallback
+                        }
 
-                        $insert->execute([$username, $email, $roleId, $googleId]);
+                        $insert = $db->prepare("INSERT INTO users (username, email, password, role_id, google_id, created_at, status) VALUES (?, ?, NULL, ?, ?, ?, 1)");
+                        $now = date('Y-m-d H:i:s');
+                        $insert->execute([$username, $email, $roleId, $googleId, $now]);
                         $newId = $db->lastInsertId();
+
+                        error_log("Google OAuth: New user created with ID: $newId, username: $username");
 
                         // Fetch new user
                         $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
@@ -124,38 +177,59 @@ class GoogleAuthController extends BaseController
                 }
 
             } catch (\Exception $e) {
+                $errorMsg = $e->getMessage();
+                error_log("Google OAuth Exception: " . $errorMsg);
+                error_log("Stack trace: " . $e->getTraceAsString());
+
                 // Handle Expired/Invalid Code (Bad Request)
-                if (strpos($e->getMessage(), 'Bad Request') !== false || strpos($e->getMessage(), 'invalid_grant') !== false) {
-                    // Redirect to login to try again
+                if (strpos($errorMsg, 'Bad Request') !== false || strpos($errorMsg, 'invalid_grant') !== false) {
+                    Auth::setFlashError('El código de autorización ha expirado. Por favor, intenta nuevamente.', 'warning');
                     $this->redirect('login');
                     return;
                 }
 
                 // Self-Healing: Check for missing 'google_id' column
-                if (strpos($e->getMessage(), 'no such column: google_id') !== false || strpos($e->getMessage(), "Unknown column 'google_id'") !== false) {
+                if (strpos($errorMsg, 'no such column: google_id') !== false || strpos($errorMsg, "Unknown column 'google_id'") !== false) {
+                    error_log("Google OAuth: Attempting to add missing google_id column");
                     try {
                         $db = Database::getInstance()->getConnection();
                         $adapter = Database::getInstance()->getAdapter();
-                        if ($adapter->getType() === 'sqlite') {
+                        $type = $adapter->getType();
+
+                        if ($type === 'sqlite') {
                             $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
-                        } else {
-                            $db->exec("ALTER TABLE users ADD COLUMN google_id TEXT");
+                        } elseif ($type === 'mysql') {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id VARCHAR(255)");
+                        } elseif ($type === 'pgsql' || $type === 'postgresql') {
+                            $db->exec("ALTER TABLE users ADD COLUMN google_id VARCHAR(255)");
                         }
-                        // Retry login flow immediately by reloading
-                        header("Refresh:0");
-                        exit;
+
+                        error_log("Google OAuth: google_id column added successfully, retrying");
+                        Auth::setFlashError('Configuración actualizada. Por favor, intenta iniciar sesión nuevamente.', 'success');
+                        $this->redirect('auth/google');
+                        return;
                     } catch (\Exception $migErr) {
-                        error_log("Migration Failed: " . $migErr->getMessage());
+                        error_log("Google OAuth Migration Failed: " . $migErr->getMessage());
+                        Auth::setFlashError('Error al actualizar la base de datos: ' . $migErr->getMessage(), 'error');
                     }
                 }
 
-                // Log error and redirect
-                error_log("Google Login Error: " . $e->getMessage());
-                // Fallback to login
+                // Generic error
+                Auth::setFlashError('Error al autenticar con Google: ' . $errorMsg, 'error');
                 $this->redirect('login');
             }
         } else {
-            die("Google did not return an authorization code.");
+            // Check for error from Google
+            if (isset($_GET['error'])) {
+                $error = $_GET['error'];
+                $errorDesc = $_GET['error_description'] ?? 'Sin descripción';
+                error_log("Google OAuth Error from Google: $error - $errorDesc");
+                Auth::setFlashError("Error de Google: $error - $errorDesc", 'error');
+            } else {
+                error_log("Google OAuth Error: No code received");
+                Auth::setFlashError('Google no devolvió un código de autorización', 'error');
+            }
+            $this->redirect('login');
         }
     }
 
