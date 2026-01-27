@@ -86,12 +86,22 @@ class ProjectAuthController extends BaseController
             // 4. Verificar acceso al proyecto
             $access = $this->hasExternalAccessToProject($userId, $projectId);
             if (!$access) {
-                // Asignar automáticamente como pendiente o rechazar
-                // Aquí asignamos como pendiente (enabled = 0)
-                $stmt = $db->prepare("INSERT INTO project_users (project_id, user_id, external_access_enabled, assigned_at) VALUES (?, ?, 0, datetime('now'))");
+                // Auto-aprobar con permisos mínimos de cliente
+                $defaultPermissions = [
+                    'role' => 'client',
+                    'pages' => [], // Sin páginas específicas, se usará la configuración del frontend
+                    'data_access' => [
+                        'scope' => 'own',
+                        'filters' => []
+                    ],
+                    'actions' => ['read'] // Solo lectura por defecto
+                ];
+
+                $stmt = $db->prepare("INSERT INTO project_users (project_id, user_id, external_access_enabled, external_permissions, assigned_at) VALUES (?, ?, 1, ?, datetime('now'))");
                 try {
-                    $stmt->execute([$projectId, $userId]);
-                    return $this->json(['error' => 'User registered but waiting for approval'], 403);
+                    $stmt->execute([$projectId, $userId, json_encode($defaultPermissions)]);
+                    // Continuar con el flujo normal de autenticación
+                    $access = $this->hasExternalAccessToProject($userId, $projectId);
                 } catch (Exception $e) {
                     // Ya existía pero estaba deshabilitado
                     return $this->json(['error' => 'User not authorized for this project'], 403);
