@@ -69,10 +69,20 @@ class ProjectAuthController extends BaseController
             $user = $stmt->fetch();
 
             if (!$user) {
+                // Buscar el rol "Usuario" (rol más básico)
+                $roleStmt = $db->prepare("SELECT id FROM roles WHERE name = 'Usuario' LIMIT 1");
+                $roleStmt->execute();
+                $userRoleId = $roleStmt->fetchColumn();
+
+                // Fallback: si no existe el rol "Usuario", usar NULL (sin rol)
+                if (!$userRoleId) {
+                    $userRoleId = null;
+                }
+
                 // Crear usuario si no existe
                 $username = strtolower(explode('@', $email)[0]) . rand(100, 999);
-                $stmt = $db->prepare("INSERT INTO users (username, email, google_id, role_id, status, created_at) VALUES (?, ?, ?, 4, 1, datetime('now'))");
-                $stmt->execute([$username, $email, $googleId]);
+                $stmt = $db->prepare("INSERT INTO users (username, email, google_id, role_id, status, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))");
+                $stmt->execute([$username, $email, $googleId, $userRoleId]);
                 $userId = $db->lastInsertId();
                 $user = ['id' => $userId, 'email' => $email, 'username' => $username];
             } else {
