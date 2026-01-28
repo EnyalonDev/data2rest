@@ -198,6 +198,173 @@ class ProjectAuthController extends BaseController
     }
 
     /**
+     * Registro tradicional (Email/Password)
+     * POST /api/projects/{projectId}/auth/register
+     */
+    public function register($routeProjectId = null)
+    {
+        $projectId = $routeProjectId ?? ($_SERVER['HTTP_X_PROJECT_ID'] ?? null);
+        if (!$projectId) {
+            return $this->json(['error' => 'Project ID required'], 400);
+        }
+
+        $project = $this->getProject($projectId);
+        if (!$project || !$project['external_auth_enabled']) {
+            return $this->json(['error' => 'External authentication not enabled for this project'], 403);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+        $name = $data['name'] ?? null;
+
+        if (!$email || !$password || !$name) {
+            return $this->json(['error' => 'Email, password and name are required'], 400);
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json(['error' => 'Invalid email format'], 400);
+        }
+
+        if (strlen($password) < 6) {
+            return $this->json(['error' => 'Password must be at least 6 characters'], 400);
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        // 1. Verificar si el usuario ya existe
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            return $this->json(['error' => 'Email already registered'], 409);
+        }
+
+        try {
+            // 2. Crear usuario
+            $username = strtolower(explode('@', $email)[0]) . rand(100, 999);
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $now = date('Y-m-d H:i:s');
+            
+            // Buscar el rol "Usuario"
+            $roleStmt = $db->prepare("SELECT id FROM roles WHERE name = 'Usuario' LIMIT 1");
+            $roleStmt->execute();
+            $userRoleId = $roleStmt->fetchColumn() ?: null;
+
+            $stmt = $db->prepare("INSERT INTO users (username, email, password, role_id, status, created_at) VALUES (?, ?, ?, ?, 1, ?)");
+            $stmt->execute([$username, $email, $hashedPassword, $userRoleId, $now]);
+            $userId = $db->lastInsertId();
+
+            // 3. Asignar acceso al proyecto
+            $defaultPermissions = [
+                'role' => 'client',
+                'pages' => [],
+                'data_access' => ['scope' => 'own', 'filters' => []],
+                'actions' => ['read']
+            ];
+
+            $stmt = $db->prepare("INSERT INTO project_users (project_id, user_id, external_access_enabled, external_permissions, assigned_at) VALUES (?, ?, 1, ?, ?)");
+            $stmt->execute([$projectId, $userId, json_encode($defaultPermissions), $now]);
+
+            // 4. Generar Token y Sesión (Login automático tras registro)
+            $token = $this->generateJWT($userId, $projectId, $defaultPermissions);
+            $expiresAt = date('Y-m-d H:i:s', time() + Config::getSetting('jwt_expiration', 86400));
+            
+            $stmt = $db->prepare("INSERT INTO project_sessions (project_id, user_id, token, expires_at, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$projectId, $userId, $token, $expiresAt, $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '', $now]);
+
+            ActivityLogger::logAuth($userId, $projectId, 'external_register_success', true);
+
+            return $this->json([
+                'success' => true,
+                'data' => [
+                    'token' => $token,
+                    'user' => ['id' => $userId, 'email' => $email, 'name' => $name, 'permissions' => $defaultPermissions],
+                    'project' => ['id' => $project['id'], 'name' => $project['name']],
+                    'expires_at' => $expiresAt
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return $this->json(['error' => 'Registration failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Login tradicional (Email/Password)
+     * POST /api/projects/{projectId}/auth/login
+     */
+    public function login($routeProjectId = null)
+    {
+        $projectId = $routeProjectId ?? ($_SERVER['HTTP_X_PROJECT_ID'] ?? null);
+        if (!$projectId) {
+            return $this->json(['error' => 'Project ID required'], 400);
+        }
+
+        $project = $this->getProject($projectId);
+        if (!$project || !$project['external_auth_enabled']) {
+            return $this->json(['error' => 'External authentication not enabled for this project'], 403);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+
+        if (!$email || !$password) {
+            return $this->json(['error' => 'Email and password are required'], 400);
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        // 1. Buscar usuario
+        $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if (!$user || !password_verify($password, $user['password'])) {
+            ActivityLogger::logAuth(0, $projectId, 'external_login_failed_credentials', false, "Email: $email");
+            return $this->json(['error' => 'Invalid email or password'], 401);
+        }
+
+        // 2. Verificar acceso al proyecto
+        $access = $this->hasExternalAccessToProject($user['id'], $projectId);
+        if (!$access || !$access['external_access_enabled']) {
+            return $this->json(['error' => 'Access denied for this project'], 403);
+        }
+
+        try {
+            // 3. Generar JWT
+            $permissions = json_decode($access['external_permissions'] ?? '{}', true);
+            $token = $this->generateJWT($user['id'], $projectId, $permissions);
+            $expiresAt = date('Y-m-d H:i:s', time() + Config::getSetting('jwt_expiration', 86400));
+            $now = date('Y-m-d H:i:s');
+
+            // 4. Registrar sesión
+            $stmt = $db->prepare("INSERT INTO project_sessions (project_id, user_id, token, expires_at, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$projectId, $user['id'], $token, $expiresAt, $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '', $now]);
+
+            ActivityLogger::logAuth($user['id'], $projectId, 'external_login_success', true);
+
+            return $this->json([
+                'success' => true,
+                'data' => [
+                    'token' => $token,
+                    'user' => [
+                        'id' => $user['id'], 
+                        'email' => $user['email'], 
+                        'name' => $user['username'], // Podríamos mejorar guardando nombres reales
+                        'permissions' => $permissions
+                    ],
+                    'project' => ['id' => $project['id'], 'name' => $project['name']],
+                    'expires_at' => $expiresAt
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return $this->json(['error' => 'Login failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Validar token de sesión
      * POST /api/v1/auth/verify-token
      */
