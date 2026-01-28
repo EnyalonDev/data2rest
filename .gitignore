@@ -67,3 +67,10 @@ yarn-error.log*
 /data/config.json
 vendor/
 composer.phar
+
+# Projects FE
+# Projects FE
+!/projects-fe/
+/projects-fe/**/node_modules/
+/projects-fe/**/.next/
+/projects-fe/**/.git/

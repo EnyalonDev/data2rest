@@ -95,10 +95,14 @@ class RestController extends BaseController
         $headers = function_exists('getallheaders') ? getallheaders() : [];
         $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
 
+        // Exemption for authentication routes (Login, Register, Google Auth)
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $isAuthRoute = (strpos($uri, '/auth/') !== false);
+
         // Internal bypass for authenticated dashboard users
-        if (!$apiKey && Auth::check()) {
-            header('X-Data2Rest-Auth: Internal-Session');
-            return ['name' => 'Internal Console Session', 'key_value' => 'internal'];
+        if (!$apiKey && (Auth::check() || $isAuthRoute)) {
+            header('X-Data2Rest-Auth: ' . ($isAuthRoute ? 'Public-Auth-Route' : 'Internal-Session'));
+            return ['name' => $isAuthRoute ? 'Public Auth Route' : 'Internal Console Session', 'key_value' => 'internal'];
         }
 
         if (!$apiKey) {

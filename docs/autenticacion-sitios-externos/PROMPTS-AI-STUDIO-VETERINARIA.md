@@ -1,116 +1,89 @@
-# Prompts para Integración OAuth con AI Studio (Proyecto Veterinaria - ID 2)
+# Prompts para Next.js + Google OAuth (PROXIED VERSION)
 
-Estos prompts están diseñados para ser ejecutados secuencialmente en Google AI Studio (Gemini 2.0 Flash Thinking). Incorporan las soluciones de seguridad y compatibilidad descubiertas.
+Estos prompts están diseñados para **Next.js (App Router)** y usan **Rewrites** para ocultar la URL del backend.
 
 ---
 
-## Prompt 1: Configuración Inicial y Dependencias
+## Prompt 1: Configuración de Proxy y Entorno
 
-**Objetivo:** Preparar el entorno del Frontend (respetando lo existente).
+**Objetivo:** Configurar el sistema para que el navegador no vea la URL real del backend.
 
 ```text
-Actúa como un experto en React y Vite.
-Tengo un proyecto existente DE VETERINARIA que ya consume datos de una API externa.
+Actúa como un Senior Full Stack Developer. Vamos a migrar el flujo de autenticación de Mundo Jácome a Next.js (App Router).
 
-Necesito instalar las dependencias necesarias para implementar autenticación con Google OAuth, SIN romper lo que ya existe.
+1. Crea 'next.config.mjs' para configurar un Proxy (Rewrites):
+   - Redirige '/api-proxy/:path*' hacia 'https://d2r.nestorovallos.com/api/v1/:path*'
+   - Redirige '/auth-gate/:path*' hacia 'https://d2r.nestorovallos.com/api/projects/2/auth/:path*'
 
-Por favor, revisa mis dependencias actuales y dame el comando npm install SOLO para lo que falte de esta lista:
-- react-router-dom (si no está)
-- axios (probablemente ya esté, verifícalo)
-- zustand (para el auth store)
-- clsx y tailwind-merge (utilidades UI)
-- lucide-react (iconos)
+2. Sigue las reglas de mi archivo "system para aistudio.md":
+   - Crea 'src/constants/content.ts'.
+   - ENV_SETTINGS debe usar rutas RELATIVAS:
+     API_BASE_URL: "/api-proxy"
+     AUTH_GATE_URL: "/auth-gate"
+     PROJECT_ID: "2"
 
-No modifiques ningún archivo todavía.
+3. Crea 'src/lib/api.ts' usando Axios, apuntando a ENV_SETTINGS.API_BASE_URL.
+   - Header 'X-Project-ID' fijo en "2".
+   - Interceptor para inyectar 'Authorization: Bearer [token]' desde Zustand.
 ```
 
 ---
 
-## Prompt 2: Cliente API y Auth Store
-
-**Objetivo:** Integrar la autenticación en el cliente API existente.
+## Prompt 2: El Auth Store (Zustand)
 
 ```text
-Ahora vamos a configurar la comunicación con el Backend.
-El Backend es Data2Rest y el ID de este proyecto es "2" (Veterinaria).
-
-IMPORTANTE: Ya tengo una configuración de API (probablemente con Axios) funcionando para la parte pública.
-No quiero borrarla. Quiero EXTENDERLA para soportar autenticación.
-
-1. Revisa mi archivo de cliente API actual (ej: `src/lib/api.ts`, `src/api/client.js` o similar):
-   - MANTÉN la Base URL existente.
-   - AGREGA un interceptor nuevo: Si existe un token en localStorage ('auth-storage'), agrégalo como Header `Authorization: Bearer ...`.
-   - AGREGA un interceptor nuevo: Agrega siempre el Header `X-Project-ID: 2` (si no está ya).
-
-2. Crea el archivo `src/stores/authStore.ts` usando Zustand:
-   - Debe persistir en localStorage ('auth-storage').
-   - Estado: `user` (null | object), `token` (null | string), `isAuthenticated` (boolean).
-   - Acciones: `setAuth(user, token)` y `logout()`.
-   - El logout debe borrar el estado y redirigir a '/login'.
+Crea 'src/stores/authStore.ts' usando Zustand con persistencia:
+- Estado: user, token, isAuthenticated.
+- Acciones: setAuth(user, token), logout().
+- Maneja el hydration para evitar errores de SSR en Next.js.
 ```
 
 ---
 
-## Prompt 3: Componente Login (Con Redirect Fijo)
-
-**Objetivo:** Crear la página de login que inicia el flujo Server-Side.
+## Prompt 3: Página de Login (Proxied)
 
 ```text
-Vamos a crear la página de Login.
+Crea la página de Login en 'src/app/login/page.tsx' (use client):
 
-Crea el archivo `src/pages/auth/Login.tsx`:
-- Diseño limpio y profesional para "Plataforma Veterinaria".
-- Botón "Iniciar Sesión con Google".
-- IMPORTANTE: La lógica del botón debe ser una redirección de ventana (window.location.href).
-- URL de destino: `${API_URL}/api/projects/2/auth/google` (Nota el ID 2).
-- PARÁMETRO CRÍTICO: Debes incluir `?redirect_uri=` apuntando EXACTAMENTE a `window.location.origin + '/auth/callback'`.
-  Ejemplo: `const redirectUri = window.location.origin + '/auth/callback';`
-  
-No uses componentes de Google SDK cliente, es un flujo server-side puro.
+1. Diseño premium de Veterinaria.
+2. El botón "Google Login" debe redirigir al Proxy interno:
+   const handleGoogle = () => {
+     // Usamos el Proxy configurado en next.config
+     const backendAuthUrl = `${window.location.origin}/auth-gate/google`;
+     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+     window.location.href = `${backendAuthUrl}?redirect_uri=${redirectUri}`;
+   };
+
+3. El navegador solo verá la petición a tu propio dominio (/auth-gate/google).
+4. Agrega el <DebugPanel /> si ENV_SETTINGS.SHOW_DEBUG_PANEL es true.
 ```
 
 ---
 
-## Prompt 4: Callback de Google (Manejo de Respuesta)
-
-**Objetivo:** Recibir el código de Google y canjearlo por el token.
+## Prompt 4: Página de Callback (Proxied)
 
 ```text
-Ahora crea la página que recibe a los usuarios de vuelta de Google: `src/pages/auth/GoogleCallback.tsx`.
+Crea 'src/app/auth/callback/page.tsx' (use client):
 
-Lógica requerida:
-1. Obtener el `code` de los parámetros de la URL.
-2. Hacer POST a `/api/projects/2/auth/google/callback`.
-3. BODY del POST: 
-   - `code`: el código recibido.
-   - `redirect_uri`: DEBE ser idéntico al usado en el Login (`window.location.origin + '/auth/callback'`).
-4. Manejo de Respuesta:
-   - El backend devuelve `{ data: { token, user } }`. Nota el doble 'data'.
-   - Si es exitoso: usa `setAuth(user, token)` del store y redirige a `/dashboard`.
-   - Si falla: muestra un mensaje de error amigable y botón para volver al Login.
+Lógica:
+1. Obtén el 'code' de los parámetros de la URL.
+2. Haz POST a la ruta proxied: `${window.location.origin}/auth-gate/google/callback`.
+3. Envía en el Body: { code, redirect_uri: `${window.location.origin}/auth/callback` }.
+4. Si es exitoso, guarda en el authStore y redirige a '/dashboard'.
+5. Si hay error, loguea en el DebugPanel.
 ```
 
 ---
 
-## Prompt 5: Rutas y Dashboard
-
-**Objetivo:** Proteger el acceso e integrar todo en App.tsx.
+## Prompt 5: Seguridad y Layout
 
 ```text
-Para finalizar la integración base:
+Protege el acceso:
 
-1. Crea `src/components/auth/ProtectedRoute.tsx`:
-   - Si `!isAuthenticated`, redirige a `/login`.
-   - Si está autenticado, renderiza los hijos (Outlet o children).
+1. Crea 'src/app/dashboard/layout.tsx':
+   - Verifica 'isAuthenticated'. Si no, 'redirect("/login")'.
 
-2. Crea un Dashboard simple `src/pages/dashboard/DashboardHome.tsx`:
-   - Mostrar mensaje de bienvenida con el nombre del usuario.
-   - Botón de Logout.
+2. Crea un DashboardHome básico en 'src/app/dashboard/page.tsx'.
 
-3. Modifica `src/App.tsx`:
-   - Mantén las rutas públicas existentes (home, servicios, etc.).
-   - Agrega ruta `/login` -> Login.tsx.
-   - Agrega ruta `/auth/callback` -> GoogleCallback.tsx.
-   - Agrega ruta protegida `/dashboard` -> DashboardHome.tsx.
-   - Asegúrate de que todo esté dentro de <BrowserRouter>.
+3. Genera un archivo 'vercel.json' que incluya las cabeceras de seguridad (CSP) y confirme que los rewrites funcionen correctamente en producción.
 ```
