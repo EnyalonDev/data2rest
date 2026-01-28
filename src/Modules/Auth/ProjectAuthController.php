@@ -163,7 +163,7 @@ class ProjectAuthController extends BaseController
             $token = $this->generateJWT($userId, $projectId, $permissions);
 
             // 6. Registrar sesión
-            $stmt = $db->prepare("INSERT INTO project_sessions (project_id, user_id, token, expires_at, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))");
+            $stmt = $db->prepare("INSERT INTO project_sessions (project_id, user_id, token, expires_at, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
             $expiresAt = date('Y-m-d H:i:s', time() + Config::getSetting('jwt_expiration', 86400));
             $stmt->execute([$projectId, $userId, $token, $expiresAt, $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '']);
 
@@ -214,7 +214,7 @@ class ProjectAuthController extends BaseController
 
         // Verificar sesión activa en BD
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM project_sessions WHERE token = ? AND expires_at > datetime('now')");
+        $stmt = $db->prepare("SELECT * FROM project_sessions WHERE token = ? AND expires_at > NOW()");
         $stmt->execute([$token]);
         if (!$stmt->fetch()) {
             return $this->json(['success' => false, 'error' => 'Session terminated'], 401);
