@@ -99,10 +99,20 @@ class RestController extends BaseController
         $uri = $_SERVER['REQUEST_URI'] ?? '';
         $isAuthRoute = (strpos($uri, '/auth/') !== false);
 
-        // Internal bypass for authenticated dashboard users
-        if (!$apiKey && (Auth::check() || $isAuthRoute)) {
-            header('X-Data2Rest-Auth: ' . ($isAuthRoute ? 'Public-Auth-Route' : 'Internal-Session'));
-            return ['name' => $isAuthRoute ? 'Public Auth Route' : 'Internal Console Session', 'key_value' => 'internal'];
+        // Exemption for Localhost / Development
+        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+        $isLocalhost = in_array($clientIp, ['127.0.0.1', '::1', '0:0:0:0:0:0:0:1']);
+
+        // Internal bypass for authenticated dashboard users, auth routes, or localhost
+        if (!$apiKey && (Auth::check() || $isAuthRoute || $isLocalhost)) {
+            $authType = 'Internal-Session';
+            if ($isAuthRoute)
+                $authType = 'Public-Auth-Route';
+            if ($isLocalhost)
+                $authType = 'Localhost-Dev-Access';
+
+            header('X-Data2Rest-Auth: ' . $authType);
+            return ['name' => $authType, 'key_value' => 'internal'];
         }
 
         if (!$apiKey) {
