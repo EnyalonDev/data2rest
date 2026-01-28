@@ -143,9 +143,21 @@
                                 </div>
                                 <div>
                                     <label class="form-label mb-2">Google Client Secret</label>
-                                    <input type="password" name="google_client_secret"
-                                        value="{{ $project['google_client_secret'] ?? '' }}"
-                                        class="form-input text-xs font-mono" placeholder="Secret Key">
+                                    <div class="relative">
+                                        <input type="password" name="google_client_secret" id="googleClientSecret"
+                                            value="{{ $project['google_client_secret'] ?? '' }}"
+                                            class="form-input pr-10 text-xs font-mono" placeholder="GOCSPX-...">
+                                        <button type="button"
+                                            onclick="const i = document.getElementById('googleClientSecret'); i.type = i.type === 'password' ? 'text' : 'password';"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-p-muted hover:text-white transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="form-label mb-2">Dominio Permitido (Opcional)</label>
@@ -306,35 +318,35 @@
                     const card = document.createElement('div');
                     card.className = `flex flex-col p-4 bg-white/5 border ${isPayer ? 'border-primary/50 bg-primary/5' : 'border-white/5'} rounded-xl transition-all group`;
                     card.innerHTML = `
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-lg ${isPayer ? 'bg-primary' : 'bg-emerald-500/10'} flex items-center justify-center text-xs font-black ${isPayer ? 'text-dark' : 'text-emerald-500'}">
-                                                            ${user.username.charAt(0).toUpperCase()}
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-8 h-8 rounded-lg ${isPayer ? 'bg-primary' : 'bg-emerald-500/10'} flex items-center justify-center text-xs font-black ${isPayer ? 'text-dark' : 'text-emerald-500'}">
+                                                                ${user.username.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <p class="text-sm font-bold text-p-title">${user.public_name || user.username}</p>
+                                                                ${!hasBillingData && isPayer ? '<p class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">⚠️ Falta info de factura</p>' : ''}
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <p class="text-sm font-bold text-p-title">${user.public_name || user.username}</p>
-                                                            ${!hasBillingData && isPayer ? '<p class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">⚠️ Falta info de factura</p>' : ''}
+                                                        <div class="flex gap-2">
+                                                            ${!isPayer ? `<button type="button" onclick="setAsPayer(${user.id})" class="text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-all">Definir Pago</button>` : '<span class="text-[9px] font-black uppercase tracking-widest text-primary">RESPONSABLE</span>'}
+                                                            <button type="button" onclick="removeUser(${user.id})" class="text-p-muted hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                                                         </div>
                                                     </div>
-                                                    <div class="flex gap-2">
-                                                        ${!isPayer ? `<button type="button" onclick="setAsPayer(${user.id})" class="text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-all">Definir Pago</button>` : '<span class="text-[9px] font-black uppercase tracking-widest text-primary">RESPONSABLE</span>'}
-                                                        <button type="button" onclick="removeUser(${user.id})" class="text-p-muted hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                                                    </div>
-                                                </div>
-                                                <input type="hidden" name="user_ids[]" value="${user.id}">
-                                            `;
+                                                    <input type="hidden" name="user_ids[]" value="${user.id}">
+                                                `;
                     assigned.appendChild(card);
                 } else if (matchesQuery && query.length > 0) {
                     const item = document.createElement('div');
                     item.className = 'p-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between hover:border-primary/50 cursor-pointer transition-all hover:bg-white/10';
                     item.onclick = () => addUser(user.id);
                     item.innerHTML = `
-                                                <div class="flex items-center gap-3">
-                                                    <span class="text-sm font-bold text-p-title">${user.username}</span>
-                                                    <span class="text-xs text-p-muted">${user.email || ''}</span>
-                                                </div>
-                                                <span class="text-xs font-black text-primary">+ Añadir</span>
-                                            `;
+                                                    <div class="flex items-center gap-3">
+                                                        <span class="text-sm font-bold text-p-title">${user.username}</span>
+                                                        <span class="text-xs text-p-muted">${user.email || ''}</span>
+                                                    </div>
+                                                    <span class="text-xs font-black text-primary">+ Añadir</span>
+                                                `;
                     results.appendChild(item);
                 }
             });
@@ -395,14 +407,14 @@
                         item.className = 'glass-card p-4 hover:border-primary/50 cursor-pointer transition-all';
                         item.onclick = () => addServiceToProject(service);
                         item.innerHTML = `
-                                                <p class="font-bold text-p-title text-sm mb-1">${service.name}</p>
-                                                <p class="text-[10px] text-p-muted mb-2">${service.description || ''}</p>
-                                                <div class="flex flex-wrap gap-2 mt-2">
-                                                    <span class="text-[9px] font-black text-primary uppercase border border-primary/20 px-2 rounded-full">Mes: $${service.price_monthly}</span>
-                                                    <span class="text-[9px] font-black text-emerald-500 uppercase border border-emerald-500/20 px-2 rounded-full">Año: $${service.price_yearly}</span>
-                                                    <span class="text-[9px] font-black text-amber-500 uppercase border border-amber-500/20 px-2 rounded-full">Pago Único: $${service.price_one_time}</span>
-                                                </div>
-                                            `;
+                                                    <p class="font-bold text-p-title text-sm mb-1">${service.name}</p>
+                                                    <p class="text-[10px] text-p-muted mb-2">${service.description || ''}</p>
+                                                    <div class="flex flex-wrap gap-2 mt-2">
+                                                        <span class="text-[9px] font-black text-primary uppercase border border-primary/20 px-2 rounded-full">Mes: $${service.price_monthly}</span>
+                                                        <span class="text-[9px] font-black text-emerald-500 uppercase border border-emerald-500/20 px-2 rounded-full">Año: $${service.price_yearly}</span>
+                                                        <span class="text-[9px] font-black text-amber-500 uppercase border border-amber-500/20 px-2 rounded-full">Pago Único: $${service.price_one_time}</span>
+                                                    </div>
+                                                `;
                         list.appendChild(item);
                     });
                 });
@@ -449,49 +461,49 @@
                 const el = document.createElement('div');
                 el.className = 'service-item glass-card !bg-white/5 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-right-2';
                 el.innerHTML = `
-                                            <div class="flex-grow">
-                                                <p class="text-sm font-bold text-p-title mb-2">${ps.name}</p>
-                                                <input type="hidden" name="services[${index}][service_id]" value="${ps.service_id}">
+                                                <div class="flex-grow">
+                                                    <p class="text-sm font-bold text-p-title mb-2">${ps.name}</p>
+                                                    <input type="hidden" name="services[${index}][service_id]" value="${ps.service_id}">
 
-                                                <div class="flex flex-wrap gap-4 items-center">
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Periodo</span>
-                                                        <select name="services[${index}][billing_period]" onchange="updatePeriod(${index}, this.value)"
-                                                            class="text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 rounded px-2 py-1.5 text-p-title focus:ring-0 outline-none">
-                                                            <option value="monthly" ${ps.billing_period === 'monthly' ? 'selected' : ''}>Precio Mensual</option>
-                                                            <option value="yearly" ${ps.billing_period === 'yearly' ? 'selected' : ''}>Precio Anual</option>
-                                                            <option value="unico" ${ps.billing_period === 'unico' ? 'selected' : ''}>Pago Único</option>
-                                                        </select>
-                                                    </div>
+                                                    <div class="flex flex-wrap gap-4 items-center">
+                                                        <div class="flex flex-col gap-1">
+                                                            <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Periodo</span>
+                                                            <select name="services[${index}][billing_period]" onchange="updatePeriod(${index}, this.value)"
+                                                                class="text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 rounded px-2 py-1.5 text-p-title focus:ring-0 outline-none">
+                                                                <option value="monthly" ${ps.billing_period === 'monthly' ? 'selected' : ''}>Precio Mensual</option>
+                                                                <option value="yearly" ${ps.billing_period === 'yearly' ? 'selected' : ''}>Precio Anual</option>
+                                                                <option value="unico" ${ps.billing_period === 'unico' ? 'selected' : ''}>Pago Único</option>
+                                                            </select>
+                                                        </div>
 
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Precio Unitario</span>
-                                                        <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-2 h-[29px]">
-                                                            <span class="text-[10px] text-p-muted font-bold">$</span>
-                                                            <input type="number" step="0.01" name="services[${index}][custom_price]" 
-                                                                value="${ps.custom_price}" 
-                                                                onchange="updateCustomPrice(${index}, this.value)"
-                                                                class="w-20 bg-transparent text-[10px] font-bold text-p-title border-none p-0 focus:ring-0 outline-none">
+                                                        <div class="flex flex-col gap-1">
+                                                            <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Precio Unitario</span>
+                                                            <div class="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-2 h-[29px]">
+                                                                <span class="text-[10px] text-p-muted font-bold">$</span>
+                                                                <input type="number" step="0.01" name="services[${index}][custom_price]" 
+                                                                    value="${ps.custom_price}" 
+                                                                    onchange="updateCustomPrice(${index}, this.value)"
+                                                                    class="w-20 bg-transparent text-[10px] font-bold text-p-title border-none p-0 focus:ring-0 outline-none">
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="flex items-center gap-4">
-                                                <div class="flex flex-col items-center gap-1">
-                                                    <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Cant.</span>
-                                                    <div class="flex items-center border border-white/10 rounded-lg overflow-hidden h-[29px]">
-                                                        <button type="button" onclick="updateQty(${index}, -1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">-</button>
-                                                        <input type="number" name="services[${index}][quantity]" value="${ps.quantity}" class="w-10 bg-transparent text-center text-xs font-bold border-none focus:ring-0" readonly>
-                                                        <button type="button" onclick="updateQty(${index}, 1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">+</button>
+                                                <div class="flex items-center gap-4">
+                                                    <div class="flex flex-col items-center gap-1">
+                                                        <span class="text-[9px] font-black text-p-muted uppercase tracking-widest leading-none">Cant.</span>
+                                                        <div class="flex items-center border border-white/10 rounded-lg overflow-hidden h-[29px]">
+                                                            <button type="button" onclick="updateQty(${index}, -1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">-</button>
+                                                            <input type="number" name="services[${index}][quantity]" value="${ps.quantity}" class="w-10 bg-transparent text-center text-xs font-bold border-none focus:ring-0" readonly>
+                                                            <button type="button" onclick="updateQty(${index}, 1)" class="px-2 py-1 hover:bg-white/10 text-p-muted">+</button>
+                                                        </div>
                                                     </div>
+                                                    <div class="text-right min-w-[100px]">
+                                                        <p class="text-[10px] text-p-muted uppercase font-black">Subtotal</p>
+                                                        <p class="text-sm font-black text-primary">$${(ps.custom_price * ps.quantity).toFixed(2)}</p>
+                                                    </div>
+                                                    <button type="button" onclick="removeService(${index})" class="text-p-muted hover:text-red-500 mt-3 md:mt-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                                 </div>
-                                                <div class="text-right min-w-[100px]">
-                                                    <p class="text-[10px] text-p-muted uppercase font-black">Subtotal</p>
-                                                    <p class="text-sm font-black text-primary">$${(ps.custom_price * ps.quantity).toFixed(2)}</p>
-                                                </div>
-                                                <button type="button" onclick="removeService(${index})" class="text-p-muted hover:text-red-500 mt-3 md:mt-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                                            </div>
-                                        `;
+                                            `;
                 list.appendChild(el);
             });
 
@@ -565,7 +577,7 @@
                         }
                     });
             @endif
-                                }
+                                    }
 
         // --- Form Submission ---
         document.getElementById('projectForm').addEventListener('submit', function (e) {
