@@ -59,7 +59,10 @@ yarn-error.log*
 /private_docs/
 
 # Agent Workflows
+# Agent Workflows
 .agent/
+.agent
+.gemini/
 .gemini/
 /data/cache/
 
@@ -70,7 +73,4 @@ composer.phar
 
 # Projects FE
 # Projects FE
-!/projects-fe/
-/projects-fe/**/node_modules/
-/projects-fe/**/.next/
-/projects-fe/**/.git/
+/projects-fe/
