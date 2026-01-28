@@ -93,8 +93,18 @@ try {
 $router = new Router();
 
 // Handle CORS for all API requests
-if (isset($_SERVER['REQUEST_URI']) && (strpos($_SERVER['REQUEST_URI'], '/api/v1/') !== false || strpos($_SERVER['REQUEST_URI'], '/api/system/') !== false)) {
-    header("Access-Control-Allow-Origin: *");
+if (
+    isset($_SERVER['REQUEST_URI']) && (
+        strpos($_SERVER['REQUEST_URI'], '/api/v1/') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/system/') !== false ||
+        strpos($_SERVER['REQUEST_URI'], '/api/projects/') !== false
+    )
+) {
+    // Dynamic Origin Check based on Allowed Origins (Simple version for now: Allow All)
+    // Production Security Note: You should restrict this to specific domains in the future
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+    header("Access-Control-Allow-Origin: $origin");
+
     header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type, X-API-KEY, X-API-Key, Authorization, X-Project-ID");
 
