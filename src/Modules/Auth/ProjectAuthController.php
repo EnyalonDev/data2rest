@@ -310,7 +310,7 @@ class ProjectAuthController extends BaseController
 
     private function generateJWT($userId, $projectId, $permissions)
     {
-        $key = (string) (Config::getSetting('jwt_secret') ?? 'default_secret_key_change_me');
+        $key = (string) (Config::getSetting('jwt_secret') ?? 'default_secret_key_change_me_to_something_very_secure_and_long_enough_32chars');
         $expiration = Config::getSetting('jwt_expiration', 86400);
 
         $payload = [
@@ -328,7 +328,7 @@ class ProjectAuthController extends BaseController
     private function validateJWT($token, $projectId)
     {
         try {
-            $key = (string) (Config::getSetting('jwt_secret') ?? 'default_secret_key_change_me');
+            $key = (string) (Config::getSetting('jwt_secret') ?? 'default_secret_key_change_me_to_something_very_secure_and_long_enough_32chars');
             $decoded = JWT::decode($token, new Key($key, 'HS256'));
 
             if ($decoded->project_id != $projectId) {
