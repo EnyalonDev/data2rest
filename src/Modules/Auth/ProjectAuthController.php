@@ -117,8 +117,9 @@ class ProjectAuthController extends BaseController
 
                 // Crear usuario si no existe
                 $username = strtolower(explode('@', $email)[0]) . rand(100, 999);
-                $stmt = $db->prepare("INSERT INTO users (username, email, google_id, role_id, status, created_at) VALUES (?, ?, ?, ?, 1, datetime('now'))");
-                $stmt->execute([$username, $email, $googleId, $userRoleId]);
+                $now = date('Y-m-d H:i:s');
+                $stmt = $db->prepare("INSERT INTO users (username, email, google_id, role_id, status, created_at) VALUES (?, ?, ?, ?, 1, ?)");
+                $stmt->execute([$username, $email, $googleId, $userRoleId, $now]);
                 $userId = $db->lastInsertId();
                 $user = ['id' => $userId, 'email' => $email, 'username' => $username];
             } else {
@@ -143,9 +144,10 @@ class ProjectAuthController extends BaseController
                     'actions' => ['read'] // Solo lectura por defecto
                 ];
 
-                $stmt = $db->prepare("INSERT INTO project_users (project_id, user_id, external_access_enabled, external_permissions, assigned_at) VALUES (?, ?, 1, ?, datetime('now'))");
+                $now = date('Y-m-d H:i:s');
+                $stmt = $db->prepare("INSERT INTO project_users (project_id, user_id, external_access_enabled, external_permissions, assigned_at) VALUES (?, ?, 1, ?, ?)");
                 try {
-                    $stmt->execute([$projectId, $userId, json_encode($defaultPermissions)]);
+                    $stmt->execute([$projectId, $userId, json_encode($defaultPermissions), $now]);
                     // Continuar con el flujo normal de autenticación
                     $access = $this->hasExternalAccessToProject($userId, $projectId);
                 } catch (Exception $e) {
