@@ -52,9 +52,9 @@ class ProjectAuthController extends BaseController
      * Verificar código de Google y crear sesión
      * POST /api/v1/auth/google/verify
      */
-    public function verifyGoogleCode()
+    public function verifyGoogleCode($routeProjectId = null)
     {
-        $projectId = $_SERVER['HTTP_X_PROJECT_ID'] ?? null;
+        $projectId = $routeProjectId ?? ($_SERVER['HTTP_X_PROJECT_ID'] ?? null);
         if (!$projectId) {
             return $this->json(['error' => 'Project ID required'], 400);
         }
