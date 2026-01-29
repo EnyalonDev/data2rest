@@ -144,6 +144,49 @@ $router->add('POST', '/admin/system/global-search', 'System\\SystemController@gl
 $router->add('GET', '/admin/system/migrate', 'System\\MigrationController@showMigrationForm');
 $router->add('POST', '/admin/system/migrate/run', 'System\\MigrationController@migrate');
 
+// Temporary Migration Route (Auth Columns)
+$router->add('GET', '/migrate-auth', function () {
+    header('Content-Type: text/html');
+    echo "<h1>Auth Migration (Integrated)</h1>";
+
+    try {
+        $db = \App\Core\Database::getInstance()->getConnection();
+        echo "Connected to DB.<br>";
+
+        // Check if columns exist
+        $columns = $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
+        $hasToken = false;
+        $hasVerified = false;
+
+        foreach ($columns as $col) {
+            if ($col['name'] === 'verification_token')
+                $hasToken = true;
+            if ($col['name'] === 'email_verified_at')
+                $hasVerified = true;
+        }
+
+        if (!$hasToken) {
+            $db->exec("ALTER TABLE users ADD COLUMN verification_token TEXT DEFAULT NULL");
+            echo "Added column: verification_token<br>";
+        } else {
+            echo "Column verification_token already exists.<br>";
+        }
+
+        if (!$hasVerified) {
+            $db->exec("ALTER TABLE users ADD COLUMN email_verified_at DATETIME DEFAULT NULL");
+            echo "Added column: email_verified_at<br>";
+        } else {
+            echo "Column email_verified_at already exists.<br>";
+        }
+
+        echo "<h3>Migration Completed!</h3>";
+
+    } catch (Exception $e) {
+        echo "<h3 style='color:red'>Error: " . $e->getMessage() . "</h3>";
+    }
+    exit;
+});
+
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
 
