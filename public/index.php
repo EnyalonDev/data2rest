@@ -359,6 +359,19 @@ $router->add('POST', '/api/v1/external/{projectId}/client-debug', 'Auth\\Project
 // --- Storage API ---
 $router->add('POST', '/api/v1/storage/upload', 'Api\\StorageApiController@upload');
 
+// --- System: Cache Maintenance ---
+$router->add('GET', '/sys/clear-opcache', function () {
+    if (function_exists('opcache_reset')) {
+        opcache_reset();
+    }
+    // Also clear stat cache
+    clearstatcache(true);
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'message' => 'OPcache & StatCache Cleared']);
+    exit;
+});
+
 // --- REST API Engine ---
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');
 $router->add('GET', '/api/v1/{db}/{table}/{id}', 'Api\\RestController@handle');
