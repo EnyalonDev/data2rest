@@ -64,6 +64,13 @@
                         </span>
                     </div>
                     <div class="hidden md:block w-[1px] h-12 bg-glass-border"></div>
+                    @if(\App\Core\Auth::isAdmin())
+                        <a href="{{ $baseUrl }}admin/projects/edit?id={{ $project['id'] }}"
+                           class="flex items-center gap-2 group px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-amber-500 hover:text-amber-400"
+                           title="Project Settings">
+                            <span class="text-xl">⚙️</span>
+                        </a>
+                    @endif
                     <a href="{{ $baseUrl }}admin/projects/select"
                         class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-dark transition-all">
                         {{ \App\Core\Lang::get('dashboard.change_project') }}
