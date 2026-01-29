@@ -240,9 +240,10 @@ class ProjectAuthController extends BaseController
         }
 
         try {
-            // 2. Crear usuario
+            // 2. Crear usuario y token de verificación
             $username = strtolower(explode('@', $email)[0]) . rand(100, 999);
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $verificationToken = bin2hex(random_bytes(32)); // Nuevo Token Seguro
             $now = date('Y-m-d H:i:s');
 
             // Buscar el rol "Usuario"
@@ -250,8 +251,9 @@ class ProjectAuthController extends BaseController
             $roleStmt->execute();
             $userRoleId = $roleStmt->fetchColumn() ?: null;
 
-            $stmt = $db->prepare("INSERT INTO users (username, email, password, role_id, status, created_at) VALUES (?, ?, ?, ?, 1, ?)");
-            $stmt->execute([$username, $email, $hashedPassword, $userRoleId, $now]);
+            // INSERT actualizado con verification_token
+            $stmt = $db->prepare("INSERT INTO users (username, email, password, role_id, status, verification_token, created_at) VALUES (?, ?, ?, ?, 1, ?, ?)");
+            $stmt->execute([$username, $email, $hashedPassword, $userRoleId, $verificationToken, $now]);
             $userId = $db->lastInsertId();
 
             // 3. Asignar acceso al proyecto
@@ -265,7 +267,7 @@ class ProjectAuthController extends BaseController
             $stmt = $db->prepare("INSERT INTO project_users (project_id, user_id, external_access_enabled, external_permissions, assigned_at) VALUES (?, ?, 1, ?, ?)");
             $stmt->execute([$projectId, $userId, json_encode($defaultPermissions), $now]);
 
-            // 4. Generar Token y Sesión (Login automático tras registro)
+            // 4. Generar Token y Sesión (Login automático)
             $token = $this->generateJWT($userId, $projectId, $defaultPermissions);
             $expiresAt = date('Y-m-d H:i:s', time() + Config::getSetting('jwt_expiration', 86400));
 
@@ -286,14 +288,14 @@ class ProjectAuthController extends BaseController
 
             // 5. Enviar Email de Bienvenida
             try {
-                // Determine Frontend URL (TODO: Make configurable per project)
-                $frontendUrl = $_SERVER['HTTP_ORIGIN'] ?? 'https://d2r.nestorovallos.com';
-                $confirmUrl = $frontendUrl . '/dashboard'; // Temporal link until Verify page is ready
+                // Construir enlace de verificación (Backend -> Frontend Redirect)
+                $backendUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+                $verifyLink = "$backendUrl/api/v1/projects/$projectId/auth/verify-email?token=$verificationToken";
 
                 $mailService = new \App\Services\MailService();
                 $projectName = $project['name'] ?? 'Mundo Jácome\'s';
 
-                $mailService->sendWelcome($email, $name, $confirmUrl, $projectName);
+                $mailService->sendWelcome($email, $name, $verifyLink, $projectName);
 
                 ActivityLogger::logAuth($userId, $projectId, 'email_sent_welcome', true);
             } catch (\Exception $e) {
