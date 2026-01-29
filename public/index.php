@@ -144,6 +144,51 @@ $router->add('POST', '/admin/system/global-search', 'System\\SystemController@gl
 $router->add('GET', '/admin/system/migrate', 'System\\MigrationController@showMigrationForm');
 $router->add('POST', '/admin/system/migrate/run', 'System\\MigrationController@migrate');
 
+// Temporary Debug Route for Email
+$router->add('GET', '/debug-mail', function () {
+    header('Content-Type: text/html');
+    echo "<h1>Debug Mail (Integrated)</h1>";
+
+    // Config/Env already loaded by index.php
+    $apiKey = getenv('RESEND_API_KEY');
+    echo "<strong>API Key loaded:</strong> " . ($apiKey ? (substr($apiKey, 0, 5) . '...') : 'NULL') . "<br>";
+    echo "<strong>From Address:</strong> " . getenv('MAIL_FROM_ADDRESS') . "<br>";
+
+    $to = $_GET['to'] ?? 'contacto@nestorovallos.com';
+    echo "<strong>Attempting to send to:</strong> " . htmlspecialchars($to) . "<br>";
+
+    $url = 'https://api.resend.com/emails';
+    $fromEmail = getenv('MAIL_FROM_ADDRESS') ?: 'onboarding@resend.dev';
+    $fromName = getenv('MAIL_FROM_NAME') ?: 'Debug';
+    $subject = "Debug Test " . date('H:i:s');
+    $html = "Test email from debug route.";
+
+    $data = [
+        'from' => "$fromName <$fromEmail>",
+        'to' => [$to],
+        'subject' => $subject,
+        'html' => $html
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $apiKey,
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    echo "<h3>Result</h3>";
+    echo "<strong>HTTP Code:</strong> $httpCode<br>";
+    echo "<strong>Response:</strong> <pre>" . htmlspecialchars($response) . "</pre>";
+    exit;
+});
+
 $router->add('GET', '/', 'Auth\\DashboardController@index');
 $router->add('GET', '/admin/dashboard', 'Auth\\DashboardController@index');
 
