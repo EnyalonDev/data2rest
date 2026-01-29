@@ -426,7 +426,11 @@ $router->add('POST', '/api/system/backup', 'SystemDatabase\\SystemDatabaseApiCon
 $router->add('GET', '/api/system/backups', 'SystemDatabase\\SystemDatabaseApiController@listBackups');
 $router->add('POST', '/api/system/optimize', 'SystemDatabase\\SystemDatabaseApiController@optimize');
 $router->add('POST', '/api/system/query', 'SystemDatabase\\SystemDatabaseApiController@executeQuery');
+// --- System Database API (Super Admin Only) ---
 $router->add('GET', '/api/system/tables', 'SystemDatabase\\SystemDatabaseApiController@listTables');
+
+// --- Storage API ---
+$router->add('POST', '/api/v1/storage/upload', 'Api\\StorageApiController@upload');
 
 // --- System Settings ---
 $router->add('GET', '/admin/settings/google', 'System\\SystemController@googleSettings');
