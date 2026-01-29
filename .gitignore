@@ -74,3 +74,4 @@ composer.phar
 # Projects FE
 # Projects FE
 /projects-fe/
+.agent/
