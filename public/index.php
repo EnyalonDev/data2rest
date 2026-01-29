@@ -344,6 +344,7 @@ $router->add('OPTIONS', '/api/projects/{projectId}/auth/register', function () {
     http_response_code(200);
     exit;
 });
+$router->add('GET', '/api/v1/projects/{projectId}/auth/verify-email', 'Auth\\ProjectAuthController@verifyEmail');
 $router->add('POST', '/api/projects/{projectId}/auth/login', 'Auth\\ProjectAuthController@login');
 $router->add('OPTIONS', '/api/projects/{projectId}/auth/login', function () {
     http_response_code(200);

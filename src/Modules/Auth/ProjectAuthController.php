@@ -478,6 +478,70 @@ class ProjectAuthController extends BaseController
     }
 
     /**
+     * Verificar email mediante token
+     * GET /api/v1/projects/{projectId}/auth/verify-email
+     */
+    public function verifyEmail($routeProjectId = null)
+    {
+        $projectId = $routeProjectId ?? ($_GET['project_id'] ?? null);
+        $token = $_GET['token'] ?? null;
+
+        if (!$projectId || !$token) {
+            return $this->json(['error' => 'Invalid verification link'], 400);
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        // Buscar usuario por token de verificación
+        // Nota: verification_token debe ser único globalmente o por proyecto. 
+        // Aquí asumimos global en la tabla users para simplificar.
+        $stmt = $db->prepare("SELECT * FROM users WHERE verification_token = ?");
+        $stmt->execute([$token]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            // Token inválido o ya usado (si lo limpiamos)
+            return $this->json(['error' => 'Invalid or expired token'], 400);
+        }
+
+        // Verificar si ya estaba verificado
+        if ($user['email_verified_at']) {
+            // Ya verificado, redirigir al éxito de todas formas
+            return $this->redirectToFrontend($projectId, 'success', 'already_verified');
+        }
+
+        try {
+            // Marcar como verificado
+            $now = date('Y-m-d H:i:s');
+
+            // Usamos driver-agnostic query
+            $update = $db->prepare("UPDATE users SET email_verified_at = ?, verification_token = NULL WHERE id = ?");
+            $update->execute([$now, $user['id']]);
+
+            // Log
+            ActivityLogger::logAuth($user['id'], $projectId, 'email_verified', true);
+
+            // Redirigir al Frontend
+            return $this->redirectToFrontend($projectId, 'success');
+
+        } catch (Exception $e) {
+            return $this->json(['error' => 'Verification failed'], 500);
+        }
+    }
+
+    private function redirectToFrontend($projectId, $status, $code = null)
+    {
+        // Obtener URL del frontend desde la configuración del proyecto o default
+        // Por ahora hardcoded al dominio principal, en futuro dinámico.
+        $frontendUrl = $_SERVER['HTTP_ORIGIN'] ?? 'https://d2r.nestorovallos.com';
+
+        $url = "$frontendUrl/verify?status=$status" . ($code ? "&code=$code" : "");
+
+        header("Location: $url");
+        exit;
+    }
+
+    /**
      * Log CLIENT-SIDE debug info (Dev Only)
      * POST /api/v1/external/{projectId}/client-debug
      */
