@@ -151,18 +151,31 @@ $router->add('GET', '/migrate-auth', function () {
 
     try {
         $db = \App\Core\Database::getInstance()->getConnection();
-        echo "Connected to DB.<br>";
+        $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        echo "Connected to DB. Driver: <strong>$driver</strong><br>";
 
-        // Check if columns exist
-        $columns = $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
         $hasToken = false;
         $hasVerified = false;
 
-        foreach ($columns as $col) {
-            if ($col['name'] === 'verification_token')
-                $hasToken = true;
-            if ($col['name'] === 'email_verified_at')
-                $hasVerified = true;
+        // Detect columns based on driver
+        if ($driver === 'sqlite') {
+            $columns = $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($columns as $col) {
+                if ($col['name'] === 'verification_token')
+                    $hasToken = true;
+                if ($col['name'] === 'email_verified_at')
+                    $hasVerified = true;
+            }
+        } else {
+            // MySQL / MariaDB
+            $columns = $db->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($columns as $col) {
+                $name = $col['Field'] ?? $col['field'] ?? '';
+                if ($name === 'verification_token')
+                    $hasToken = true;
+                if ($name === 'email_verified_at')
+                    $hasVerified = true;
+            }
         }
 
         if (!$hasToken) {
