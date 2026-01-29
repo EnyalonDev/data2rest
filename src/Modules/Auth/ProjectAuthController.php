@@ -279,6 +279,7 @@ class ProjectAuthController extends BaseController
 
             ActivityLogger::logAuth($userId, $projectId, 'external_register_success', true);
 
+            /* DELETE START - Premature response prevents email logic
             $response = $this->json([
                 'success' => true,
                 'data' => [
@@ -288,6 +289,7 @@ class ProjectAuthController extends BaseController
                     'expires_at' => $expiresAt
                 ]
             ]);
+            DELETE END */
 
             // 5. Enviar Email de Bienvenida
             $emailDebug = ['attempted' => false, 'success' => false, 'error' => null];
@@ -387,7 +389,6 @@ class ProjectAuthController extends BaseController
 
             ActivityLogger::logAuth($user['id'], $projectId, 'external_login_success', true);
 
-            /* DELETE START - Premature response prevents email logic
             return $this->json([
                 'success' => true,
                 'data' => [
@@ -402,7 +403,6 @@ class ProjectAuthController extends BaseController
                     'expires_at' => $expiresAt
                 ]
             ]);
-            DELETE END */
 
         } catch (Exception $e) {
             return $this->json(['error' => 'Login failed: ' . $e->getMessage()], 500);
