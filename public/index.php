@@ -338,7 +338,15 @@ $router->add('OPTIONS', '/api/projects/{projectId}/auth/google/callback', functi
 $router->add('GET', '/api/projects/{projectId}/auth/google/callback', 'Auth\\ProjectAuthController@verifyGoogleCode');
 $router->add('POST', '/api/projects/{projectId}/auth/google/callback', 'Auth\\ProjectAuthController@verifyGoogleCode');
 $router->add('POST', '/api/projects/{projectId}/auth/register', 'Auth\\ProjectAuthController@register');
+$router->add('OPTIONS', '/api/projects/{projectId}/auth/register', function () {
+    http_response_code(200);
+    exit;
+});
 $router->add('POST', '/api/projects/{projectId}/auth/login', 'Auth\\ProjectAuthController@login');
+$router->add('OPTIONS', '/api/projects/{projectId}/auth/login', function () {
+    http_response_code(200);
+    exit;
+});
 $router->add('POST', '/api/v1/auth/google/verify', 'Auth\\ProjectAuthController@verifyGoogleCode');
 $router->add('POST', '/api/v1/auth/verify-token', 'Auth\\ProjectAuthController@verifyToken');
 $router->add('POST', '/api/v1/auth/logout', 'Auth\\ProjectAuthController@logout');
