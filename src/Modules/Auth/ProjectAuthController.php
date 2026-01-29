@@ -203,6 +203,9 @@ class ProjectAuthController extends BaseController
      */
     public function register($routeProjectId = null)
     {
+        // HARD DEBUGS
+        header('X-Debug-Check: I_AM_THE_NEW_CODE');
+
         $projectId = $routeProjectId ?? ($_SERVER['HTTP_X_PROJECT_ID'] ?? null);
         if (!$projectId) {
             return $this->json(['error' => 'Project ID required'], 400);
