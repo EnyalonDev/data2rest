@@ -244,7 +244,7 @@ class ProjectAuthController extends BaseController
             $username = strtolower(explode('@', $email)[0]) . rand(100, 999);
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $now = date('Y-m-d H:i:s');
-            
+
             // Buscar el rol "Usuario"
             $roleStmt = $db->prepare("SELECT id FROM roles WHERE name = 'Usuario' LIMIT 1");
             $roleStmt->execute();
@@ -268,7 +268,7 @@ class ProjectAuthController extends BaseController
             // 4. Generar Token y Sesión (Login automático tras registro)
             $token = $this->generateJWT($userId, $projectId, $defaultPermissions);
             $expiresAt = date('Y-m-d H:i:s', time() + Config::getSetting('jwt_expiration', 86400));
-            
+
             $stmt = $db->prepare("INSERT INTO project_sessions (project_id, user_id, token, expires_at, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$projectId, $userId, $token, $expiresAt, $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '', $now]);
 
@@ -349,8 +349,8 @@ class ProjectAuthController extends BaseController
                 'data' => [
                     'token' => $token,
                     'user' => [
-                        'id' => $user['id'], 
-                        'email' => $user['email'], 
+                        'id' => $user['id'],
+                        'email' => $user['email'],
                         'name' => $user['username'], // Podríamos mejorar guardando nombres reales
                         'permissions' => $permissions
                     ],
@@ -453,6 +453,39 @@ class ProjectAuthController extends BaseController
             $data['resource_id'] ?? 0,
             $data['details'] ?? []
         );
+
+        return $this->json(['success' => true]);
+    }
+
+    /**
+     * Log CLIENT-SIDE debug info (Dev Only)
+     * POST /api/v1/external/{projectId}/client-debug
+     */
+    public function logExternalClientDebug($projectIdToLog)
+    {
+        // Only allow if IS_LOCAL equivalent logic or specific permission
+        // For now, open but logged
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $message = $data['message'] ?? 'No message';
+        $level = $data['level'] ?? 'INFO';
+
+        // __DIR__ is src/Modules/Auth.
+        // We need to go up: Auth -> Modules -> src -> [root] -> data -> logs
+        // That is 4 levels up.
+
+        $logDir = __DIR__ . '/../../../../data/logs';
+        if (!is_dir($logDir))
+            mkdir($logDir, 0777, true);
+
+        $date = date('Y-m-d');
+        $logFile = "$logDir/client_debug_{$projectIdToLog}_$date.log";
+
+        $ts = date('H:i:s');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+        $entry = "[$ts] [$ip] [$level] $message" . PHP_EOL;
+
+        file_put_contents($logFile, $entry, FILE_APPEND);
 
         return $this->json(['success' => true]);
     }
