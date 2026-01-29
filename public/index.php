@@ -343,6 +343,7 @@ $router->add('POST', '/api/v1/auth/google/verify', 'Auth\\ProjectAuthController@
 $router->add('POST', '/api/v1/auth/verify-token', 'Auth\\ProjectAuthController@verifyToken');
 $router->add('POST', '/api/v1/auth/logout', 'Auth\\ProjectAuthController@logout');
 $router->add('POST', '/api/v1/external/{projectId}/log-activity', 'Auth\\ProjectAuthController@logExternalActivity');
+$router->add('POST', '/api/v1/external/{projectId}/client-debug', 'Auth\\ProjectAuthController@logExternalClientDebug');
 
 // --- REST API Engine ---
 $router->add('GET', '/api/v1/{db}/{table}', 'Api\\RestController@handle');

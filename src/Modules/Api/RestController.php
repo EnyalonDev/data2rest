@@ -96,8 +96,12 @@ class RestController extends BaseController
         $apiKey = $headers['X-API-KEY'] ?? $headers['X-API-Key'] ?? $headers['x-api-key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? null;
 
         // Exemption for authentication routes (Login, Register, Google Auth)
+        // Exemption for authentication routes (Login, Register, Google Auth)
         $uri = $_SERVER['REQUEST_URI'] ?? '';
-        $isAuthRoute = (strpos($uri, '/auth/') !== false);
+        $isAuthRoute = (strpos($uri, '/auth/') !== false) ||
+            (strpos($uri, '/external/') !== false) ||
+            (strpos($uri, 'google/callback') !== false) ||
+            (strpos($uri, 'client-debug') !== false);
 
         // Exemption for Localhost / Development
         $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
