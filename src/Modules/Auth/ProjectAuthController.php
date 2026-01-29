@@ -274,7 +274,7 @@ class ProjectAuthController extends BaseController
 
             ActivityLogger::logAuth($userId, $projectId, 'external_register_success', true);
 
-            return $this->json([
+            $response = $this->json([
                 'success' => true,
                 'data' => [
                     'token' => $token,
@@ -283,6 +283,26 @@ class ProjectAuthController extends BaseController
                     'expires_at' => $expiresAt
                 ]
             ]);
+
+            // 5. Enviar Email de Bienvenida
+            try {
+                // Determine Frontend URL (TODO: Make configurable per project)
+                $frontendUrl = $_SERVER['HTTP_ORIGIN'] ?? 'https://d2r.nestorovallos.com';
+                $confirmUrl = $frontendUrl . '/dashboard'; // Temporal link until Verify page is ready
+
+                $mailService = new \App\Services\MailService();
+                $projectName = $project['name'] ?? 'Mundo Jácome\'s';
+
+                $mailService->sendWelcome($email, $name, $confirmUrl, $projectName);
+
+                ActivityLogger::logAuth($userId, $projectId, 'email_sent_welcome', true);
+            } catch (\Exception $e) {
+                // Log but don't fail the registration
+                ActivityLogger::logAuth($userId, $projectId, 'email_failed', false, $e->getMessage());
+                Logger::log('MAIL_EXCEPTION', ['error' => $e->getMessage()]);
+            }
+
+            return $response;
 
         } catch (Exception $e) {
             return $this->json(['error' => 'Registration failed: ' . $e->getMessage()], 500);

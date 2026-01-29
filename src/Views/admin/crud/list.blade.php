@@ -4,9 +4,9 @@
 
 @section('styles')
     <!-- 
-                Custom Styles 
-                Scrollbar customization and sticky columns for the data table.
-            -->
+                    Custom Styles 
+                    Scrollbar customization and sticky columns for the data table.
+                -->
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
@@ -110,11 +110,11 @@
             }
         }
     @endphp
-    @endphp
+
     <!-- 
-            CRUD List Header 
-            Title, Database details, and Action buttons (Back, Fields, API Docs, Export, Recycle Bin, New Record).
-        -->
+                CRUD List Header 
+                Title, Database details, and Action buttons (Back, Fields, API Docs, Export, Recycle Bin, New Record).
+            -->
     <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
         <div>
             <div class="flex items-center gap-4 mb-2">
@@ -189,9 +189,9 @@
     </header>
 
     <!-- 
-        Data Table Section 
-        Contains search bar and the main data table matrix.
-    -->
+            Data Table Section 
+            Contains search bar and the main data table matrix.
+        -->
     <section class="glass-card !p-0 overflow-hidden shadow-2xl">
         <div
             class="px-8 py-5 bg-white/[0.03] border-b border-glass-border flex flex-col md:flex-row justify-between items-center gap-4">
