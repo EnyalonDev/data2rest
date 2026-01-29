@@ -287,6 +287,7 @@ class ProjectAuthController extends BaseController
             ]);
 
             // 5. Enviar Email de Bienvenida
+            $emailDebug = ['attempted' => false, 'success' => false, 'error' => null];
             try {
                 // Construir enlace de verificación (Backend -> Frontend Redirect)
                 $backendUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
@@ -295,15 +296,32 @@ class ProjectAuthController extends BaseController
                 $mailService = new \App\Services\MailService();
                 $projectName = $project['name'] ?? 'Mundo Jácome\'s';
 
-                $mailService->sendWelcome($email, $name, $verifyLink, $projectName);
+                $emailDebug['attempted'] = true;
+                $sent = $mailService->sendWelcome($email, $name, $verifyLink, $projectName);
+                $emailDebug['success'] = $sent;
+
+                if (!$sent) {
+                    $emailDebug['error'] = 'MailService returned false (check server logs)';
+                }
 
                 ActivityLogger::logAuth($userId, $projectId, 'email_sent_welcome', true);
             } catch (\Exception $e) {
                 ActivityLogger::logAuth($userId, $projectId, 'email_failed', false, $e->getMessage());
                 \App\Core\Logger::log('MAIL_EXCEPTION', ['error' => $e->getMessage()]);
+                $emailDebug['error'] = $e->getMessage();
             }
 
-            return $response;
+            // Append debug info to response
+            $response = $this->json([
+                'success' => true,
+                'data' => [
+                    'token' => $token,
+                    'user' => ['id' => $userId, 'email' => $email, 'name' => $name, 'permissions' => $defaultPermissions],
+                    'project' => ['id' => $project['id'], 'name' => $project['name']],
+                    'expires_at' => $expiresAt,
+                    'debug_email' => $emailDebug
+                ]
+            ]);
             return $response;
 
         } catch (Exception $e) {
