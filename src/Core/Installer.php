@@ -43,6 +43,7 @@ class Installer
                 group_id INTEGER,
                 status INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP, public_name TEXT, phone TEXT, address TEXT, email TEXT, tax_id TEXT, google_id TEXT,
+                verification_token TEXT DEFAULT NULL, email_verified_at DATETIME DEFAULT NULL,
                 FOREIGN KEY (role_id) REFERENCES roles(id),
                 FOREIGN KEY (group_id) REFERENCES groups(id)
                 )"
