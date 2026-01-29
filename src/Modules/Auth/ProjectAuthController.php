@@ -297,11 +297,11 @@ class ProjectAuthController extends BaseController
 
                 ActivityLogger::logAuth($userId, $projectId, 'email_sent_welcome', true);
             } catch (\Exception $e) {
-                // Log but don't fail the registration
                 ActivityLogger::logAuth($userId, $projectId, 'email_failed', false, $e->getMessage());
-                Logger::log('MAIL_EXCEPTION', ['error' => $e->getMessage()]);
+                \App\Core\Logger::log('MAIL_EXCEPTION', ['error' => $e->getMessage()]);
             }
 
+            return $response;
             return $response;
 
         } catch (Exception $e) {
