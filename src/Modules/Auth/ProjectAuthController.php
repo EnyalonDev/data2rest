@@ -181,6 +181,7 @@ class ProjectAuthController extends BaseController
                         'id' => $userId,
                         'email' => $email,
                         'name' => $name,
+                        'email_verified_at' => $user['email_verified_at'] ?? ($user['google_id'] ? date('Y-m-d H:i:s') : null), // Google users are verified by definition
                         'permissions' => $permissions
                     ],
                     'project' => [
@@ -321,7 +322,13 @@ class ProjectAuthController extends BaseController
                 'success' => true,
                 'data' => [
                     'token' => $token,
-                    'user' => ['id' => $userId, 'email' => $email, 'name' => $name, 'permissions' => $defaultPermissions],
+                    'user' => [
+                        'id' => $userId, 
+                        'email' => $email, 
+                        'name' => $name, 
+                        'email_verified_at' => null, // Newly registered via email is not verified
+                        'permissions' => $defaultPermissions
+                    ],
                     'project' => ['id' => $project['id'], 'name' => $project['name']],
                     'expires_at' => $expiresAt,
                     'debug_email' => $emailDebug
@@ -397,6 +404,7 @@ class ProjectAuthController extends BaseController
                         'id' => $user['id'],
                         'email' => $user['email'],
                         'name' => $user['username'], // Podríamos mejorar guardando nombres reales
+                        'email_verified_at' => $user['email_verified_at'],
                         'permissions' => $permissions
                     ],
                     'project' => ['id' => $project['id'], 'name' => $project['name']],
@@ -448,6 +456,7 @@ class ProjectAuthController extends BaseController
                 'user_id' => $decoded->sub,
                 'project_id' => $projectId,
                 'permissions' => json_decode($access['external_permissions'] ?? '{}', true),
+                'email_verified_at' => $this->getUserVerificationStatus($decoded->sub),
                 'expires_at' => date('c', $decoded->exp)
             ]
         ]);
@@ -671,5 +680,13 @@ class ProjectAuthController extends BaseController
             }
         }
         return null;
+    }
+
+    private function getUserVerificationStatus($userId)
+    {
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT email_verified_at FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        return $stmt->fetchColumn();
     }
 }
