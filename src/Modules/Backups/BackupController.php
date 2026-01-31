@@ -654,6 +654,147 @@ class BackupController extends BaseController
     }
 
     /**
+     * Create backup from CLI (for cron jobs)
+     * 
+     * Similar to createWithProgress() but without SSE streaming.
+     * Returns results array instead of streaming progress.
+     * 
+     * This method backs up:
+     * - System database (SQLite, MySQL, or PostgreSQL)
+     * - All client databases from databases table
+     * - Creates manifest with metadata
+     * 
+     * @return array Backup results with filename, counts, and status
+     * @throws \Exception If backup creation fails
+     * 
+     * @example
+     * $controller = new BackupController();
+     * $result = $controller->createBackupCLI();
+     * echo "Backed up: {$result['backed_up']}/{$result['total']} databases\n";
+     */
+    public function createBackupCLI(): array
+    {
+        $filename = 'backup_' . date('Y-m-d_H-i-s') . '.zip';
+        $filepath = $this->backupDir . '/' . $filename;
+        $tempDir = sys_get_temp_dir() . '/backup_' . uniqid();
+
+        // Create temporary directory
+        if (!mkdir($tempDir, 0755, true)) {
+            throw new \Exception('Could not create temporary directory');
+        }
+
+        $backedUpDatabases = 0;
+        $failedDatabases = [];
+        $totalDatabases = 0;
+
+        try {
+            // Count total databases first
+            $db = Database::getInstance()->getConnection();
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+            $stmt = $db->query("SELECT COUNT(*) FROM $qDatabases");
+            $totalDatabases = $stmt->fetchColumn() + 1; // +1 for system database
+
+            $zip = new ZipArchive();
+            if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+                throw new \Exception("Could not create ZIP file");
+            }
+
+            // 1. Backup system database
+            try {
+                $systemAdapter = Database::getInstance()->getAdapter();
+                $systemType = $systemAdapter->getType();
+                $extension = ($systemType === 'sqlite') ? 'sqlite' : 'sql';
+                $systemBackupFile = $tempDir . '/system.' . $extension;
+
+                if ($systemAdapter->createBackup($systemBackupFile)) {
+                    $zip->addFile($systemBackupFile, basename($systemBackupFile));
+                    $backedUpDatabases++;
+                } else {
+                    $failedDatabases[] = 'system';
+                }
+            } catch (\Exception $e) {
+                $failedDatabases[] = 'system';
+                error_log("System database backup error: " . $e->getMessage());
+            }
+
+            // 2. Backup all client databases
+            $stmt = $db->query("SELECT * FROM $qDatabases");
+            $databases = $stmt->fetchAll();
+
+            foreach ($databases as $database) {
+                try {
+                    $dbAdapter = \App\Core\DatabaseManager::getAdapter($database);
+                    $dbType = $dbAdapter->getType();
+                    $extension = ($dbType === 'sqlite') ? 'sqlite' : 'sql';
+
+                    $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $database['name']);
+                    $backupFile = $tempDir . '/' . $safeName . '.' . $extension;
+
+                    if ($dbAdapter->createBackup($backupFile)) {
+                        $zip->addFile($backupFile, basename($backupFile));
+                        $backedUpDatabases++;
+                    } else {
+                        $failedDatabases[] = $database['name'];
+                    }
+                } catch (\Exception $e) {
+                    $failedDatabases[] = $database['name'];
+                    error_log("Database backup error for {$database['name']}: " . $e->getMessage());
+                }
+            }
+
+            // 3. Add manifest
+            $manifest = [
+                'created_at' => date('c'),
+                'version' => '2.0',
+                'creator' => 'cli',
+                'total_databases' => $totalDatabases,
+                'backed_up' => $backedUpDatabases,
+                'failed' => count($failedDatabases),
+                'failed_databases' => $failedDatabases
+            ];
+
+            $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
+            $zip->close();
+
+            // Cleanup
+            $this->cleanupTempDir($tempDir);
+
+            // Log
+            try {
+                Logger::log('BACKUP_CREATED_CLI', [
+                    'file' => $filename,
+                    'databases' => $backedUpDatabases,
+                    'failed' => count($failedDatabases)
+                ]);
+            } catch (\Exception $e) {
+                // Ignore logging errors in CLI
+            }
+
+            return [
+                'success' => true,
+                'filename' => $filename,
+                'filepath' => $filepath,
+                'total' => $totalDatabases,
+                'backed_up' => $backedUpDatabases,
+                'failed' => count($failedDatabases),
+                'failed_databases' => $failedDatabases,
+                'size' => filesize($filepath)
+            ];
+
+        } catch (\Exception $e) {
+            // Cleanup on error
+            if (is_dir($tempDir)) {
+                $this->cleanupTempDir($tempDir);
+            }
+            if (file_exists($filepath)) {
+                unlink($filepath);
+            }
+            throw $e;
+        }
+    }
+
+    /**
      * Get configured cloud URL
      * 
      * Retrieves the Google Drive Apps Script webhook URL

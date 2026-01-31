@@ -6,67 +6,27 @@ if (php_sapi_name() !== 'cli') {
 }
 
 require_once __DIR__ . '/../src/autoload.php';
+
 use App\Core\Config;
-use App\Core\Logger;
+use App\Core\Database;
+use App\Modules\Backups\BackupController;
 
 // Load Env
 Config::loadEnv();
 
 echo "[" . date('Y-m-d H:i:s') . "] Starting automated backup...\n";
 
-// Configuration
-$rootPath = dirname(__DIR__);
-$backupDir = $rootPath . '/data/backups';
-$dataPath = $rootPath . '/data';
+try {
+    // Create backup using BackupController
+    $controller = new BackupController();
+    $result = $controller->createBackupCLI();
 
-if (!file_exists($backupDir)) {
-    mkdir($backupDir, 0755, true);
-}
+    echo "Backup created successfully: {$result['filename']}\n";
+    echo "Databases: {$result['backed_up']}/{$result['total']} | ";
+    echo "Size: " . round($result['size'] / 1024 / 1024, 2) . " MB\n";
 
-// Create Backup
-$filename = 'auto_backup_' . date('Y-m-d_H-i-s') . '.zip';
-$filepath = $backupDir . '/' . $filename;
-
-$zip = new ZipArchive();
-if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-    $count = 0;
-    $totalSize = 0;
-
-    // Add all .sqlite files from data/
-    // Exclude cache or temp files if any
-    foreach (glob($dataPath . '/*.sqlite') as $dbFile) {
-        $zip->addFile($dbFile, basename($dbFile));
-        $totalSize += filesize($dbFile);
-        $count++;
-    }
-
-    // Add manifest
-    $zip->addFromString('manifest.json', json_encode([
-        'created_at' => date('c'),
-        'timestamp' => time(),
-        'version' => '1.0',
-        'type' => 'automated_cli',
-        'files_count' => $count,
-        'total_db_size' => $totalSize
-    ], JSON_PRETTY_PRINT));
-
-    $zip->close();
-
-    $finalSize = filesize($filepath);
-    echo "Backup created successfully: $filename\n";
-    echo "Databases: $count | Size: " . round($finalSize / 1024 / 1024, 2) . " MB\n";
-
-    // Log intent to system logs (if logger supports it without session)
-    try {
-        // Mock session for Logger if needed, or Logger should handle CLI
-        if (session_status() == PHP_SESSION_NONE) {
-            // Logger might rely on session for user_id, let's see. 
-            // If Logger::log uses $_SESSION, we might need a workaround or just skip it.
-            // Assuming Logger is robust enough or we just print to stdout.
-        }
-        // Logger::log('BACKUP_AUTO', ['file' => $filename]);
-    } catch (\Exception $e) {
-        // Ignore logging errors in CLI
+    if ($result['failed'] > 0) {
+        echo "Failed databases: " . implode(', ', $result['failed_databases']) . "\n";
     }
 
     // --- Retention Policy ---
@@ -83,7 +43,8 @@ if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) 
         }
     }
 
-    $backups = glob($backupDir . '/auto_backup_*.zip');
+    $backupDir = dirname(__DIR__) . '/data/backups';
+    $backups = glob($backupDir . '/backup_*.zip');
 
     if (count($backups) > $retention) {
         // Sort by time: Oldest first
@@ -104,22 +65,22 @@ if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) 
     // --- Cloud Synchronization ---
     echo "Checking cloud sync configuration...\n";
     try {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        $stmt = $db->query("SELECT value FROM system_settings WHERE key = 'backup_cloud_url'");
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->query("SELECT value FROM system_settings WHERE key_name = 'backup_cloud_url'");
         $cloudUrl = $stmt->fetchColumn();
 
         if ($cloudUrl) {
             echo "Cloud URL found. Uploading to Google Drive...\n";
 
             // Limit file size for Cloud Sync (Google Apps Script usually has 50MB limits)
-            if ($finalSize > 20 * 1024 * 1024) {
+            if ($result['size'] > 20 * 1024 * 1024) {
                 echo "WARNING: File too large (>20MB) for standard GAS Sync. Skipping Cloud Upload.\n";
             } else {
-                $fileContent = file_get_contents($filepath);
+                $fileContent = file_get_contents($result['filepath']);
                 $base64Data = base64_encode($fileContent);
 
                 $payload = json_encode([
-                    'filename' => $filename,
+                    'filename' => $result['filename'],
                     'mimeType' => 'application/zip',
                     'data' => $base64Data
                 ]);
@@ -151,8 +112,8 @@ if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) 
         echo "Cloud Sync Error: " . $e->getMessage() . "\n";
     }
 
-} else {
-    echo "Error: Could not create zip archive at $filepath\n";
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
     exit(1);
 }
 
