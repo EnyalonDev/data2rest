@@ -317,6 +317,7 @@ $router->add('GET', '/admin/logs', 'Logs\\LogController@index');
 // --- Module: Backups ---
 $router->add('GET', '/admin/backups', 'Backups\\BackupController@index');
 $router->add('POST', '/admin/backups/create', 'Backups\\BackupController@create');
+$router->add('GET', '/admin/backups/createWithProgress', 'Backups\\BackupController@createWithProgress');
 $router->add('POST', '/admin/backups/config', 'Backups\\BackupController@saveConfig');
 $router->add('GET', '/admin/backups/download', 'Backups\\BackupController@download');
 $router->add('GET', '/admin/backups/delete', 'Backups\\BackupController@delete');
