@@ -454,6 +454,11 @@ class ProjectAuthController extends BaseController
             return $this->json(['success' => false, 'error' => 'Session terminated'], 401);
         }
 
+        // Get user details
+        $stmt = $db->prepare("SELECT public_name, phone, address, tax_id FROM users WHERE id = ?");
+        $stmt->execute([$decoded->sub]);
+        $user = $stmt->fetch();
+
         // Obtener permisos actualizados
         $access = $this->hasExternalAccessToProject($decoded->sub, $projectId);
         if (!$access || !$access['external_access_enabled']) {
@@ -467,6 +472,10 @@ class ProjectAuthController extends BaseController
                 'project_id' => $projectId,
                 'permissions' => json_decode($access['external_permissions'] ?? '{}', true),
                 'email_verified_at' => $this->getUserVerificationStatus($decoded->sub),
+                'public_name' => $user['public_name'],
+                'phone' => $user['phone'],
+                'address' => $user['address'],
+                'tax_id' => $user['tax_id'],
                 'expires_at' => date('c', $decoded->exp)
             ]
         ]);
@@ -617,6 +626,65 @@ class ProjectAuthController extends BaseController
         file_put_contents($logFile, $entry, FILE_APPEND);
 
         return $this->json(['success' => true]);
+    }
+
+    /**
+     * Actualizar perfil de usuario
+     * POST /api/v1/projects/{projectId}/auth/profile
+     */
+    public function updateProfile($routeProjectId = null)
+    {
+        $projectId = $routeProjectId ?? ($_SERVER['HTTP_X_PROJECT_ID'] ?? null);
+        $token = $this->getBearerToken();
+
+        if (!$projectId || !$token) {
+            return $this->json(['error' => 'Project ID and Token required'], 400);
+        }
+
+        $decoded = $this->validateJWT($token, $projectId);
+        if (!$decoded) {
+            return $this->json(['error' => 'Invalid token'], 401);
+        }
+
+        $userId = $decoded->sub;
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // Campos permitidos
+        $allowedFields = ['public_name', 'phone', 'address', 'tax_id'];
+        $updates = [];
+        $params = [];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updates[] = "$field = ?";
+                $params[] = $data[$field];
+            }
+        }
+
+        if (empty($updates)) {
+            return $this->json(['success' => true]); // Nada que actualizar
+        }
+
+        // Añadir ID al final
+        $params[] = $userId;
+
+        try {
+            $db = Database::getInstance()->getConnection();
+            $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE id = ?";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+
+            // Log activity
+            ActivityLogger::logAuth($userId, $projectId, 'profile_updated', true);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Profile updated successfully'
+            ]);
+
+        } catch (Exception $e) {
+            return $this->json(['error' => 'Update failed: ' . $e->getMessage()], 500);
+        }
     }
 
     // --- Helpers ---
