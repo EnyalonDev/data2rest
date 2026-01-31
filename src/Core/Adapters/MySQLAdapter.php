@@ -352,13 +352,15 @@ class MySQLAdapter extends DatabaseAdapter
             }
 
             // Build mysqldump command
+            // Use MYSQL_PWD environment variable for password (more secure than -p)
             // Using --single-transaction for InnoDB tables to avoid locking
+            $envVars = !empty($pass) ? 'MYSQL_PWD=' . escapeshellarg($pass) . ' ' : '';
             $command = sprintf(
-                'mysqldump --single-transaction -h%s -P%d -u%s %s %s > %s 2>&1',
+                '%smysqldump --single-transaction -h%s -P%d -u%s %s > %s 2>&1',
+                $envVars,
                 escapeshellarg($host),
                 (int) $port,
                 escapeshellarg($user),
-                !empty($pass) ? '-p' . escapeshellarg($pass) : '',
                 escapeshellarg($db),
                 escapeshellarg($outputPath)
             );
@@ -405,12 +407,14 @@ class MySQLAdapter extends DatabaseAdapter
             }
 
             // Build mysql restore command
+            // Use MYSQL_PWD environment variable for password (more secure than -p)
+            $envVars = !empty($pass) ? 'MYSQL_PWD=' . escapeshellarg($pass) . ' ' : '';
             $command = sprintf(
-                'mysql -h%s -P%d -u%s %s %s < %s 2>&1',
+                '%smysql -h%s -P%d -u%s %s < %s 2>&1',
+                $envVars,
                 escapeshellarg($host),
                 (int) $port,
                 escapeshellarg($user),
-                !empty($pass) ? '-p' . escapeshellarg($pass) : '',
                 escapeshellarg($db),
                 escapeshellarg($backupPath)
             );
