@@ -297,7 +297,17 @@ class ProjectAuthController extends BaseController
             try {
                 // Construir enlace de verificación (Backend -> Frontend Redirect)
                 $backendUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-                $verifyLink = "$backendUrl/api/v1/projects/$projectId/auth/verify-email?token=$verificationToken";
+
+                // Detectar Frontend URL para redirección
+                $frontendUrl = $_SERVER['HTTP_ORIGIN'] ?? '';
+                // Si no hay Origin, intentar referer o dejar vacío
+                if (!$frontendUrl && isset($_SERVER['HTTP_REFERER'])) {
+                    $parsed = parse_url($_SERVER['HTTP_REFERER']);
+                    $frontendUrl = $parsed['scheme'] . '://' . $parsed['host'] . (isset($parsed['port']) ? ':' . $parsed['port'] : '');
+                }
+
+                $redirectParam = $frontendUrl ? "&redirect_to=" . urlencode($frontendUrl) : "";
+                $verifyLink = "$backendUrl/api/v1/projects/$projectId/auth/verify-email?token=$verificationToken$redirectParam";
 
                 $mailService = new \App\Services\MailService();
                 $projectName = $project['name'] ?? 'Mundo Jácome\'s';
@@ -518,7 +528,9 @@ class ProjectAuthController extends BaseController
     public function verifyEmail($routeProjectId = null)
     {
         $projectId = $routeProjectId ?? ($_GET['project_id'] ?? null);
+        $projectId = $routeProjectId ?? ($_GET['project_id'] ?? null);
         $token = $_GET['token'] ?? null;
+        $redirectTo = $_GET['redirect_to'] ?? null;
 
         if (!$projectId || !$token) {
             return $this->json(['error' => 'Invalid verification link'], 400);
@@ -535,13 +547,13 @@ class ProjectAuthController extends BaseController
 
         if (!$user) {
             // Token inválido o ya usado (si lo limpiamos)
-            return $this->redirectToFrontend($projectId, 'error', 'invalid_token');
+            return $this->redirectToFrontend($projectId, 'error', 'invalid_token', $redirectTo);
         }
 
         // Verificar si ya estaba verificado
         if ($user['email_verified_at']) {
             // Ya verificado, redirigir al éxito de todas formas
-            return $this->redirectToFrontend($projectId, 'success', 'already_verified');
+            return $this->redirectToFrontend($projectId, 'success', 'already_verified', $redirectTo);
         }
 
         try {
@@ -556,18 +568,17 @@ class ProjectAuthController extends BaseController
             ActivityLogger::logAuth($user['id'], $projectId, 'email_verified', true);
 
             // Redirigir al Frontend
-            return $this->redirectToFrontend($projectId, 'success');
+            return $this->redirectToFrontend($projectId, 'success', null, $redirectTo);
 
         } catch (Exception $e) {
             return $this->json(['error' => 'Verification failed'], 500);
         }
     }
 
-    private function redirectToFrontend($projectId, $status, $code = null)
+    private function redirectToFrontend($projectId, $status, $code = null, $customFrontendUrl = null)
     {
-        // Obtener URL del frontend desde la configuración del proyecto o default
-        // Por ahora hardcoded al dominio principal, en futuro dinámico.
-        $frontendUrl = $_SERVER['HTTP_ORIGIN'] ?? 'https://d2r.nestorovallos.com';
+        // Obtener URL del frontend desde el parámetro, configuración o default
+        $frontendUrl = $customFrontendUrl ?? ($_SERVER['HTTP_ORIGIN'] ?? 'https://d2r.nestorovallos.com');
 
         $url = "$frontendUrl/verify?status=$status" . ($code ? "&code=$code" : "");
 
