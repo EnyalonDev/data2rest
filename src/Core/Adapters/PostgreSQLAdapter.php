@@ -598,9 +598,11 @@ class PostgreSQLAdapter extends DatabaseAdapter
 
             // Build pg_dump command
             // Using PGPASSWORD environment variable for password
+            // Using long-format parameters for better compatibility
+            $envVars = !empty($pass) ? 'PGPASSWORD=' . escapeshellarg($pass) . ' ' : '';
             $command = sprintf(
-                'PGPASSWORD=%s pg_dump -h %s -p %d -U %s %s > %s 2>&1',
-                escapeshellarg($pass),
+                '%spg_dump --host=%s --port=%d --username=%s --format=plain %s > %s 2>&1',
+                $envVars,
                 escapeshellarg($host),
                 (int) $port,
                 escapeshellarg($user),
@@ -651,9 +653,11 @@ class PostgreSQLAdapter extends DatabaseAdapter
 
             // Build psql restore command
             // Using PGPASSWORD environment variable for password
+            // Using long-format parameters for better compatibility
+            $envVars = !empty($pass) ? 'PGPASSWORD=' . escapeshellarg($pass) . ' ' : '';
             $command = sprintf(
-                'PGPASSWORD=%s psql -h %s -p %d -U %s %s < %s 2>&1',
-                escapeshellarg($pass),
+                '%spsql --host=%s --port=%d --username=%s --dbname=%s < %s 2>&1',
+                $envVars,
                 escapeshellarg($host),
                 (int) $port,
                 escapeshellarg($user),
