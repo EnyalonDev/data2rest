@@ -4,9 +4,9 @@
 
 @section('content')
     <!-- 
-            Backups Header 
-            Title, Subtitle, Configuration Button, and Create Backup Action.
-        -->
+                Backups Header 
+                Title, Subtitle, Configuration Button, and Create Backup Action.
+            -->
     <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-3xl font-black text-p-title tracking-tight mb-2">System Backups</h1>
@@ -24,25 +24,22 @@
                 </svg>
                 {{ \App\Core\Lang::get('backups.config_btn') }}
             </button>
-            <form action="{{ \App\Core\Auth::getBaseUrl() }}admin/backups/create" method="POST">
-                <input type="hidden" name="_token" value="{{ $csrf_token }}">
-                <button type="submit" class="btn-primary flex items-center gap-2" onclick="showLoading()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    {{ \App\Core\Lang::get('backups.create') }}
-                </button>
-            </form>
+            <button onclick="startBackupWithProgress()" class="btn-primary flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                {{ \App\Core\Lang::get('backups.create') }}
+            </button>
         </div>
     </header>
 
     <!-- 
-            Backups List 
-            Grid of available backup files with actions to Upload to Cloud, Download, or Delete.
-        -->
+                Backups List 
+                Grid of available backup files with actions to Upload to Cloud, Download, or Delete.
+            -->
     <div class="grid grid-cols-1 gap-6">
         @forelse($backups as $backup)
             <div
@@ -103,9 +100,9 @@
     </div>
 
     <!-- 
-            Configuration Modal 
-            Hidden modal to configure the Google Script URL for cloud sync.
-        -->
+                Configuration Modal 
+                Hidden modal to configure the Google Script URL for cloud sync.
+            -->
     <div id="config-modal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         <div class="glass-card w-full max-w-lg shadow-2xl border-2 border-white/10">
@@ -132,7 +129,122 @@
         </div>
     </div>
 
+    <!-- Progress Modal -->
+    <div id="progress-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="glass-card w-full max-w-2xl shadow-2xl border-2 border-white/10">
+            <h3 class="text-xl font-bold text-p-title mb-4">Creando Respaldo</h3>
+
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-p-muted" id="progress-message">Iniciando...</span>
+                    <span class="text-p-title font-bold" id="progress-percent">0%</span>
+                </div>
+                <div class="w-full bg-white/5 rounded-full h-3 overflow-hidden">
+                    <div id="progress-bar"
+                        class="bg-gradient-to-r from-primary to-blue-500 h-full transition-all duration-300"
+                        style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Log Output -->
+            <div class="bg-black/30 rounded-lg p-4 font-mono text-xs max-h-64 overflow-y-auto space-y-1" id="progress-log">
+                <div class="text-p-muted">Esperando inicio...</div>
+            </div>
+
+            <!-- Close Button (hidden until complete) -->
+            <div class="mt-4 flex justify-end">
+                <button id="progress-close-btn" onclick="closeProgressModal()" class="btn-primary hidden">
+                    Cerrar y Recargar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let eventSource = null;
+
+        function startBackupWithProgress() {
+            // Show modal
+            document.getElementById('progress-modal').classList.remove('hidden');
+            document.getElementById('progress-log').innerHTML = '<div class="text-p-muted">Conectando...</div>';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-percent').textContent = '0%';
+            document.getElementById('progress-close-btn').classList.add('hidden');
+
+            // Create EventSource for Server-Sent Events
+            eventSource = new EventSource('{{ \App\Core\Auth::getBaseUrl() }}admin/backups/createWithProgress');
+
+            eventSource.addEventListener('progress', function (e) {
+                const data = JSON.parse(e.data);
+                updateProgress(data.message, data.percent);
+            });
+
+            eventSource.addEventListener('success', function (e) {
+                const data = JSON.parse(e.data);
+                addLog(data.message, 'success');
+            });
+
+            eventSource.addEventListener('warning', function (e) {
+                const data = JSON.parse(e.data);
+                addLog(data.message, 'warning');
+            });
+
+            eventSource.addEventListener('error', function (e) {
+                if (e.data) {
+                    const data = JSON.parse(e.data);
+                    addLog('ERROR: ' + data.message, 'error');
+                }
+                eventSource.close();
+                document.getElementById('progress-close-btn').classList.remove('hidden');
+            });
+
+            eventSource.addEventListener('complete', function (e) {
+                const data = JSON.parse(e.data);
+                updateProgress(data.message, 100);
+                addLog('✓ Respaldo completado exitosamente', 'success');
+                eventSource.close();
+                document.getElementById('progress-close-btn').classList.remove('hidden');
+            });
+
+            eventSource.onerror = function () {
+                addLog('Error de conexión con el servidor', 'error');
+                eventSource.close();
+                document.getElementById('progress-close-btn').classList.remove('hidden');
+            };
+        }
+
+        function updateProgress(message, percent) {
+            document.getElementById('progress-message').textContent = message;
+            document.getElementById('progress-percent').textContent = percent + '%';
+            document.getElementById('progress-bar').style.width = percent + '%';
+            addLog(message, 'info');
+        }
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('progress-log');
+            const entry = document.createElement('div');
+
+            let colorClass = 'text-p-muted';
+            if (type === 'success') colorClass = 'text-green-400';
+            if (type === 'warning') colorClass = 'text-yellow-400';
+            if (type === 'error') colorClass = 'text-red-400';
+
+            entry.className = colorClass;
+            entry.textContent = message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function closeProgressModal() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            document.getElementById('progress-modal').classList.add('hidden');
+            location.reload(); // Reload to show new backup
+        }
+
         async function uploadBackup(filename) {
             if (!confirm('{{ \App\Core\Lang::get('backups.upload_confirm', ['file' => '']) }}' + filename)) return;
 
@@ -174,11 +286,6 @@
                 console.error(e);
                 showModal({ title: 'Connection Error', message: 'Could not connect to server: ' + e.message, type: 'error' });
             }
-        }
-
-        function showLoading() {
-            // Simple visual feedback
-            document.body.style.cursor = 'wait';
         }
     </script>
 @endsection

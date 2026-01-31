@@ -16,20 +16,28 @@ use RecursiveDirectoryIterator;
  * Backup Controller
  * 
  * Comprehensive backup management system with local and cloud storage support.
+ * Supports SQLite, MySQL, and PostgreSQL databases.
  * 
  * Core Features:
  * - Create full system backups (ZIP format)
+ * - Backup system database (SQLite, MySQL, or PostgreSQL)
+ * - Backup all client databases from databases table
  * - List and manage existing backups
  * - Download backups locally
  * - Upload backups to cloud (Google Drive via Apps Script)
  * - Delete old backups
- * - Backup manifest generation
+ * - Backup manifest generation with success/failure tracking
  * - Cloud URL configuration
  * 
  * Backup Contents:
- * - All SQLite database files (.sqlite)
- * - Manifest file with metadata
- * - Creation timestamp and creator info
+ * - System database (system.sqlite or system.sql)
+ * - All client databases ([database_name].sqlite or [database_name].sql)
+ * - Manifest file with metadata and backup statistics
+ * 
+ * Database Backup Methods:
+ * - SQLite: Direct file copy
+ * - MySQL: mysqldump command
+ * - PostgreSQL: pg_dump command
  * 
  * Cloud Integration:
  * - Google Drive via Apps Script webhook
@@ -45,7 +53,7 @@ use RecursiveDirectoryIterator;
  * 
  * @package App\Modules\Backups
  * @author DATA2REST Development Team
- * @version 1.0.0
+ * @version 2.0.0
  */
 /**
  * BackupController Controller
@@ -159,32 +167,306 @@ class BackupController extends BaseController
     {
         $filename = 'backup_' . date('Y-m-d_H-i-s') . '.zip';
         $filepath = $this->backupDir . '/' . $filename;
-        $dataPath = dirname(Config::get('db_path')); // data/ folder
+        $tempDir = sys_get_temp_dir() . '/backup_' . uniqid();
 
-        $zip = new ZipArchive();
-        if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+        // Create temporary directory for backup files
+        if (!mkdir($tempDir, 0755, true)) {
+            die("Could not create temporary directory");
+        }
 
-            // Add all .sqlite files from data/
-            foreach (glob($dataPath . '/*.sqlite') as $dbFile) {
-                $zip->addFile($dbFile, basename($dbFile));
+        $backedUpDatabases = 0;
+        $failedDatabases = [];
+
+        try {
+            $zip = new ZipArchive();
+            if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+                throw new \Exception("Could not create zip file");
             }
 
-            // Add uploads? Optional, might be too big. Let's just do databases for now as "Data Backup".
-            // Adding a manifest
-            $zip->addFromString('manifest.json', json_encode([
-                'created_at' => date('c'),
-                'version' => '1.0',
-                'creator' => $_SESSION['username'] ?? 'system'
-            ]));
+            // 1. Backup system database
+            try {
+                $systemAdapter = Database::getInstance()->getAdapter();
+                $systemType = $systemAdapter->getType();
+                $extension = ($systemType === 'sqlite') ? 'sqlite' : 'sql';
+                $systemBackupFile = $tempDir . '/system.' . $extension;
 
+                if ($systemAdapter->createBackup($systemBackupFile)) {
+                    $zip->addFile($systemBackupFile, basename($systemBackupFile));
+                    $backedUpDatabases++;
+                } else {
+                    $failedDatabases[] = 'system';
+                    error_log("Failed to backup system database");
+                }
+            } catch (\Exception $e) {
+                $failedDatabases[] = 'system';
+                error_log("System database backup error: " . $e->getMessage());
+            }
+
+            // 2. Backup all client databases
+            $db = Database::getInstance()->getConnection();
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+
+            $stmt = $db->query("SELECT * FROM $qDatabases");
+            $databases = $stmt->fetchAll();
+
+            foreach ($databases as $database) {
+                try {
+                    $dbAdapter = \App\Core\DatabaseManager::getAdapter($database);
+                    $dbType = $dbAdapter->getType();
+                    $extension = ($dbType === 'sqlite') ? 'sqlite' : 'sql';
+
+                    // Create safe filename
+                    $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $database['name']);
+                    $backupFile = $tempDir . '/' . $safeName . '.' . $extension;
+
+                    if ($dbAdapter->createBackup($backupFile)) {
+                        $zip->addFile($backupFile, basename($backupFile));
+                        $backedUpDatabases++;
+                    } else {
+                        $failedDatabases[] = $database['name'];
+                        error_log("Failed to backup database: {$database['name']}");
+                    }
+                } catch (\Exception $e) {
+                    $failedDatabases[] = $database['name'];
+                    error_log("Database backup error for {$database['name']}: " . $e->getMessage());
+                }
+            }
+
+            // 3. Add manifest with backup metadata
+            $manifest = [
+                'created_at' => date('c'),
+                'version' => '2.0',
+                'creator' => $_SESSION['username'] ?? 'system',
+                'total_databases' => count($databases) + 1, // +1 for system
+                'backed_up' => $backedUpDatabases,
+                'failed' => count($failedDatabases),
+                'failed_databases' => $failedDatabases
+            ];
+
+            $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
             $zip->close();
 
-            Logger::log('BACKUP_CREATED', ['file' => $filename]);
-            $this->redirect('admin/backups'); // Redirect back with success
-        } else {
-            // Handle error
-            die("Could not create zip");
+            // Cleanup temporary files
+            $this->cleanupTempDir($tempDir);
+
+            // Log the backup creation
+            Logger::log('BACKUP_CREATED', [
+                'file' => $filename,
+                'databases' => $backedUpDatabases,
+                'failed' => count($failedDatabases)
+            ]);
+
+            $this->redirect('admin/backups');
+
+        } catch (\Exception $e) {
+            // Cleanup on error
+            if (is_dir($tempDir)) {
+                $this->cleanupTempDir($tempDir);
+            }
+            if (file_exists($filepath)) {
+                unlink($filepath);
+            }
+            die("Backup failed: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Clean up temporary directory and its contents
+     * 
+     * @param string $dir Directory path to clean up
+     * @return void
+     */
+    private function cleanupTempDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = glob($dir . '/*');
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        rmdir($dir);
+    }
+
+    /**
+     * Create backup with real-time progress updates
+     * 
+     * Uses Server-Sent Events (SSE) to stream progress to the client.
+     * Shows which database is currently being backed up and overall progress.
+     * 
+     * @return void Streams SSE events
+     * 
+     * @example
+     * GET /admin/backups/createWithProgress
+     */
+    public function createWithProgress()
+    {
+        // Set headers for Server-Sent Events
+        header('Content-Type: text/event-stream');
+        header('Cache-Control: no-cache');
+        header('Connection: keep-alive');
+        header('X-Accel-Buffering: no'); // Disable nginx buffering
+
+        // Disable output buffering
+        if (ob_get_level())
+            ob_end_clean();
+
+        $filename = 'backup_' . date('Y-m-d_H-i-s') . '.zip';
+        $filepath = $this->backupDir . '/' . $filename;
+        $tempDir = sys_get_temp_dir() . '/backup_' . uniqid();
+
+        $this->sendSSE('progress', ['message' => 'Iniciando proceso de respaldo...', 'percent' => 0]);
+
+        // Create temporary directory
+        if (!mkdir($tempDir, 0755, true)) {
+            $this->sendSSE('error', ['message' => 'No se pudo crear el directorio temporal']);
+            return;
+        }
+
+        $backedUpDatabases = 0;
+        $failedDatabases = [];
+        $totalDatabases = 0;
+
+        try {
+            // Count total databases first
+            $db = Database::getInstance()->getConnection();
+            $adapter = Database::getInstance()->getAdapter();
+            $qDatabases = $adapter->quoteName('databases');
+            $stmt = $db->query("SELECT COUNT(*) FROM $qDatabases");
+            $totalDatabases = $stmt->fetchColumn() + 1; // +1 for system database
+
+            $this->sendSSE('progress', ['message' => "Total de bases de datos: {$totalDatabases}", 'percent' => 5]);
+
+            $zip = new ZipArchive();
+            if ($zip->open($filepath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+                throw new \Exception("No se pudo crear el archivo ZIP");
+            }
+
+            // 1. Backup system database
+            $this->sendSSE('progress', ['message' => 'Respaldando base de datos del sistema...', 'percent' => 10]);
+
+            try {
+                $systemAdapter = Database::getInstance()->getAdapter();
+                $systemType = $systemAdapter->getType();
+                $extension = ($systemType === 'sqlite') ? 'sqlite' : 'sql';
+                $systemBackupFile = $tempDir . '/system.' . $extension;
+
+                if ($systemAdapter->createBackup($systemBackupFile)) {
+                    $zip->addFile($systemBackupFile, basename($systemBackupFile));
+                    $backedUpDatabases++;
+                    $this->sendSSE('success', ['message' => '✓ Sistema respaldado correctamente']);
+                } else {
+                    $failedDatabases[] = 'system';
+                    $this->sendSSE('warning', ['message' => '✗ Falló el respaldo del sistema']);
+                }
+            } catch (\Exception $e) {
+                $failedDatabases[] = 'system';
+                $this->sendSSE('warning', ['message' => '✗ Error en sistema: ' . $e->getMessage()]);
+            }
+
+            // 2. Backup all client databases
+            $stmt = $db->query("SELECT * FROM $qDatabases");
+            $databases = $stmt->fetchAll();
+            $currentDb = 1;
+
+            foreach ($databases as $database) {
+                $percentComplete = 10 + (($currentDb / $totalDatabases) * 80);
+                $this->sendSSE('progress', [
+                    'message' => "Respaldando: {$database['name']}...",
+                    'percent' => round($percentComplete),
+                    'current' => $currentDb,
+                    'total' => $totalDatabases
+                ]);
+
+                try {
+                    $dbAdapter = \App\Core\DatabaseManager::getAdapter($database);
+                    $dbType = $dbAdapter->getType();
+                    $extension = ($dbType === 'sqlite') ? 'sqlite' : 'sql';
+
+                    $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $database['name']);
+                    $backupFile = $tempDir . '/' . $safeName . '.' . $extension;
+
+                    if ($dbAdapter->createBackup($backupFile)) {
+                        $zip->addFile($backupFile, basename($backupFile));
+                        $backedUpDatabases++;
+                        $this->sendSSE('success', ['message' => "✓ {$database['name']} ({$dbType})"]);
+                    } else {
+                        $failedDatabases[] = $database['name'];
+                        $this->sendSSE('warning', ['message' => "✗ Falló: {$database['name']}"]);
+                    }
+                } catch (\Exception $e) {
+                    $failedDatabases[] = $database['name'];
+                    $this->sendSSE('warning', ['message' => "✗ Error en {$database['name']}: " . $e->getMessage()]);
+                }
+
+                $currentDb++;
+            }
+
+            // 3. Add manifest
+            $this->sendSSE('progress', ['message' => 'Generando manifiesto...', 'percent' => 90]);
+
+            $manifest = [
+                'created_at' => date('c'),
+                'version' => '2.0',
+                'creator' => $_SESSION['username'] ?? 'system',
+                'total_databases' => $totalDatabases,
+                'backed_up' => $backedUpDatabases,
+                'failed' => count($failedDatabases),
+                'failed_databases' => $failedDatabases
+            ];
+
+            $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
+            $zip->close();
+
+            // Cleanup
+            $this->sendSSE('progress', ['message' => 'Limpiando archivos temporales...', 'percent' => 95]);
+            $this->cleanupTempDir($tempDir);
+
+            // Log
+            Logger::log('BACKUP_CREATED', [
+                'file' => $filename,
+                'databases' => $backedUpDatabases,
+                'failed' => count($failedDatabases)
+            ]);
+
+            // Send completion
+            $this->sendSSE('complete', [
+                'message' => "Respaldo completado: {$backedUpDatabases}/{$totalDatabases} bases de datos",
+                'percent' => 100,
+                'filename' => $filename,
+                'backed_up' => $backedUpDatabases,
+                'failed' => count($failedDatabases)
+            ]);
+
+        } catch (\Exception $e) {
+            if (is_dir($tempDir)) {
+                $this->cleanupTempDir($tempDir);
+            }
+            if (file_exists($filepath)) {
+                unlink($filepath);
+            }
+            $this->sendSSE('error', ['message' => 'Error fatal: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Send Server-Sent Event to client
+     * 
+     * @param string $event Event type (progress, success, warning, error, complete)
+     * @param array $data Event data
+     * @return void
+     */
+    private function sendSSE(string $event, array $data): void
+    {
+        echo "event: {$event}\n";
+        echo "data: " . json_encode($data) . "\n\n";
+        if (ob_get_level())
+            ob_flush();
+        flush();
     }
 
     /**

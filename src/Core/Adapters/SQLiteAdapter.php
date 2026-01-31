@@ -264,4 +264,74 @@ class SQLiteAdapter extends DatabaseAdapter
     {
         return implode(' || ', $parts);
     }
+
+    /**
+     * Create a backup of the SQLite database
+     * 
+     * Simply copies the database file to the output path.
+     * 
+     * @param string $outputPath Absolute path where backup should be saved
+     * @return bool True on success, false on failure
+     */
+    public function createBackup(string $outputPath): bool
+    {
+        try {
+            $dbPath = $this->config['path'] ?? null;
+            if (!$dbPath || !file_exists($dbPath)) {
+                error_log("SQLite backup failed: Database file not found at {$dbPath}");
+                return false;
+            }
+
+            // Ensure output directory exists
+            $outputDir = dirname($outputPath);
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0755, true);
+            }
+
+            // Copy the database file
+            return copy($dbPath, $outputPath);
+        } catch (\Exception $e) {
+            error_log("SQLite backup failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Restore a SQLite database from backup
+     * 
+     * Copies the backup file to the database location.
+     * 
+     * @param string $backupPath Absolute path to backup file
+     * @return bool True on success, false on failure
+     */
+    public function restoreBackup(string $backupPath): bool
+    {
+        try {
+            $dbPath = $this->config['path'] ?? null;
+            if (!$dbPath) {
+                error_log("SQLite restore failed: No database path configured");
+                return false;
+            }
+
+            if (!file_exists($backupPath)) {
+                error_log("SQLite restore failed: Backup file not found at {$backupPath}");
+                return false;
+            }
+
+            // Close existing connection if any
+            $this->disconnect();
+
+            // Ensure database directory exists
+            $dbDir = dirname($dbPath);
+            if (!is_dir($dbDir)) {
+                mkdir($dbDir, 0755, true);
+            }
+
+            // Copy backup to database location
+            return copy($backupPath, $dbPath);
+        } catch (\Exception $e) {
+            error_log("SQLite restore failed: " . $e->getMessage());
+            return false;
+        }
+    }
 }

@@ -315,4 +315,117 @@ class MySQLAdapter extends DatabaseAdapter
     {
         return "CONCAT(" . implode(', ', $parts) . ")";
     }
+
+    /**
+     * Create a backup of the MySQL database
+     * 
+     * Uses mysqldump to create a SQL dump file.
+     * 
+     * @param string $outputPath Absolute path where backup should be saved
+     * @return bool True on success, false on failure
+     */
+    public function createBackup(string $outputPath): bool
+    {
+        try {
+            // Check if mysqldump is available
+            exec('which mysqldump 2>&1', $whichOutput, $whichCode);
+            if ($whichCode !== 0) {
+                error_log("MySQL backup failed: mysqldump command not found. Please install mysql-client.");
+                return false;
+            }
+
+            $host = $this->config['host'] ?? 'localhost';
+            $port = $this->config['port'] ?? 3306;
+            $user = $this->config['username'] ?? '';
+            $pass = $this->config['password'] ?? '';
+            $db = $this->config['database'] ?? '';
+
+            if (empty($db)) {
+                error_log("MySQL backup failed: No database name configured");
+                return false;
+            }
+
+            // Ensure output directory exists
+            $outputDir = dirname($outputPath);
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0755, true);
+            }
+
+            // Build mysqldump command
+            // Using --single-transaction for InnoDB tables to avoid locking
+            $command = sprintf(
+                'mysqldump --single-transaction -h%s -P%d -u%s %s %s > %s 2>&1',
+                escapeshellarg($host),
+                (int) $port,
+                escapeshellarg($user),
+                !empty($pass) ? '-p' . escapeshellarg($pass) : '',
+                escapeshellarg($db),
+                escapeshellarg($outputPath)
+            );
+
+            exec($command, $output, $returnCode);
+
+            if ($returnCode !== 0) {
+                error_log("MySQL backup failed: " . implode("\n", $output));
+                return false;
+            }
+
+            return file_exists($outputPath) && filesize($outputPath) > 0;
+        } catch (\Exception $e) {
+            error_log("MySQL backup failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Restore a MySQL database from backup
+     * 
+     * Uses mysql CLI to restore from a SQL dump file.
+     * 
+     * @param string $backupPath Absolute path to backup file
+     * @return bool True on success, false on failure
+     */
+    public function restoreBackup(string $backupPath): bool
+    {
+        try {
+            if (!file_exists($backupPath)) {
+                error_log("MySQL restore failed: Backup file not found at {$backupPath}");
+                return false;
+            }
+
+            $host = $this->config['host'] ?? 'localhost';
+            $port = $this->config['port'] ?? 3306;
+            $user = $this->config['username'] ?? '';
+            $pass = $this->config['password'] ?? '';
+            $db = $this->config['database'] ?? '';
+
+            if (empty($db)) {
+                error_log("MySQL restore failed: No database name configured");
+                return false;
+            }
+
+            // Build mysql restore command
+            $command = sprintf(
+                'mysql -h%s -P%d -u%s %s %s < %s 2>&1',
+                escapeshellarg($host),
+                (int) $port,
+                escapeshellarg($user),
+                !empty($pass) ? '-p' . escapeshellarg($pass) : '',
+                escapeshellarg($db),
+                escapeshellarg($backupPath)
+            );
+
+            exec($command, $output, $returnCode);
+
+            if ($returnCode !== 0) {
+                error_log("MySQL restore failed: " . implode("\n", $output));
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            error_log("MySQL restore failed: " . $e->getMessage());
+            return false;
+        }
+    }
 }

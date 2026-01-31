@@ -560,4 +560,118 @@ class PostgreSQLAdapter extends DatabaseAdapter
     {
         return implode(' || ', $parts);
     }
+
+    /**
+     * Create a backup of the PostgreSQL database
+     * 
+     * Uses pg_dump to create a SQL dump file.
+     * 
+     * @param string $outputPath Absolute path where backup should be saved
+     * @return bool True on success, false on failure
+     */
+    public function createBackup(string $outputPath): bool
+    {
+        try {
+            // Check if pg_dump is available
+            exec('which pg_dump 2>&1', $whichOutput, $whichCode);
+            if ($whichCode !== 0) {
+                error_log("PostgreSQL backup failed: pg_dump command not found. Please install postgresql-client.");
+                return false;
+            }
+
+            $host = $this->config['host'] ?? 'localhost';
+            $port = $this->config['port'] ?? 5432;
+            $user = $this->config['username'] ?? '';
+            $pass = $this->config['password'] ?? '';
+            $db = $this->config['database'] ?? '';
+
+            if (empty($db)) {
+                error_log("PostgreSQL backup failed: No database name configured");
+                return false;
+            }
+
+            // Ensure output directory exists
+            $outputDir = dirname($outputPath);
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0755, true);
+            }
+
+            // Build pg_dump command
+            // Using PGPASSWORD environment variable for password
+            $command = sprintf(
+                'PGPASSWORD=%s pg_dump -h %s -p %d -U %s %s > %s 2>&1',
+                escapeshellarg($pass),
+                escapeshellarg($host),
+                (int) $port,
+                escapeshellarg($user),
+                escapeshellarg($db),
+                escapeshellarg($outputPath)
+            );
+
+            exec($command, $output, $returnCode);
+
+            if ($returnCode !== 0) {
+                error_log("PostgreSQL backup failed: " . implode("\n", $output));
+                return false;
+            }
+
+            return file_exists($outputPath) && filesize($outputPath) > 0;
+        } catch (\Exception $e) {
+            error_log("PostgreSQL backup failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Restore a PostgreSQL database from backup
+     * 
+     * Uses psql to restore from a SQL dump file.
+     * 
+     * @param string $backupPath Absolute path to backup file
+     * @return bool True on success, false on failure
+     */
+    public function restoreBackup(string $backupPath): bool
+    {
+        try {
+            if (!file_exists($backupPath)) {
+                error_log("PostgreSQL restore failed: Backup file not found at {$backupPath}");
+                return false;
+            }
+
+            $host = $this->config['host'] ?? 'localhost';
+            $port = $this->config['port'] ?? 5432;
+            $user = $this->config['username'] ?? '';
+            $pass = $this->config['password'] ?? '';
+            $db = $this->config['database'] ?? '';
+
+            if (empty($db)) {
+                error_log("PostgreSQL restore failed: No database name configured");
+                return false;
+            }
+
+            // Build psql restore command
+            // Using PGPASSWORD environment variable for password
+            $command = sprintf(
+                'PGPASSWORD=%s psql -h %s -p %d -U %s %s < %s 2>&1',
+                escapeshellarg($pass),
+                escapeshellarg($host),
+                (int) $port,
+                escapeshellarg($user),
+                escapeshellarg($db),
+                escapeshellarg($backupPath)
+            );
+
+            exec($command, $output, $returnCode);
+
+            if ($returnCode !== 0) {
+                error_log("PostgreSQL restore failed: " . implode("\n", $output));
+                return false;
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            error_log("PostgreSQL restore failed: " . $e->getMessage());
+            return false;
+        }
+    }
 }

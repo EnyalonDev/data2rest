@@ -363,4 +363,30 @@ abstract class DatabaseAdapter
      * @return string SQL snippet
      */
     abstract public function getConcatSQL(array $parts): string;
+
+    /**
+     * Create a backup of the database
+     * 
+     * Creates a backup file at the specified output path.
+     * For SQLite: copies the database file
+     * For MySQL: executes mysqldump
+     * For PostgreSQL: executes pg_dump
+     * 
+     * @param string $outputPath Absolute path where backup should be saved
+     * @return bool True on success, false on failure
+     */
+    abstract public function createBackup(string $outputPath): bool;
+
+    /**
+     * Restore a database from backup
+     * 
+     * Restores the database from a backup file.
+     * For SQLite: copies the backup file to database location
+     * For MySQL: executes mysql < backup.sql
+     * For PostgreSQL: executes psql < backup.sql
+     * 
+     * @param string $backupPath Absolute path to backup file
+     * @return bool True on success, false on failure
+     */
+    abstract public function restoreBackup(string $backupPath): bool;
 }
