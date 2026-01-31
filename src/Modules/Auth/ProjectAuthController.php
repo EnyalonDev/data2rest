@@ -323,9 +323,9 @@ class ProjectAuthController extends BaseController
                 'data' => [
                     'token' => $token,
                     'user' => [
-                        'id' => $userId, 
-                        'email' => $email, 
-                        'name' => $name, 
+                        'id' => $userId,
+                        'email' => $email,
+                        'name' => $name,
                         'email_verified_at' => null, // Newly registered via email is not verified
                         'permissions' => $defaultPermissions
                     ],
@@ -535,7 +535,7 @@ class ProjectAuthController extends BaseController
 
         if (!$user) {
             // Token inválido o ya usado (si lo limpiamos)
-            return $this->json(['error' => 'Invalid or expired token'], 400);
+            return $this->redirectToFrontend($projectId, 'error', 'invalid_token');
         }
 
         // Verificar si ya estaba verificado
