@@ -312,4 +312,55 @@ abstract class DatabaseAdapter
     {
         return $this->getConnection()->quote($value);
     }
+
+    /**
+     * Get SQL for date difference in days
+     * 
+     * @param string $date1 Later date (e.g. 'now', 'column_name')
+     * @param string $date2 Earlier date
+     * @return string SQL snippet
+     */
+    abstract public function getDateDiffSQL(string $date1, string $date2): string;
+
+    /**
+     * Get SQL for formatting a date column
+     * 
+     * @param string $column Column name
+     * @param string $format Format type ('Y-m', 'Y', 'm', 'Y-m-d')
+     * @return string SQL snippet
+     */
+    abstract public function getDateFormatSQL(string $column, string $format): string;
+
+    /**
+     * Get SQL for the start of the current month
+     * 
+     * @return string SQL snippet
+     */
+    abstract public function getStartOfMonthSQL(): string;
+
+    /**
+     * Get SQL for subtracting an interval from a date
+     * 
+     * @param string $date Base date ('now', 'column_name', or 'YYYY-MM-DD')
+     * @param int $amount Amount to subtract
+     * @param string $unit Unit ('day', 'month', 'year')
+     * @return string SQL snippet
+     */
+    abstract public function getDateSubSQL(string $date, int $amount, string $unit): string;
+
+    /**
+     * Get SQL for current date/timestamp
+     * 
+     * @param bool $includeTime Whether to include time
+     * @return string SQL snippet
+     */
+    abstract public function getCurrentDateSQL(bool $includeTime = false): string;
+
+    /**
+     * Get SQL for string concatenation
+     * 
+     * @param array $parts Array of SQL snippets/columns to concatenate
+     * @return string SQL snippet
+     */
+    abstract public function getConcatSQL(array $parts): string;
 }

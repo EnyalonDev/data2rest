@@ -56,7 +56,7 @@ class InstallmentRepository
             LEFT JOIN clients c ON p.client_id = c.id
             LEFT JOIN payment_plans pp ON i.plan_id = pp.id
             WHERE i.status = 'pendiente'
-            AND i.due_date BETWEEN DATE('now') AND ?
+            AND i.due_date BETWEEN " . Database::getInstance()->getAdapter()->getCurrentDateSQL() . " AND ?
             ORDER BY i.due_date ASC
             LIMIT ?
         ");
@@ -75,7 +75,7 @@ class InstallmentRepository
                    c.name as client_name,
                    c.email as client_email,
                    pp.name as plan_name,
-                   JULIANDAY('now') - JULIANDAY(i.due_date) as days_overdue
+                   " . Database::getInstance()->getAdapter()->getDateDiffSQL('now', 'i.due_date') . " as days_overdue
             FROM installments i
             INNER JOIN projects p ON i.project_id = p.id
             LEFT JOIN clients c ON p.client_id = c.id

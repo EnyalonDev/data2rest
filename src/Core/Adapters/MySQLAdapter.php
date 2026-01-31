@@ -253,4 +253,66 @@ class MySQLAdapter extends DatabaseAdapter
             throw new PDOException("MySQL Database Creation Failed: " . $e->getMessage());
         }
     }
+
+    /**
+     * Get SQL for date difference in days for MySQL
+     */
+    public function getDateDiffSQL(string $date1, string $date2): string
+    {
+        $d1 = ($date1 === 'now') ? 'NOW()' : $date1;
+        $d2 = ($date2 === 'now') ? 'NOW()' : $date2;
+        return "DATEDIFF($d1, $d2)";
+    }
+
+    /**
+     * Get SQL for formatting a date column in MySQL
+     */
+    public function getDateFormatSQL(string $column, string $format): string
+    {
+        $sqlFormat = match ($format) {
+            'Y-m' => '%Y-%m',
+            'Y' => '%Y',
+            'm' => '%m',
+            'H:i' => '%H:%i',
+            'Y-m-d' => '%Y-%m-%d',
+            'Y-m-d H:i' => '%Y-%m-%d %H:%i',
+            'Y-m-d H:00' => '%Y-%m-%d %H:00',
+            default => $format
+        };
+        return "DATE_FORMAT($column, '$sqlFormat')";
+    }
+
+    /**
+     * Get SQL for subtracting an interval from a date in MySQL
+     */
+    public function getDateSubSQL(string $date, int $amount, string $unit): string
+    {
+        $d = ($date === 'now') ? 'NOW()' : $date;
+        $unit = strtoupper($unit);
+        return "DATE_SUB($d, INTERVAL $amount $unit)";
+    }
+
+    /**
+     * Get SQL for the start of the current month in MySQL
+     */
+    public function getStartOfMonthSQL(): string
+    {
+        return "DATE_FORMAT(NOW(), '%Y-%m-01')";
+    }
+
+    /**
+     * Get SQL for current date/timestamp in MySQL
+     */
+    public function getCurrentDateSQL(bool $includeTime = false): string
+    {
+        return $includeTime ? "NOW()" : "CURDATE()";
+    }
+
+    /**
+     * Get SQL for string concatenation in MySQL
+     */
+    public function getConcatSQL(array $parts): string
+    {
+        return "CONCAT(" . implode(', ', $parts) . ")";
+    }
 }

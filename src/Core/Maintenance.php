@@ -37,8 +37,8 @@ class Maintenance
             $stmtConf->execute();
             $retentionDays = $stmtConf->fetchColumn() ?: 30;
 
-            $stmt = $db->prepare("DELETE FROM data_versions WHERE created_at < date('now', ?)");
-            $stmt->execute(["-$retentionDays days"]);
+            $stmt = $db->prepare("DELETE FROM data_versions WHERE created_at < " . $adapter->getDateSubSQL('now', (int) $retentionDays, 'day'));
+            $stmt->execute();
             $deletedVersions = $stmt->rowCount();
 
             // 2. Retention Policy: Activity Logs
@@ -46,8 +46,8 @@ class Maintenance
             $stmtLogConf->execute();
             $logRetention = $stmtLogConf->fetchColumn() ?: 60;
 
-            $stmtLogs = $db->prepare("DELETE FROM activity_logs WHERE created_at < date('now', ?)");
-            $stmtLogs->execute(["-$logRetention days"]);
+            $stmtLogs = $db->prepare("DELETE FROM activity_logs WHERE created_at < " . $adapter->getDateSubSQL('now', (int) $logRetention, 'day'));
+            $stmtLogs->execute();
             $deletedLogs = $stmtLogs->rowCount();
 
             // 3. Database Optimization (Only for SQLite)

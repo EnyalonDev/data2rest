@@ -499,4 +499,65 @@ class PostgreSQLAdapter extends DatabaseAdapter
             return false;
         }
     }
+
+    /**
+     * Get SQL for date difference in days for PostgreSQL
+     */
+    public function getDateDiffSQL(string $date1, string $date2): string
+    {
+        $d1 = ($date1 === 'now') ? 'CURRENT_DATE' : "DATE($date1)";
+        $d2 = ($date2 === 'now') ? 'CURRENT_DATE' : "DATE($date2)";
+        return "($d1 - $d2)";
+    }
+
+    /**
+     * Get SQL for formatting a date column in PostgreSQL
+     */
+    public function getDateFormatSQL(string $column, string $format): string
+    {
+        $sqlFormat = match ($format) {
+            'Y-m' => 'YYYY-MM',
+            'Y' => 'YYYY',
+            'm' => 'MM',
+            'H:i' => 'HH24:MI',
+            'Y-m-d' => 'YYYY-MM-DD',
+            'Y-m-d H:i' => 'YYYY-MM-DD HH24:MI',
+            'Y-m-d H:00' => 'YYYY-MM-DD HH24:00',
+            default => $format
+        };
+        return "TO_CHAR($column, '$sqlFormat')";
+    }
+
+    /**
+     * Get SQL for subtracting an interval from a date in PostgreSQL
+     */
+    public function getDateSubSQL(string $date, int $amount, string $unit): string
+    {
+        $d = ($date === 'now') ? 'CURRENT_DATE' : "DATE($date)";
+        return "($d - INTERVAL '$amount $unit" . ($amount > 1 ? 's' : '') . "')";
+    }
+
+    /**
+     * Get SQL for the start of the current month in PostgreSQL
+     */
+    public function getStartOfMonthSQL(): string
+    {
+        return "DATE_TRUNC('month', CURRENT_DATE)::DATE";
+    }
+
+    /**
+     * Get SQL for current date/timestamp in PostgreSQL
+     */
+    public function getCurrentDateSQL(bool $includeTime = false): string
+    {
+        return $includeTime ? "CURRENT_TIMESTAMP" : "CURRENT_DATE";
+    }
+
+    /**
+     * Get SQL for string concatenation in PostgreSQL
+     */
+    public function getConcatSQL(array $parts): string
+    {
+        return implode(' || ', $parts);
+    }
 }

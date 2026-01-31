@@ -66,12 +66,14 @@ yarn-error.log*
 .gemini/
 /data/cache/
 
+# Private Documentation
+/docs/
+
 # System Config
 /data/config.json
 vendor/
 composer.phar
 
-# Projects FE
 # Projects FE
 /projects-fe/
 .agent/

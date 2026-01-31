@@ -264,14 +264,9 @@ class DashboardController extends BaseController
         $adapter = Database::getInstance()->getAdapter();
         $dbType = $adapter->getType();
 
-        if ($dbType === 'mysql') {
-            $sql = "SELECT DATE(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY day ORDER BY day ASC";
-        } elseif ($dbType === 'pgsql') {
-            $sql = "SELECT created_at::date as day, COUNT(*) as count FROM activity_logs WHERE created_at >= current_date - INTERVAL '6 days' GROUP BY day ORDER BY day ASC";
-        } else {
-            // SQLite default
-            $sql = "SELECT date(created_at) as day, COUNT(*) as count FROM activity_logs WHERE created_at >= date('now', '-6 days') GROUP BY day ORDER BY day ASC";
-        }
+        $daySql = $adapter->getDateFormatSQL('created_at', 'Y-m-d');
+        $whereSql = "created_at >= " . $adapter->getDateSubSQL('now', 6, 'day');
+        $sql = "SELECT $daySql as day, COUNT(*) as count FROM activity_logs WHERE $whereSql GROUP BY day ORDER BY day ASC";
         $stmt = $db->prepare($sql);
         $stmt->execute();
         $activityDays = [];
@@ -312,17 +307,9 @@ class DashboardController extends BaseController
                 $type = $adapter->getType();
                 $tables = $adapter->getTables();
 
-                // Determine Date Logic based on DB Type
-                $dateColExp = "date(fecha_de_creacion)"; // Default (SQLite)
-                $whereDate = "date('now', '-6 days')";   // Default (SQLite)
-
-                if ($type === 'mysql') {
-                    $dateColExp = "DATE(fecha_de_creacion)";
-                    $whereDate = "DATE_SUB(NOW(), INTERVAL 6 DAY)";
-                } elseif ($type === 'pgsql' || $type === 'postgresql') {
-                    $dateColExp = "fecha_de_creacion::date";
-                    $whereDate = "CURRENT_DATE - INTERVAL '6 days'";
-                }
+                // Determine Date Logic using Adapter
+                $dateColExp = $adapter->getDateFormatSQL('fecha_de_creacion', 'Y-m-d');
+                $whereDate = $adapter->getDateSubSQL('now', 6, 'day');
 
                 foreach ($tables as $table) {
                     if (str_starts_with($table, 'sqlite_'))

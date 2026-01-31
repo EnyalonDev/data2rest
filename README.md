@@ -170,59 +170,7 @@ data2rest/
 
 ## 📦 Módulos
 
-El sistema está organizado en módulos independientes y bien documentados:
-
-### 1. [Módulo de API REST](docs/API.md)
-Generación automática de endpoints REST con documentación interactiva y ejemplos multiplataforma.
-- Controladores REST (GET, POST, PUT, DELETE)
-- Gestión de API Keys con validación de seguridad
-- Documentación dinámica con ejemplos prácticos
-- **Ejemplos incluidos**: cURL, JavaScript, Python
-
-### 2. [Módulo de Autenticación](docs/AUTH.md)
-Sistema completo de login, usuarios, roles y permisos granulares.
-- Gestión de perfiles de usuario
-- Arquitecto de Políticas (Permisos por tabla y acción)
-- Grupos de trabajo y jerarquías
-- **Casos de uso**: Creación de roles restringidos, gestión de equipos
-
-### 3. [Módulo de Bases de Datos](docs/DATABASE.md)
-Gestión visual integral de bases de datos SQLite y flujos de datos.
-- Diseño de esquemas (Tablas y Columnas)
-- Tipos de datos avanzados e interfaces de carga
-- CRUD dinámico con validaciones
-- **Tutoriales**: Configuración de relaciones
-
-### 4. [Módulo de Media Library](docs/MEDIA.md) (Nuevo ✨)
-Gestión avanzada de archivos con edición de imágenes integrada.
-- **Editor de Imágenes**: Recorte, filtros y optimización nativa.
-- **Papelera de Reciclaje**: Sistema de recuperación y retención configurable.
-- **Rastreador de Uso**: Identificación de archivos huérfanos y referencias en BD.
-- **Interfaz Fluida**: Vista de mosaico/lista y panel de inspección flotante.
-
-### 5. [Módulo de Webhooks](docs/WEBHOOKS.md) (Nuevo ✨)
-Notificaciones en tiempo real a sistemas externos.
-- **Eventos Reactivos**: `record.created`, `record.updated`, `media.uploaded`, etc.
-- **Seguridad**: Firmas HMAC-SHA256 para verificar la autenticidad.
-- **Logs**: Historial completo de ejecuciones y respuestas.
-- **Integraciones**: Conecta fácilmente con Zapier, Slack, Discord o Scripts propios.
-
-### 6. [Módulo de Billing](docs/BILLING.md) (Nuevo ✨)
-Sistema completo de gestión de pagos por proyecto con facturación automática.
-- **Planes de Pago**: Mensual (12 cuotas) y Anual (1 cuota) configurables.
-- **Cuotas Automáticas**: Generación y recálculo inteligente preservando pagos.
-- **Recordatorios**: Notificaciones automáticas 5 días antes del vencimiento.
-- **Reportes Financieros**: Ingresos reales vs proyectados, tasa de cobro, calendario de cobranzas.
-- **Auditoría Completa**: Historial de cambios de plan y pagos efectuados.
-
-### 7. [Gestión de Tareas Kanban](docs/TASKS_MODULE.md) (Nuevo ✨)
-Organiza el flujo de trabajo de tu equipo de manera visual y eficiente.
-- **Tablero Interactivo**: Drag & Drop para mover tareas entre estados (Backlog, To Do, In Progress, Review, Done).
-- **Roles y Permisos**: 
-    - *Admin/Dev/Marketing*: Gestión completa de tareas.
-    - *Cliente*: Vista restringida para aprobar entregables.
-- **Colaboración**: Asignación de responsables y seguimiento de historial.
-- **Integración**: Vinculación directa con los proyectos existentes.
+El sistema está organizado en módulos independientes. Para una descripción técnica detallada, consulta la [Documentación de Módulos](public_docs/MODULES.md).
 
 ---
 

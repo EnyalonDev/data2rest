@@ -60,12 +60,12 @@ class InstallmentStatusService
         // Obtener cuotas vencidas de hoy
         $stmt = $this->db->prepare("
             SELECT i.*, p.name as project_name, p.client_id, c.name as client_name, c.email as client_email,
-                   JULIANDAY(?) - JULIANDAY(i.due_date) as days_overdue
+                   " . Database::getInstance()->getAdapter()->getDateDiffSQL('?', 'i.due_date') . " as days_overdue
             FROM installments i
             INNER JOIN projects p ON i.project_id = p.id
             LEFT JOIN clients c ON p.client_id = c.id
             WHERE i.status = 'vencida'
-            AND DATE(i.updated_at) = ?
+            AND " . Database::getInstance()->getAdapter()->getDateFormatSQL('i.updated_at', 'Y-m-d') . " = ?
         ");
         $stmt->execute([$today, $today]);
         $overdueInstallments = $stmt->fetchAll();

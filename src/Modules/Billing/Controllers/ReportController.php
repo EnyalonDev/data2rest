@@ -124,7 +124,7 @@ class ReportController extends BaseController
                 COUNT(*) as payments_count,
                 SUM(p.amount) as total_amount
             FROM payments p
-            WHERE DATE(p.payment_date) BETWEEN ? AND ?
+            WHERE " . Database::getInstance()->getAdapter()->getDateFormatSQL('p.payment_date', 'Y-m-d') . " BETWEEN ? AND ?
         ");
         $realStmt->execute([$startDate, $endDate]);
         $realIncome = $realStmt->fetch();
@@ -196,7 +196,7 @@ class ReportController extends BaseController
             LEFT JOIN users u ON p.billing_user_id = u.id
             LEFT JOIN payment_plans pp ON i.plan_id = pp.id
             WHERE i.status = 'pendiente'
-            AND i.due_date BETWEEN CURRENT_DATE AND ?
+            AND i.due_date BETWEEN " . Database::getInstance()->getAdapter()->getCurrentDateSQL() . " AND ?
             ORDER BY i.due_date ASC
         ");
         $stmt->execute([$targetDate]);

@@ -202,4 +202,66 @@ class SQLiteAdapter extends DatabaseAdapter
             return false;
         }
     }
+
+    /**
+     * Get SQL for date difference in days for SQLite
+     */
+    public function getDateDiffSQL(string $date1, string $date2): string
+    {
+        $d1 = ($date1 === 'now') ? "'now'" : $date1;
+        $d2 = ($date2 === 'now') ? "'now'" : $date2;
+        return "JULIANDAY($d1) - JULIANDAY($d2)";
+    }
+
+    /**
+     * Get SQL for formatting a date column in SQLite
+     */
+    public function getDateFormatSQL(string $column, string $format): string
+    {
+        $sqlFormat = match ($format) {
+            'Y-m' => '%Y-%m',
+            'Y' => '%Y',
+            'm' => '%m',
+            'H:i' => '%H:%M',
+            'Y-m-d' => '%Y-%m-%d',
+            'Y-m-d H:i' => '%Y-%m-%d %H:%M',
+            'Y-m-d H:00' => '%Y-%m-%d %H:00',
+            default => $format
+        };
+        return "strftime('$sqlFormat', $column)";
+    }
+
+    /**
+     * Get SQL for subtracting an interval from a date in SQLite
+     */
+    public function getDateSubSQL(string $date, int $amount, string $unit): string
+    {
+        $d = ($date === 'now') ? "'now'" : $date;
+        $interval = "-$amount $unit" . ($amount > 1 ? 's' : '');
+        return "DATE($d, '$interval')";
+    }
+
+    /**
+     * Get SQL for the start of the current month in SQLite
+     */
+    public function getStartOfMonthSQL(): string
+    {
+        return "DATE('now', 'start of month')";
+    }
+
+    /**
+     * Get SQL for current date/timestamp in SQLite
+     */
+    public function getCurrentDateSQL(bool $includeTime = false): string
+    {
+        return $includeTime ? "CURRENT_TIMESTAMP" : "CURRENT_DATE";
+    }
+
+    /**
+     * Get SQL for string concatenation in SQLite
+     */
+    public function getConcatSQL(array $parts): string
+    {
+        return implode(' || ', $parts);
+    }
 }

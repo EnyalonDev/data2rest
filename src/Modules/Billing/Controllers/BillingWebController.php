@@ -405,8 +405,8 @@ class BillingWebController extends BaseController
             COUNT(*) as total_payments,
             SUM(amount) as total_received,
             AVG(amount) as average_payment,
-            (SELECT COUNT(*) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_payments,
-            (SELECT SUM(amount) FROM payments WHERE payment_date >= DATE('now', 'start of month')) as month_received,
+            (SELECT COUNT(*) FROM payments WHERE payment_date >= " . Database::getInstance()->getAdapter()->getStartOfMonthSQL() . ") as month_payments,
+            (SELECT SUM(amount) FROM payments WHERE payment_date >= " . Database::getInstance()->getAdapter()->getStartOfMonthSQL() . ") as month_received,
             (SELECT payment_date FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_date,
             (SELECT amount FROM payments ORDER BY payment_date DESC LIMIT 1) as last_payment_amount
         FROM payments
@@ -475,12 +475,7 @@ class BillingWebController extends BaseController
     {
         $type = Database::getInstance()->getAdapter()->getType();
 
-        $daysOverdueSql = "JULIANDAY('now') - JULIANDAY(i.due_date)"; // Default SQLite
-        if ($type === 'pgsql') {
-            $daysOverdueSql = "DATE_PART('day', NOW() - i.due_date)";
-        } elseif ($type === 'mysql') {
-            $daysOverdueSql = "DATEDIFF(NOW(), i.due_date)";
-        }
+        $daysOverdueSql = Database::getInstance()->getAdapter()->getDateDiffSQL('now', 'i.due_date');
 
         $stmt = $this->db->query("
             SELECT i.*, p.name as project_name, COALESCE(u.public_name, u.username) as client_name,
@@ -528,11 +523,7 @@ class BillingWebController extends BaseController
     {
         $type = Database::getInstance()->getAdapter()->getType();
 
-        $monthSql = "strftime('%Y-%m', payment_date)";
-        if ($type === 'pgsql')
-            $monthSql = "TO_CHAR(payment_date, 'YYYY-MM')";
-        if ($type === 'mysql')
-            $monthSql = "DATE_FORMAT(payment_date, '%Y-%m')";
+        $monthSql = Database::getInstance()->getAdapter()->getDateFormatSQL('payment_date', 'Y-m');
 
         $sixMonthsAgo = date('Y-m-d', strtotime('-6 months'));
 
@@ -597,16 +588,8 @@ class BillingWebController extends BaseController
 
         $type = Database::getInstance()->getAdapter()->getType();
 
-        $yearSql = "strftime('%Y', payment_date)";
-        $monthSql = "strftime('%m', payment_date)";
-
-        if ($type === 'pgsql') {
-            $yearSql = "TO_CHAR(payment_date, 'YYYY')";
-            $monthSql = "TO_CHAR(payment_date, 'MM')";
-        } elseif ($type === 'mysql') {
-            $yearSql = "DATE_FORMAT(payment_date, '%Y')";
-            $monthSql = "DATE_FORMAT(payment_date, '%m')";
-        }
+        $yearSql = Database::getInstance()->getAdapter()->getDateFormatSQL('payment_date', 'Y');
+        $monthSql = Database::getInstance()->getAdapter()->getDateFormatSQL('payment_date', 'm');
 
         for ($month = 1; $month <= 12; $month++) {
             // Año actual
@@ -663,11 +646,7 @@ class BillingWebController extends BaseController
         $amounts = [];
 
         $type = Database::getInstance()->getAdapter()->getType();
-        $dateSql = "strftime('%Y-%m', due_date)";
-        if ($type === 'pgsql')
-            $dateSql = "TO_CHAR(due_date, 'YYYY-MM')";
-        if ($type === 'mysql')
-            $dateSql = "DATE_FORMAT(due_date, '%Y-%m')";
+        $dateSql = Database::getInstance()->getAdapter()->getDateFormatSQL('due_date', 'Y-m');
 
         for ($i = 0; $i < $months; $i++) {
             $date = date('Y-m', strtotime("+{$i} months"));

@@ -69,23 +69,9 @@ class ApiAnalyticsController extends BaseController
         $errorRate = $totalRequests > 0 ? round(($totalErrors / $totalRequests) * 100, 2) : 0;
 
         // 4. Requests Over Time (Hourly) - Split by Success vs Error
-        // Group format: date-agnostic logic
-        $timeFormat = ($range === '30d' || $range === '7d') ? 'Y-m-d' : 'Y-m-d H:00';
-
         // Use adapter-specific DATE formatting for aggregation
-        if ($adapterType === 'sqlite') {
-            $dateFormatSql = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00';
-            $groupBySql = "strftime('$dateFormatSql', created_at)";
-        } elseif ($adapterType === 'mysql') {
-            $mysqlFormat = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00';
-            $groupBySql = "DATE_FORMAT(created_at, '$mysqlFormat')";
-        } elseif ($adapterType === 'pgsql' || $adapterType === 'postgresql') {
-            $pgFormat = ($range === '30d' || $range === '7d') ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH24:00';
-            $groupBySql = "TO_CHAR(created_at, '$pgFormat')";
-        } else {
-            $dateFormatSql = ($range === '30d' || $range === '7d') ? '%Y-%m-%d' : '%Y-%m-%d %H:00';
-            $groupBySql = "strftime('$dateFormatSql', created_at)";
-        }
+        $dateFormatSql = ($range === '30d' || $range === '7d') ? 'Y-m-d' : 'Y-m-d H:00';
+        $groupBySql = $adapter->getDateFormatSQL('created_at', $dateFormatSql);
 
         $usageSql = "SELECT $groupBySql as time_slot, 
                      SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) as success_count,
