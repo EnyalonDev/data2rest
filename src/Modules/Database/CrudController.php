@@ -324,11 +324,12 @@ LIMIT 1");
      * - Search functionality across visible fields
      * - Foreign key resolution for display
      * - Permission-based access control
+     * - Pagination with configurable page sizes
      * 
      * @return void Renders the list view template
      * 
      * @example
-     * GET /admin/crud/list?db_id=1&table=users&s=search_term
+     * GET /admin/crud/list?db_id=1&table=users&s=search_term&page=2&per_page=20
      */
     /**
      * list method
@@ -339,6 +340,18 @@ LIMIT 1");
     {
         $ctx = $this->getContext('crud_view');
         $search = $_GET['s'] ?? '';
+
+        // Pagination parameters
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = (int) ($_GET['per_page'] ?? 20);
+
+        // Validate and sanitize per_page (only allow specific values)
+        $allowedPerPage = [10, 15, 20, 50, 100];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 20; // Default fallback
+        }
+
+        $offset = ($page - 1) * $perPage;
 
         try {
             $adapter = \App\Core\DatabaseManager::getAdapter($ctx['database']);
@@ -363,9 +376,30 @@ LIMIT 1");
             $whereSql = !empty($whereClauses) ? "WHERE " . implode(" OR ", $whereClauses) : "";
 
             $qTable = $adapter->quoteName($tableName);
-            $sql = "SELECT * FROM $qTable $whereSql ORDER BY id DESC";
+
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(*) FROM $qTable $whereSql";
+            $countStmt = $targetDb->prepare($countSql);
+            $countStmt->execute($params);
+            $totalRecords = (int) $countStmt->fetchColumn();
+
+            // Calculate pagination metadata
+            $totalPages = max(1, ceil($totalRecords / $perPage));
+            $page = min($page, $totalPages); // Ensure page doesn't exceed total pages
+            $offset = ($page - 1) * $perPage;
+
+            // Fetch paginated records
+            $sql = "SELECT * FROM $qTable $whereSql ORDER BY id DESC LIMIT ? OFFSET ?";
             $stmt = $targetDb->prepare($sql);
-            $stmt->execute($params);
+
+            // Bind search params first, then LIMIT and OFFSET
+            foreach ($params as $i => $param) {
+                $stmt->bindValue($i + 1, $param, PDO::PARAM_STR);
+            }
+            $stmt->bindValue(count($params) + 1, $perPage, PDO::PARAM_INT);
+            $stmt->bindValue(count($params) + 2, $offset, PDO::PARAM_INT);
+
+            $stmt->execute();
             $records = $stmt->fetchAll();
 
             foreach ($ctx['fields'] as $field) {
@@ -391,11 +425,25 @@ LIMIT 1");
             die("Error accessing data: " . $e->getMessage());
         }
 
+        // Prepare pagination data
+        $pagination = [
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total_records' => $totalRecords,
+            'total_pages' => $totalPages,
+            'has_prev' => $page > 1,
+            'has_next' => $page < $totalPages,
+            'start_record' => $totalRecords > 0 ? $offset + 1 : 0,
+            'end_record' => min($offset + $perPage, $totalRecords),
+            'allowed_per_page' => $allowedPerPage
+        ];
+
         $this->view('admin/crud/list', [
             'title' => 'List - ' . $ctx['table'],
             'records' => $records,
             'ctx' => $ctx,
             'search' => $search,
+            'pagination' => $pagination,
             'breadcrumbs' => [
                 \App\Core\Lang::get('databases.title') => 'admin/databases',
                 $ctx['database']['name'] => 'admin/databases/view?id=' . $ctx['db_id'],

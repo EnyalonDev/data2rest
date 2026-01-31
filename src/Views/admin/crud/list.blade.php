@@ -4,9 +4,9 @@
 
 @section('styles')
     <!-- 
-                    Custom Styles 
-                    Scrollbar customization and sticky columns for the data table.
-                -->
+                            Custom Styles 
+                            Scrollbar customization and sticky columns for the data table.
+                        -->
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
@@ -112,9 +112,9 @@
     @endphp
 
     <!-- 
-                CRUD List Header 
-                Title, Database details, and Action buttons (Back, Fields, API Docs, Export, Recycle Bin, New Record).
-            -->
+                        CRUD List Header 
+                        Title, Database details, and Action buttons (Back, Fields, API Docs, Export, Recycle Bin, New Record).
+                    -->
     <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
         <div>
             <div class="flex items-center gap-4 mb-2">
@@ -189,9 +189,9 @@
     </header>
 
     <!-- 
-            Data Table Section 
-            Contains search bar and the main data table matrix.
-        -->
+                    Data Table Section 
+                    Contains search bar and the main data table matrix.
+                -->
     <section class="glass-card !p-0 overflow-hidden shadow-2xl">
         <div
             class="px-8 py-5 bg-white/[0.03] border-b border-glass-border flex flex-col md:flex-row justify-between items-center gap-4">
@@ -236,6 +236,31 @@
         </div>
 
         <div class="overflow-x-auto custom-scrollbar">
+            <!-- Pagination Controls Top -->
+            <div
+                class="px-8 py-4 bg-black/5 dark:bg-black/20 border-b border-glass-border flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <span class="text-[10px] font-black text-p-muted uppercase tracking-widest">Registros por página:</span>
+                    <select onchange="changePageSize(this.value)"
+                        class="bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold text-p-title focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all outline-none cursor-pointer hover:border-primary/30">
+                        @foreach($pagination['allowed_per_page'] as $size)
+                            <option value="{{ $size }}" {{ $pagination['per_page'] == $size ? 'selected' : '' }}>
+                                {{ $size }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="text-xs font-medium text-p-muted">
+                    Mostrando
+                    <span class="font-black text-primary">{{ $pagination['start_record'] }}</span>
+                    -
+                    <span class="font-black text-primary">{{ $pagination['end_record'] }}</span>
+                    de
+                    <span class="font-black text-primary">{{ $pagination['total_records'] }}</span>
+                    registros
+                </div>
+            </div>
+
             <table class="w-full text-left">
                 <thead>
                     <tr
@@ -381,11 +406,98 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Controls Bottom -->
+        @if($pagination['total_pages'] > 1)
+            <div class="px-8 py-5 bg-black/5 dark:bg-black/20 border-t border-glass-border flex justify-between items-center">
+                <div class="text-xs font-medium text-p-muted">
+                    Página
+                    <span class="font-black text-primary">{{ $pagination['current_page'] }}</span>
+                    de
+                    <span class="font-black text-primary">{{ $pagination['total_pages'] }}</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    @if($pagination['has_prev'])
+                        <a href="?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&page={{ $pagination['current_page'] - 1 }}&per_page={{ $pagination['per_page'] }}{{ !empty($search) ? '&s=' . urlencode($search) : '' }}"
+                            class="px-4 py-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all text-xs font-bold border border-white/5 hover:border-primary/30">
+                            ← Anterior
+                        </a>
+                    @else
+                        <span
+                            class="px-4 py-2 bg-black/10 rounded-lg text-p-muted/30 text-xs font-bold border border-white/5 cursor-not-allowed">
+                            ← Anterior
+                        </span>
+                    @endif
+
+                    <!-- Page Numbers -->
+                    <div class="flex items-center gap-1">
+                        @php
+                            $start = max(1, $pagination['current_page'] - 2);
+                            $end = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                        @endphp
+
+                        @if($start > 1)
+                            <a href="?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&page=1&per_page={{ $pagination['per_page'] }}{{ !empty($search) ? '&s=' . urlencode($search) : '' }}"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all text-xs font-bold border border-white/5 hover:border-primary/30">
+                                1
+                            </a>
+                            @if($start > 2)
+                                <span class="text-p-muted px-2">...</span>
+                            @endif
+                        @endif
+
+                        @for($i = $start; $i <= $end; $i++)
+                            @if($i == $pagination['current_page'])
+                                <span
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-black border border-primary shadow-lg">
+                                    {{ $i }}
+                                </span>
+                            @else
+                                <a href="?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&page={{ $i }}&per_page={{ $pagination['per_page'] }}{{ !empty($search) ? '&s=' . urlencode($search) : '' }}"
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all text-xs font-bold border border-white/5 hover:border-primary/30">
+                                    {{ $i }}
+                                </a>
+                            @endif
+                        @endfor
+
+                        @if($end < $pagination['total_pages'])
+                            @if($end < $pagination['total_pages'] - 1)
+                                <span class="text-p-muted px-2">...</span>
+                            @endif
+                            <a href="?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&page={{ $pagination['total_pages'] }}&per_page={{ $pagination['per_page'] }}{{ !empty($search) ? '&s=' . urlencode($search) : '' }}"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all text-xs font-bold border border-white/5 hover:border-primary/30">
+                                {{ $pagination['total_pages'] }}
+                            </a>
+                        @endif
+                    </div>
+
+                    @if($pagination['has_next'])
+                        <a href="?db_id={{ $ctx['db_id'] }}&table={{ $ctx['table'] }}&page={{ $pagination['current_page'] + 1 }}&per_page={{ $pagination['per_page'] }}{{ !empty($search) ? '&s=' . urlencode($search) : '' }}"
+                            class="px-4 py-2 bg-p-bg dark:bg-white/5 rounded-lg text-p-muted hover:text-primary hover:bg-primary/10 transition-all text-xs font-bold border border-white/5 hover:border-primary/30">
+                            Siguiente →
+                        </a>
+                    @else
+                        <span
+                            class="px-4 py-2 bg-black/10 rounded-lg text-p-muted/30 text-xs font-bold border border-white/5 cursor-not-allowed">
+                            Siguiente →
+                        </span>
+                    @endif
+                </div>
+            </div>
+        @endif
     </section>
 @endsection
 
 @section('scripts')
     <script>
+        function changePageSize(perPage) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', perPage);
+            url.searchParams.set('page', '1'); // Reset to first page when changing size
+            window.location.href = url.toString();
+        }
+        
         function confirmRecordDelete(id) {
             showModal({
                 title: '{!! addslashes(\App\Core\Lang::get('crud_list.delete_confirm_title')) !!}',
