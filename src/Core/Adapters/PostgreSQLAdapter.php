@@ -20,6 +20,16 @@ use PDOException;
 class PostgreSQLAdapter extends DatabaseAdapter
 {
     /**
+     * @var string Path to pg_dump binary
+     */
+    private $pgDumpPath;
+
+    /**
+     * @var string Path to psql binary
+     */
+    private $psqlPath;
+
+    /**
      * Constructor
      * 
      * @param array $config Database configuration array with keys:
@@ -34,6 +44,45 @@ class PostgreSQLAdapter extends DatabaseAdapter
     public function __construct(array $config)
     {
         parent::__construct($config);
+
+        // Find PostgreSQL binaries
+        $this->pgDumpPath = $this->findBinary('pg_dump');
+        $this->psqlPath = $this->findBinary('psql');
+    }
+
+    /**
+     * Find PostgreSQL binary path
+     * 
+     * Searches common locations for PostgreSQL binaries.
+     * Priority: Homebrew (macOS) > System paths
+     * 
+     * @param string $binary Binary name (pg_dump, psql)
+     * @return string Full path to binary or just the binary name if not found
+     */
+    private function findBinary(string $binary): string
+    {
+        // Common PostgreSQL binary locations
+        $paths = [
+            '/opt/homebrew/bin/' . $binary,           // Homebrew Apple Silicon
+            '/usr/local/bin/' . $binary,              // Homebrew Intel
+            '/usr/bin/' . $binary,                    // System
+            '/usr/local/pgsql/bin/' . $binary,        // Custom install
+        ];
+
+        foreach ($paths as $path) {
+            if (file_exists($path) && is_executable($path)) {
+                return $path;
+            }
+        }
+
+        // Fallback: try to find using 'which'
+        $which = trim(shell_exec("which $binary 2>/dev/null"));
+        if ($which && file_exists($which)) {
+            return $which;
+        }
+
+        // Last resort: return binary name and hope it's in PATH
+        return $binary;
     }
 
     /**
@@ -599,10 +648,12 @@ class PostgreSQLAdapter extends DatabaseAdapter
             // Build pg_dump command
             // Using PGPASSWORD environment variable for password
             // Using long-format parameters for better compatibility
+            // Using absolute path to pg_dump for web server compatibility
             $envVars = !empty($pass) ? 'PGPASSWORD=' . escapeshellarg($pass) . ' ' : '';
             $command = sprintf(
-                '%spg_dump --host=%s --port=%d --username=%s --format=plain %s > %s 2>&1',
+                '%s%s --host=%s --port=%d --username=%s --format=plain %s > %s 2>&1',
                 $envVars,
+                $this->pgDumpPath,  // Use absolute path
                 escapeshellarg($host),
                 (int) $port,
                 escapeshellarg($user),
