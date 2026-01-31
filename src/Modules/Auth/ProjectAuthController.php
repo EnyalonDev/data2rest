@@ -118,14 +118,15 @@ class ProjectAuthController extends BaseController
                 // Crear usuario si no existe
                 $username = strtolower(explode('@', $email)[0]) . rand(100, 999);
                 $now = date('Y-m-d H:i:s');
-                $stmt = $db->prepare("INSERT INTO users (username, email, google_id, role_id, status, created_at) VALUES (?, ?, ?, ?, 1, ?)");
-                $stmt->execute([$username, $email, $googleId, $userRoleId, $now]);
+                $stmt = $db->prepare("INSERT INTO users (username, email, google_id, role_id, status, email_verified_at, created_at) VALUES (?, ?, ?, ?, 1, ?, ?)");
+                $stmt->execute([$username, $email, $googleId, $userRoleId, $now, $now]);
                 $userId = $db->lastInsertId();
                 $user = ['id' => $userId, 'email' => $email, 'username' => $username];
             } else {
                 // Actualizar google_id si faltaba
                 if (empty($user['google_id'])) {
-                    $db->prepare("UPDATE users SET google_id = ? WHERE id = ?")->execute([$googleId, $user['id']]);
+                    // Actualizar google_id si faltaba y asegurar email_verified_at
+                    $db->prepare("UPDATE users SET google_id = ?, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = ?")->execute([$googleId, $user['id']]);
                 }
                 $userId = $user['id'];
             }
