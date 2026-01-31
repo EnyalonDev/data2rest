@@ -125,9 +125,16 @@ class ProjectAuthController extends BaseController
             } else {
                 // Actualizar google_id si faltaba
                 if (empty($user['google_id'])) {
-                    // Actualizar google_id si faltaba y asegurar email_verified_at
-                    $db->prepare("UPDATE users SET google_id = ?, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = ?")->execute([$googleId, $user['id']]);
+                    $db->prepare("UPDATE users SET google_id = ? WHERE id = ?")->execute([$googleId, $user['id']]);
                 }
+
+                // Asegurar que el usuario esté marcado como verificado (si viene de Google, el email es válido)
+                if (empty($user['email_verified_at'])) {
+                    $db->prepare("UPDATE users SET email_verified_at = ? WHERE id = ?")->execute([date('Y-m-d H:i:s'), $user['id']]);
+                    // Actualizamos el array local para la respuesta
+                    $user['email_verified_at'] = date('Y-m-d H:i:s');
+                }
+
                 $userId = $user['id'];
             }
 
